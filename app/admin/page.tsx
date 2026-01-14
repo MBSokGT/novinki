@@ -116,7 +116,7 @@ export default function AdminPage() {
             <h1 className="text-2xl font-bold text-red-900">Админ панель</h1>
           </div>
           <div className="flex gap-3">
-            <Link href="/admin/users" className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
+            <Link href="/admin/users" className="px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-900 transition">
               👥 Пользователи
             </Link>
             <Link href="/" className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition">

@@ -144,7 +144,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filtered.map((product, idx) => (
-                <tr key={product.id} className="hover:bg-red-50/50 transition-colors group">
+                <tr key={product.id} className="hover:bg-slate-100 transition-colors group">
                   <td className="px-6 py-4">
                     <div className="relative w-20 h-20 rounded-lg overflow-hidden shadow-sm group-hover:shadow-md transition">
                       <Image src={product.image_url} alt={product.name} fill className="object-cover" />
