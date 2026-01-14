@@ -1,36 +1,68 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Новинки ассортимента
 
-## Getting Started
+Веб-приложение для управления и отображения новинок ассортимента с админ панелью.
 
-First, run the development server:
+## Возможности
+
+- 📋 Таблица с новинками (название, бренд, описание, фото, преимущества, на что обратить внимание)
+- 🔍 Поиск по таблице
+- 🔐 Админ панель с авторизацией через Google
+- ➕ Добавление новинок с загрузкой фото
+- ✏️ Редактирование существующих новинок
+- 🗑️ Удаление новинок
+
+## Настройка
+
+### 1. Создайте проект в Supabase
+
+1. Перейдите на [supabase.com](https://supabase.com)
+2. Создайте новый проект
+3. Скопируйте URL проекта и Anon Key
+
+### 2. Настройте переменные окружения
+
+Откройте файл `.env.local` и замените значения:
+
+```
+NEXT_PUBLIC_SUPABASE_URL=ваш-url-проекта
+NEXT_PUBLIC_SUPABASE_ANON_KEY=ваш-anon-key
+```
+
+### 3. Настройте базу данных
+
+1. В Supabase перейдите в SQL Editor
+2. Скопируйте содержимое файла `supabase-setup.sql`
+3. Выполните SQL скрипт
+
+### 4. Настройте Google OAuth
+
+1. В Supabase перейдите в Authentication → Providers
+2. Включите Google Provider
+3. Следуйте инструкциям для настройки Google OAuth
+
+### 5. Запустите проект
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Откройте [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Использование
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Главная страница
+- Просмотр всех новинок в таблице
+- Поиск по названию, бренду или описанию
 
-## Learn More
+### Админ панель (/admin)
+- Вход через Google аккаунт
+- Добавление новых новинок с фото
+- Редактирование существующих записей
+- Удаление записей
 
-To learn more about Next.js, take a look at the following resources:
+## Технологии
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Next.js 15 (App Router)
+- TypeScript
+- Tailwind CSS
+- Supabase (Database + Auth + Storage)
