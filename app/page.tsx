@@ -25,13 +25,17 @@ export default function Home() {
     }
     setUser(user)
     
-    const { data: profile } = await supabase
+    const { data: profile, error } = await supabase
       .from('user_profiles')
       .select('is_admin')
       .eq('id', user.id)
       .single()
     
-    if (profile) setIsAdmin(profile.is_admin)
+    console.log('Profile:', profile, 'Error:', error)
+    
+    if (profile) {
+      setIsAdmin(profile.is_admin)
+    }
   }
 
   const handleLogout = async () => {
