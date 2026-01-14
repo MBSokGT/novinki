@@ -34,23 +34,22 @@ export default function AdminPage() {
       .eq('id', user.id)
       .single()
     
-    console.log('Admin check:', { profile, error, userId: user.id })
+    console.log('Admin page check:', { profile, error, userId: user.id })
     
-    if (error || !profile) {
+    if (error) {
       console.error('Profile error:', error)
-      alert('Ошибка проверки прав доступа. Проверьте консоль.')
-      router.push('/')
       return
     }
     
-    if (!profile.is_admin) {
+    if (profile && profile.is_admin) {
+      console.log('Admin access granted!')
+      setIsAdmin(true)
+      fetchProducts()
+    } else {
+      console.log('Not admin, redirecting...')
       alert('У вас нет прав администратора')
       router.push('/')
-      return
     }
-    
-    setIsAdmin(true)
-    fetchProducts()
   }
 
   const fetchProducts = async () => {
@@ -102,8 +101,12 @@ export default function AdminPage() {
     router.push('/login')
   }
 
-  if (!user || !isAdmin) {
-    return null
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-800"></div>
+      </div>
+    )
   }
 
   return (
