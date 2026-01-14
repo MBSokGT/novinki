@@ -28,13 +28,23 @@ export default function AdminPage() {
     }
     setUser(user)
     
-    const { data: profile } = await supabase
+    const { data: profile, error } = await supabase
       .from('user_profiles')
       .select('is_admin')
       .eq('id', user.id)
       .single()
     
-    if (!profile?.is_admin) {
+    console.log('Admin check:', { profile, error, userId: user.id })
+    
+    if (error || !profile) {
+      console.error('Profile error:', error)
+      alert('Ошибка проверки прав доступа. Проверьте консоль.')
+      router.push('/')
+      return
+    }
+    
+    if (!profile.is_admin) {
+      alert('У вас нет прав администратора')
       router.push('/')
       return
     }
