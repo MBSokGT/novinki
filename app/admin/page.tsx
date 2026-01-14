@@ -81,16 +81,16 @@ export default function AdminPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="bg-white p-8 rounded-lg shadow max-w-md w-full">
-          <h2 className="text-2xl font-bold mb-6">Вход в админ панель</h2>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className="bg-white p-8 rounded-2xl shadow-lg max-w-md w-full">
+          <h2 className="text-2xl font-bold mb-6 text-center">🔐 Вход в админ панель</h2>
           <form onSubmit={handleLogin} className="space-y-4">
             <input
               type="email"
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-3 border rounded"
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 transition"
               required
             />
             <input
@@ -98,10 +98,10 @@ export default function AdminPage() {
               placeholder="Пароль"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-3 border rounded"
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 transition"
               required
             />
-            <button type="submit" className="w-full bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700">
+            <button type="submit" className="w-full bg-slate-900 text-white px-6 py-3 rounded-xl hover:bg-slate-800 transition font-medium">
               Войти
             </button>
           </form>
@@ -111,60 +111,68 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Админ панель</h1>
-          <div className="flex gap-4">
-            <Link href="/" className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <nav className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+          <h1 className="text-2xl font-bold text-red-900">Админ панель</h1>
+          <div className="flex gap-3">
+            <Link href="/" className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition">
               На главную
             </Link>
-            <button onClick={handleLogout} className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+            <button onClick={handleLogout} className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition">
               Выйти
             </button>
           </div>
         </div>
+      </nav>
 
-        <div className="bg-white p-6 rounded-lg shadow mb-8">
-          <h2 className="text-xl font-bold mb-4">{editId ? 'Редактировать' : 'Добавить новинку'}</h2>
+      <main className="max-w-7xl mx-auto px-6 py-8">
+        <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
+          <h2 className="text-xl font-bold mb-6">{editId ? '✏️ Редактировать' : '➕ Добавить новинку'}</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <input type="text" placeholder="Название" value={form.name} onChange={(e) => setForm({...form, name: e.target.value})} className="w-full p-2 border rounded" required />
-            <input type="text" placeholder="Бренд" value={form.brand} onChange={(e) => setForm({...form, brand: e.target.value})} className="w-full p-2 border rounded" required />
-            <textarea placeholder="Описание" value={form.description} onChange={(e) => setForm({...form, description: e.target.value})} className="w-full p-2 border rounded" rows={3} required />
-            <textarea placeholder="Преимущества" value={form.advantages} onChange={(e) => setForm({...form, advantages: e.target.value})} className="w-full p-2 border rounded" rows={3} required />
-            <textarea placeholder="На что обратить внимание" value={form.attention_points} onChange={(e) => setForm({...form, attention_points: e.target.value})} className="w-full p-2 border rounded" rows={3} required />
-            <input type="file" accept="image/*" onChange={(e) => setImage(e.target.files?.[0] || null)} className="w-full p-2 border rounded" />
-            <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
-              {editId ? 'Обновить' : 'Добавить'}
-            </button>
-            {editId && <button type="button" onClick={() => { setEditId(null); setForm({ name: '', brand: '', description: '', advantages: '', attention_points: '' }) }} className="ml-2 bg-gray-600 text-white px-6 py-2 rounded hover:bg-gray-700">Отмена</button>}
+            <div className="grid md:grid-cols-2 gap-4">
+              <input type="text" placeholder="Название" value={form.name} onChange={(e) => setForm({...form, name: e.target.value})} className="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 transition" required />
+              <input type="text" placeholder="Бренд" value={form.brand} onChange={(e) => setForm({...form, brand: e.target.value})} className="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 transition" required />
+            </div>
+            <textarea placeholder="Описание" value={form.description} onChange={(e) => setForm({...form, description: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 transition" rows={3} required />
+            <textarea placeholder="Преимущества" value={form.advantages} onChange={(e) => setForm({...form, advantages: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 transition" rows={3} required />
+            <textarea placeholder="На что обратить внимание" value={form.attention_points} onChange={(e) => setForm({...form, attention_points: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 transition" rows={3} required />
+            <input type="file" accept="image/*" onChange={(e) => setImage(e.target.files?.[0] || null)} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 transition" />
+            <div className="flex gap-3">
+              <button type="submit" className="px-6 py-3 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition font-medium">
+                {editId ? 'Обновить' : 'Добавить'}
+              </button>
+              {editId && <button type="button" onClick={() => { setEditId(null); setForm({ name: '', brand: '', description: '', advantages: '', attention_points: '' }) }} className="px-6 py-3 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition">Отмена</button>}
+            </div>
           </form>
         </div>
 
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="min-w-full">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">Название</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">Бренд</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">Действия</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {products.map((product) => (
-                <tr key={product.id}>
-                  <td className="px-6 py-4">{product.name}</td>
-                  <td className="px-6 py-4">{product.brand}</td>
-                  <td className="px-6 py-4">
-                    <button onClick={() => handleEdit(product)} className="text-blue-600 hover:underline mr-4">Редактировать</button>
-                    <button onClick={() => handleDelete(product.id)} className="text-red-600 hover:underline">Удалить</button>
-                  </td>
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead className="bg-slate-50">
+                <tr>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Название</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Бренд</th>
+                  <th className="px-6 py-4 text-right text-sm font-semibold text-slate-700">Действия</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {products.map((product) => (
+                  <tr key={product.id} className="hover:bg-slate-50 transition">
+                    <td className="px-6 py-4 font-medium text-slate-900">{product.name}</td>
+                    <td className="px-6 py-4 text-slate-600">{product.brand}</td>
+                    <td className="px-6 py-4 text-right">
+                      <button onClick={() => handleEdit(product)} className="text-red-800 hover:text-red-900 font-medium mr-4">Редактировать</button>
+                      <button onClick={() => handleDelete(product.id)} className="text-red-600 hover:text-red-700 font-medium">Удалить</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   )
 }
