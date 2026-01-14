@@ -28,26 +28,16 @@ export default function AdminPage() {
     }
     setUser(user)
     
-    const { data: profile, error } = await supabase
+    const { data: profile } = await supabase
       .from('user_profiles')
       .select('is_admin')
       .eq('id', user.id)
       .single()
     
-    console.log('Admin page check:', { profile, error, userId: user.id })
-    
-    if (error) {
-      console.error('Profile error:', error)
-      return
-    }
-    
     if (profile && profile.is_admin) {
-      console.log('Admin access granted!')
       setIsAdmin(true)
       fetchProducts()
     } else {
-      console.log('Not admin, redirecting...')
-      alert('У вас нет прав администратора')
       router.push('/')
     }
   }

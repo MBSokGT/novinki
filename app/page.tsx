@@ -13,38 +13,62 @@ export default function Home() {
   const [user, setUser] = useState<any>(null)
   const router = useRouter()
 
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
   useEffect(() => {
     checkAuth()
   }, [])
 
   const checkAuth = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      router.push('/login')
-      return
-    }
-    setUser(user)
-    
-    const { data: profile, error } = await supabase
-      .from('user_profiles')
-      .select('is_admin')
-      .eq('id', user.id)
-      .single()
-    
-    console.log('Profile:', profile, 'Error:', error)
-    
-    if (profile && profile.is_admin) {
-      console.log('User is admin!')
-      setIsAdmin(true)
-    } else {
-      console.log('User is NOT admin')
-      setIsAdmin(false)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        router.push('/login')
+        return
+      }
+      setUser(user)
+      
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('is_admin')
+        .eq('id', user.id)
+        .single()
+      
+      if (profile && profile.is_admin) {
+        setIsAdmin(true)
+      }
+    } catch (err) {
+      setError('Ошибка загрузки данных')
+    } finally {
+      setLoading(false)
     }
   }
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
     router.push('/login')
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-800"></div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button onClick={() => window.location.reload()} className="px-4 py-2 bg-red-800 text-white rounded-lg">
+            Повторить
+          </button>
+        </div>
+      </div>
+    )
   }
 
   if (!user) return null

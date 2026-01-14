@@ -9,27 +9,16 @@ export async function middleware(request: NextRequest) {
   const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
   const userAgent = request.headers.get('user-agent') || ''
   
-  // Блокировка подозрительных IP
   if (blockedIPs.has(ip)) {
     return new NextResponse('Access Denied', { status: 403 })
   }
 
-  // Детекция ботов и сканеров
   const botPatterns = /bot|crawler|spider|scraper|curl|wget|python|java|postman/i
   if (botPatterns.test(userAgent) && !pathname.startsWith('/api')) {
     trackSuspiciousActivity(ip)
     return new NextResponse('Forbidden', { status: 403 })
   }
 
-  // Защита админских роутов (временно отключено)
-  // if (pathname.startsWith('/admin')) {
-  //   const token = request.cookies.get('sb-access-token')
-  //   if (!token) {
-  //     return NextResponse.redirect(new URL('/login', request.url))
-  //   }
-  // }
-
-  // Защита от path traversal атак
   if (pathname.includes('..') || pathname.includes('%2e%2e')) {
     trackSuspiciousActivity(ip)
     return new NextResponse('Invalid Path', { status: 400 })
@@ -37,7 +26,6 @@ export async function middleware(request: NextRequest) {
 
   const response = NextResponse.next()
   
-  // Максимальные security headers
   response.headers.set('X-Frame-Options', 'DENY')
   response.headers.set('X-Content-Type-Options', 'nosniff')
   response.headers.set('X-XSS-Protection', '1; mode=block')
@@ -45,7 +33,6 @@ export async function middleware(request: NextRequest) {
   response.headers.set('Permissions-Policy', 'geolocation=(), microphone=(), camera=(), payment=(), usb=()')
   response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
   
-  // Строгая Content Security Policy
   response.headers.set(
     'Content-Security-Policy',
     "default-src 'self'; " +
@@ -71,7 +58,6 @@ function trackSuspiciousActivity(ip: string) {
     activity.count++
     if (activity.count > 5) {
       blockedIPs.add(ip)
-      console.warn(`[SECURITY] IP blocked: ${ip}`)
     }
   }
 }
