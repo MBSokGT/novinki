@@ -33,8 +33,12 @@ export default function Home() {
     
     console.log('Profile:', profile, 'Error:', error)
     
-    if (profile) {
-      setIsAdmin(profile.is_admin)
+    if (profile && profile.is_admin) {
+      console.log('User is admin!')
+      setIsAdmin(true)
+    } else {
+      console.log('User is NOT admin')
+      setIsAdmin(false)
     }
   }
 
