@@ -10,6 +10,9 @@ interface UserProfile {
   id: string
   email: string
   is_admin: boolean
+  is_blocked: boolean
+  blocked_reason?: string
+  blocked_at?: string
   created_at: string
 }
 
