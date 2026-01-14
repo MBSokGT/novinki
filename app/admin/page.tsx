@@ -4,24 +4,43 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Product } from '@/types/product'
 import Link from 'next/link'
+import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 
 export default function AdminPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [form, setForm] = useState({ name: '', brand: '', description: '', advantages: '', attention_points: '' })
   const [image, setImage] = useState<File | null>(null)
   const [editId, setEditId] = useState<string | null>(null)
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [user, setUser] = useState<any>(null)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const router = useRouter()
 
   useEffect(() => {
     checkAuth()
-    fetchProducts()
   }, [])
 
   const checkAuth = async () => {
     const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      router.push('/login')
+      return
+    }
     setUser(user)
+    
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('is_admin')
+      .eq('id', user.id)
+      .single()
+    
+    if (!profile?.is_admin) {
+      router.push('/')
+      return
+    }
+    
+    setIsAdmin(true)
+    fetchProducts()
   }
 
   const fetchProducts = async () => {
@@ -68,54 +87,27 @@ export default function AdminPage() {
     }
   }
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (!error) checkAuth()
-  }
-
   const handleLogout = async () => {
     await supabase.auth.signOut()
-    setUser(null)
+    router.push('/login')
   }
 
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
-        <div className="bg-white p-8 rounded-2xl shadow-lg max-w-md w-full">
-          <h2 className="text-2xl font-bold mb-6 text-center">🔐 Вход в админ панель</h2>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 transition"
-              required
-            />
-            <input
-              type="password"
-              placeholder="Пароль"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 transition"
-              required
-            />
-            <button type="submit" className="w-full bg-slate-900 text-white px-6 py-3 rounded-xl hover:bg-slate-800 transition font-medium">
-              Войти
-            </button>
-          </form>
-        </div>
-      </div>
-    )
+  if (!user || !isAdmin) {
+    return null
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <nav className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-red-900">Админ панель</h1>
+          <div className="flex items-center gap-4">
+            <Image src="/logo.png" alt="Logo" width={120} height={40} className="object-contain" />
+            <h1 className="text-2xl font-bold text-red-900">Админ панель</h1>
+          </div>
           <div className="flex gap-3">
+            <Link href="/admin/users" className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
+              👥 Пользователи
+            </Link>
             <Link href="/" className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition">
               На главную
             </Link>

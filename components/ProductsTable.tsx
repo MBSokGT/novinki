@@ -4,17 +4,36 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Product } from '@/types/product'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 
-export default function ProductsTable() {
+interface ProductsTableProps {
+  isAdmin: boolean
+}
+
+export default function ProductsTable({ isAdmin }: ProductsTableProps) {
   const [products, setProducts] = useState<Product[]>([])
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
+  const [user, setUser] = useState<any>(null)
+  const [bookmarks, setBookmarks] = useState<Set<string>>(new Set())
+  const router = useRouter()
 
   useEffect(() => {
+    checkAuth()
     fetchProducts()
+    if (!isAdmin) fetchBookmarks()
   }, [])
+
+  const checkAuth = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      router.push('/login')
+    } else {
+      setUser(user)
+    }
+  }
 
   const fetchProducts = async () => {
     const { data, error } = await supabase
@@ -26,6 +45,45 @@ export default function ProductsTable() {
     setLoading(false)
   }
 
+  const fetchBookmarks = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const { data } = await supabase
+      .from('bookmarks')
+      .select('product_id')
+      .eq('user_id', user.id)
+    
+    if (data) {
+      setBookmarks(new Set(data.map(b => b.product_id)))
+    }
+  }
+
+  const toggleBookmark = async (productId: string) => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    if (bookmarks.has(productId)) {
+      await supabase
+        .from('bookmarks')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('product_id', productId)
+      
+      setBookmarks(prev => {
+        const next = new Set(prev)
+        next.delete(productId)
+        return next
+      })
+    } else {
+      await supabase
+        .from('bookmarks')
+        .insert({ user_id: user.id, product_id: productId })
+      
+      setBookmarks(prev => new Set(prev).add(productId))
+    }
+  }
+
   const filtered = products.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) ||
       p.brand.toLowerCase().includes(search.toLowerCase()) ||
@@ -34,7 +92,7 @@ export default function ProductsTable() {
     return matchesSearch && matchesBrand
   })
 
-  if (loading) return (
+  if (loading || !user) return (
     <div className="flex items-center justify-center py-20">
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-800"></div>
     </div>
@@ -81,7 +139,7 @@ export default function ProductsTable() {
                 <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Описание</th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Преимущества</th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Внимание</th>
-                <th className="px-6 py-4 text-center text-xs font-bold text-slate-700 uppercase tracking-wider">Детали</th>
+                <th className="px-6 py-4 text-center text-xs font-bold text-slate-700 uppercase tracking-wider">Действия</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -108,9 +166,20 @@ export default function ProductsTable() {
                     <div className="line-clamp-2">{product.attention_points}</div>
                   </td>
                   <td className="px-6 py-4 text-center">
-                    <button onClick={() => setSelectedProduct(product)} className="inline-flex items-center px-3 py-1.5 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-800 transition">
-                      Подробнее
-                    </button>
+                    <div className="flex items-center justify-center gap-2">
+                      {!isAdmin && (
+                        <button
+                          onClick={() => toggleBookmark(product.id)}
+                          className={`p-2 rounded-lg transition ${bookmarks.has(product.id) ? 'bg-yellow-100 text-yellow-600 hover:bg-yellow-200' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}
+                          title={bookmarks.has(product.id) ? 'Удалить из закладок' : 'Добавить в закладки'}
+                        >
+                          <svg className="w-5 h-5" fill={bookmarks.has(product.id) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
+                        </button>
+                      )}
+                      <button onClick={() => setSelectedProduct(product)} className="inline-flex items-center px-3 py-1.5 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-800 transition">
+                        Подробнее
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
