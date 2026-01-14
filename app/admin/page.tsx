@@ -132,6 +132,26 @@ export default function AdminPage() {
       </nav>
 
       <main className="max-w-7xl mx-auto px-6 py-8">
+        {/* Меню функций */}
+        <div className="grid md:grid-cols-4 gap-4 mb-8">
+          <Link href="/admin/analytics" className="p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition text-center">
+            <div className="text-4xl mb-2">📊</div>
+            <div className="font-bold">Аналитика</div>
+          </Link>
+          <Link href="/admin/categories" className="p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition text-center">
+            <div className="text-4xl mb-2">🏷️</div>
+            <div className="font-bold">Категории</div>
+          </Link>
+          <Link href="/admin/settings" className="p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition text-center">
+            <div className="text-4xl mb-2">⚙️</div>
+            <div className="font-bold">Настройки</div>
+          </Link>
+          <Link href="/admin/archive" className="p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition text-center">
+            <div className="text-4xl mb-2">🗄️</div>
+            <div className="font-bold">Архив</div>
+          </Link>
+        </div>
+
         <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
           <h2 className="text-xl font-bold mb-6">{editId ? '✏️ Редактировать' : '➕ Добавить новинку'}</h2>
           <form onSubmit={handleSubmit} className="space-y-4">

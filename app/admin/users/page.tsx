@@ -64,6 +64,40 @@ export default function UsersPage() {
     fetchUsers()
   }
 
+  const toggleBlock = async (userId: string, currentStatus: boolean) => {
+    const reason = currentStatus ? null : prompt('Причина блокировки:')
+    if (!currentStatus && !reason) return
+
+    await supabase
+      .from('user_profiles')
+      .update({ 
+        is_blocked: !currentStatus,
+        blocked_reason: reason,
+        blocked_at: !currentStatus ? new Date().toISOString() : null
+      })
+      .eq('id', userId)
+    
+    fetchUsers()
+  }
+
+  const exportToCSV = () => {
+    const csv = [
+      ['Email', 'Роль', 'Дата регистрации', 'Статус'],
+      ...users.map(u => [
+        u.email,
+        u.is_admin ? 'Админ' : 'Пользователь',
+        new Date(u.created_at).toLocaleDateString('ru-RU'),
+        u.is_blocked ? 'Заблокирован' : 'Активен'
+      ])
+    ].map(row => row.join(',')).join('\n')
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = `users_${new Date().toISOString().split('T')[0]}.csv`
+    link.click()
+  }
+
   if (loading || !isAdmin) return (
     <div className="flex items-center justify-center py-20">
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-800"></div>
@@ -91,8 +125,11 @@ export default function UsersPage() {
 
       <main className="max-w-7xl mx-auto px-6 py-8">
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <div className="px-6 py-4 bg-slate-50 border-b">
+          <div className="px-6 py-4 bg-slate-50 border-b flex justify-between items-center">
             <h2 className="text-lg font-bold text-slate-900">Всего пользователей: {users.length}</h2>
+            <button onClick={exportToCSV} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+              📄 Экспорт в CSV
+            </button>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full">
@@ -101,6 +138,7 @@ export default function UsersPage() {
                   <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Email</th>
                   <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Дата регистрации</th>
                   <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Роль</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Статус</th>
                   <th className="px-6 py-4 text-center text-xs font-bold text-slate-700 uppercase tracking-wider">Действия</th>
                 </tr>
               </thead>
@@ -126,16 +164,37 @@ export default function UsersPage() {
                         </span>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-center">
+                    <td className="px-6 py-4">
+                      {user.is_blocked ? (
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-900">
+                          🚫 Заблокирован
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-900">
+                          ✅ Активен
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-center space-x-2">
                       <button
                         onClick={() => toggleAdmin(user.id, user.is_admin)}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                        className={`px-3 py-1 rounded-lg text-sm font-medium transition ${
                           user.is_admin
                             ? 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                             : 'bg-purple-600 text-white hover:bg-purple-700'
                         }`}
                       >
-                        {user.is_admin ? 'Снять права админа' : 'Дать права админа'}
+                        {user.is_admin ? 'Снять админа' : 'Дать админа'}
+                      </button>
+                      <button
+                        onClick={() => toggleBlock(user.id, user.is_blocked)}
+                        className={`px-3 py-1 rounded-lg text-sm font-medium transition ${
+                          user.is_blocked
+                            ? 'bg-green-600 text-white hover:bg-green-700'
+                            : 'bg-red-600 text-white hover:bg-red-700'
+                        }`}
+                      >
+                        {user.is_blocked ? 'Разблокировать' : 'Заблокировать'}
                       </button>
                     </td>
                   </tr>
