@@ -21,17 +21,13 @@ export async function middleware(request: NextRequest) {
     return new NextResponse('Forbidden', { status: 403 })
   }
 
-  // Защита админских роутов
-  if (pathname.startsWith('/admin')) {
-    const token = request.cookies.get('sb-access-token')
-    
-    if (!token) {
-      console.log('[MIDDLEWARE] No token, redirecting to login')
-      return NextResponse.redirect(new URL('/login', request.url))
-    }
-    
-    console.log('[MIDDLEWARE] Admin access allowed')
-  }
+  // Защита админских роутов (временно отключено)
+  // if (pathname.startsWith('/admin')) {
+  //   const token = request.cookies.get('sb-access-token')
+  //   if (!token) {
+  //     return NextResponse.redirect(new URL('/login', request.url))
+  //   }
+  // }
 
   // Защита от path traversal атак
   if (pathname.includes('..') || pathname.includes('%2e%2e')) {
