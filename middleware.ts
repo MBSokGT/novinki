@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { createHash } from 'crypto'
 
 const blockedIPs = new Set<string>()
 const suspiciousActivity = new Map<string, { count: number; timestamp: number }>()
@@ -22,21 +21,11 @@ export async function middleware(request: NextRequest) {
     return new NextResponse('Forbidden', { status: 403 })
   }
 
-  // Защита админских роутов с двойной проверкой
+  // Защита админских роутов
   if (pathname.startsWith('/admin')) {
     const token = request.cookies.get('sb-access-token')
-    const sessionHash = request.cookies.get('session-hash')
     
-    if (!token || !sessionHash) {
-      return NextResponse.redirect(new URL('/login', request.url))
-    }
-
-    // Проверка целостности сессии
-    const expectedHash = createHash('sha256')
-      .update(token.value + ip + userAgent)
-      .digest('hex')
-    
-    if (sessionHash.value !== expectedHash) {
+    if (!token) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
   }
@@ -54,11 +43,8 @@ export async function middleware(request: NextRequest) {
   response.headers.set('X-Content-Type-Options', 'nosniff')
   response.headers.set('X-XSS-Protection', '1; mode=block')
   response.headers.set('Referrer-Policy', 'no-referrer')
-  response.headers.set('Permissions-Policy', 'geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=()')
-  response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload')
-  response.headers.set('X-DNS-Prefetch-Control', 'off')
-  response.headers.set('X-Download-Options', 'noopen')
-  response.headers.set('X-Permitted-Cross-Domain-Policies', 'none')
+  response.headers.set('Permissions-Policy', 'geolocation=(), microphone=(), camera=(), payment=(), usb=()')
+  response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
   
   // Строгая Content Security Policy
   response.headers.set(
@@ -70,22 +56,8 @@ export async function middleware(request: NextRequest) {
     "font-src 'self' data:; " +
     "connect-src 'self' https://*.supabase.co; " +
     "frame-ancestors 'none'; " +
-    "base-uri 'self'; " +
-    "form-action 'self'; " +
-    "upgrade-insecure-requests"
+    "base-uri 'self'"
   )
-
-  // Добавление fingerprint для отслеживания сессий
-  const fingerprint = createHash('sha256')
-    .update(ip + userAgent + request.headers.get('accept-language'))
-    .digest('hex')
-  
-  response.cookies.set('fp', fingerprint, {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'strict',
-    maxAge: 3600
-  })
 
   return response
 }
@@ -104,12 +76,6 @@ function trackSuspiciousActivity(ip: string) {
     }
   }
 }
-
-// Очистка заблокированных IP каждые 30 минут
-setInterval(() => {
-  blockedIPs.clear()
-  suspiciousActivity.clear()
-}, 1800000)
 
 export const config = {
   matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
