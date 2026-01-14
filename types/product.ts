@@ -6,5 +6,7 @@ export interface Product {
   image_url: string
   advantages: string
   attention_points: string
+  website_link?: string
+  onec_link?: string
   created_at: string
 }

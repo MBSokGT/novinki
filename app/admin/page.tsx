@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation'
 
 export default function AdminPage() {
   const [products, setProducts] = useState<Product[]>([])
-  const [form, setForm] = useState({ name: '', brand: '', description: '', advantages: '', attention_points: '' })
+  const [form, setForm] = useState({ name: '', brand: '', description: '', advantages: '', attention_points: '', website_link: '', onec_link: '' })
   const [image, setImage] = useState<File | null>(null)
   const [editId, setEditId] = useState<string | null>(null)
   const [user, setUser] = useState<any>(null)
@@ -69,13 +69,21 @@ export default function AdminPage() {
       await supabase.from('products').insert([productData])
     }
 
-    setForm({ name: '', brand: '', description: '', advantages: '', attention_points: '' })
+    setForm({ name: '', brand: '', description: '', advantages: '', attention_points: '', website_link: '', onec_link: '' })
     setImage(null)
     fetchProducts()
   }
 
   const handleEdit = (product: Product) => {
-    setForm({ name: product.name, brand: product.brand, description: product.description, advantages: product.advantages, attention_points: product.attention_points })
+    setForm({ 
+      name: product.name, 
+      brand: product.brand, 
+      description: product.description, 
+      advantages: product.advantages, 
+      attention_points: product.attention_points,
+      website_link: product.website_link || '',
+      onec_link: product.onec_link || ''
+    })
     setEditId(product.id)
   }
 
@@ -152,12 +160,14 @@ export default function AdminPage() {
             <textarea placeholder="Описание" value={form.description} onChange={(e) => setForm({...form, description: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 transition" rows={3} required />
             <textarea placeholder="Преимущества" value={form.advantages} onChange={(e) => setForm({...form, advantages: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 transition" rows={3} required />
             <textarea placeholder="На что обратить внимание" value={form.attention_points} onChange={(e) => setForm({...form, attention_points: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 transition" rows={3} required />
+            <input type="text" placeholder="Ссылка на товар на сайте" value={form.website_link} onChange={(e) => setForm({...form, website_link: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 transition" />
+            <input type="text" placeholder="Ссылка на товар в 1С" value={form.onec_link} onChange={(e) => setForm({...form, onec_link: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 transition" />
             <input type="file" accept="image/*" onChange={(e) => setImage(e.target.files?.[0] || null)} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 transition" />
             <div className="flex gap-3">
               <button type="submit" className="px-6 py-3 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition font-medium">
                 {editId ? 'Обновить' : 'Добавить'}
               </button>
-              {editId && <button type="button" onClick={() => { setEditId(null); setForm({ name: '', brand: '', description: '', advantages: '', attention_points: '' }) }} className="px-6 py-3 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition">Отмена</button>}
+              {editId && <button type="button" onClick={() => { setEditId(null); setForm({ name: '', brand: '', description: '', advantages: '', attention_points: '', website_link: '', onec_link: '' }) }} className="px-6 py-3 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition">Отмена</button>}
             </div>
           </form>
         </div>
@@ -169,6 +179,7 @@ export default function AdminPage() {
                 <tr>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Название</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Бренд</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Ссылки</th>
                   <th className="px-6 py-4 text-right text-sm font-semibold text-slate-700">Действия</th>
                 </tr>
               </thead>
@@ -177,6 +188,23 @@ export default function AdminPage() {
                   <tr key={product.id} className="hover:bg-slate-50 transition">
                     <td className="px-6 py-4 font-medium text-slate-900">{product.name}</td>
                     <td className="px-6 py-4 text-slate-600">{product.brand}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col gap-1">
+                        {product.website_link && (
+                          <a href={product.website_link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1">
+                            🌐 Сайт
+                          </a>
+                        )}
+                        {product.onec_link && (
+                          <a href={product.onec_link} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-800 text-sm flex items-center gap-1">
+                            📊 1С
+                          </a>
+                        )}
+                        {!product.website_link && !product.onec_link && (
+                          <span className="text-slate-400 text-sm">—</span>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-6 py-4 text-right">
                       <button onClick={() => handleEdit(product)} className="text-red-800 hover:text-red-900 font-medium mr-4">Редактировать</button>
                       <button onClick={() => handleDelete(product.id)} className="text-red-600 hover:text-red-700 font-medium">Удалить</button>
