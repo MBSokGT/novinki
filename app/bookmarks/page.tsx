@@ -31,7 +31,7 @@ export default function BookmarksPage() {
       .order('created_at', { ascending: false })
     
     if (data) {
-      setProducts(data.map(b => b.products).filter(Boolean))
+      setProducts(data.map((b: any) => b.products as Product).filter(Boolean))
     }
     setLoading(false)
   }
