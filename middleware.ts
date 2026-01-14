@@ -26,8 +26,11 @@ export async function middleware(request: NextRequest) {
     const token = request.cookies.get('sb-access-token')
     
     if (!token) {
+      console.log('[MIDDLEWARE] No token, redirecting to login')
       return NextResponse.redirect(new URL('/login', request.url))
     }
+    
+    console.log('[MIDDLEWARE] Admin access allowed')
   }
 
   // Защита от path traversal атак
