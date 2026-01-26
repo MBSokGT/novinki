@@ -29,27 +29,40 @@ export default function AdminPage() {
     setUser(user)
     
     try {
-      const { data: adminCheck, error: rpcError } = await supabase.rpc('check_admin_status', { user_id: user.id })
-      console.log('Admin check result:', { adminCheck, rpcError, userId: user.id })
+      // Проверяем права админа напрямую через таблицу
+      const { data: profile, error } = await supabase
+        .from('user_profiles')
+        .select('is_admin')
+        .eq('id', user.id)
+        .single()
       
-      if (adminCheck === true) {
+      console.log('Admin check:', { profile, error, userId: user.id })
+      
+      if (profile?.is_admin === true) {
         setIsAdmin(true)
         fetchProducts()
       } else {
-        setIsAdmin(false)
-        setTimeout(() => {
-          alert('У вас нет прав администратора')
-          router.push('/')
-        }, 100)
+        // Пробуем RPC функцию как fallback
+        try {
+          const { data: adminCheck } = await supabase.rpc('check_admin_status', { user_id: user.id })
+          if (adminCheck === true) {
+            setIsAdmin(true)
+            fetchProducts()
+          } else {
+            setIsAdmin(false)
+            setTimeout(() => router.push('/'), 500)
+          }
+        } catch (rpcError) {
+          console.error('RPC error:', rpcError)
+          setIsAdmin(false)
+          setTimeout(() => router.push('/'), 500)
+        }
       }
       
     } catch (err) {
       console.error('Auth check error:', err)
       setIsAdmin(false)
-      setTimeout(() => {
-        alert('Ошибка проверки прав доступа')
-        router.push('/')
-      }, 100)
+      setTimeout(() => router.push('/'), 500)
     }
   }
 
