@@ -3,6 +3,7 @@
 import ProductsTable from '@/components/ProductsTable'
 import RequestForm from '@/components/RequestForm'
 import SecurityMonitor from '@/components/SecurityMonitor'
+import ToastContainer from '@/components/Toast'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useEffect, useState } from 'react'
@@ -103,6 +104,7 @@ export default function Home() {
         <ProductsTable isAdmin={isAdmin} />
       </main>
       {isAdmin && <SecurityMonitor />}
+      <ToastContainer />
     </div>
   )
 }

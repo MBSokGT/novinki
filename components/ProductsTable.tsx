@@ -1,10 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Product } from '@/types/product'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
+import ProductSkeleton from './ProductSkeleton'
+import { showToast } from './Toast'
 
 interface ProductsTableProps {
   isAdmin: boolean
@@ -13,6 +15,7 @@ interface ProductsTableProps {
 export default function ProductsTable({ isAdmin }: ProductsTableProps) {
   const [products, setProducts] = useState<Product[]>([])
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
@@ -25,6 +28,14 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
     fetchProducts()
     if (!isAdmin) fetchBookmarks()
   }, [])
+
+  // Debounced поиск
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [search])
 
   const checkAuth = async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -63,24 +74,30 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    if (bookmarks.has(productId)) {
-      await supabase
-        .from('bookmarks')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('product_id', productId)
-      
-      setBookmarks(prev => {
-        const next = new Set(prev)
-        next.delete(productId)
-        return next
-      })
-    } else {
-      await supabase
-        .from('bookmarks')
-        .insert({ user_id: user.id, product_id: productId })
-      
-      setBookmarks(prev => new Set(prev).add(productId))
+    try {
+      if (bookmarks.has(productId)) {
+        await supabase
+          .from('bookmarks')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('product_id', productId)
+        
+        setBookmarks(prev => {
+          const next = new Set(prev)
+          next.delete(productId)
+          return next
+        })
+        showToast('Удалено из закладок', 'info')
+      } else {
+        await supabase
+          .from('bookmarks')
+          .insert({ user_id: user.id, product_id: productId })
+        
+        setBookmarks(prev => new Set(prev).add(productId))
+        showToast('Добавлено в закладки', 'success')
+      }
+    } catch (error) {
+      showToast('Ошибка при работе с закладками', 'error')
     }
   }
 
@@ -103,19 +120,17 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
     }
   }
 
-  const filtered = products.filter(p => {
-    const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.brand.toLowerCase().includes(search.toLowerCase()) ||
-      p.description.toLowerCase().includes(search.toLowerCase())
-    const matchesBrand = !selectedBrand || p.brand === selectedBrand
-    return matchesSearch && matchesBrand
-  })
+  const filtered = useMemo(() => {
+    return products.filter(p => {
+      const matchesSearch = p.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        p.brand.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        p.description.toLowerCase().includes(debouncedSearch.toLowerCase())
+      const matchesBrand = !selectedBrand || p.brand === selectedBrand
+      return matchesSearch && matchesBrand
+    })
+  }, [products, debouncedSearch, selectedBrand])
 
-  if (loading || !user) return (
-    <div className="flex items-center justify-center py-20">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-800"></div>
-    </div>
-  )
+  if (loading || !user) return <ProductSkeleton />
 
   return (
     <div>
@@ -126,8 +141,13 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
           placeholder="Поиск по названию, бренду или описанию..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-12 pr-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 focus:border-transparent transition shadow-sm"
+          className="w-full pl-12 pr-12 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 focus:border-transparent transition shadow-sm"
         />
+        {debouncedSearch !== search && (
+          <div className="absolute right-12 top-1/2 -translate-y-1/2">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-800"></div>
+          </div>
+        )}
         {search && (
           <button onClick={() => setSearch('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -205,10 +225,22 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
             </tbody>
           </table>
         </div>
-        {filtered.length === 0 && (
+        {filtered.length === 0 && debouncedSearch && (
           <div className="text-center py-16">
-            <svg className="mx-auto h-12 w-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            <p className="mt-4 text-slate-400 text-lg">Ничего не найдено</p>
+            <svg className="mx-auto h-12 w-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            <p className="mt-4 text-slate-400 text-lg">Ничего не найдено по запросу "{debouncedSearch}"</p>
+            <button 
+              onClick={() => setSearch('')}
+              className="mt-2 text-red-800 hover:text-red-900 font-medium"
+            >
+              Очистить поиск
+            </button>
+          </div>
+        )}
+        {filtered.length === 0 && !debouncedSearch && (
+          <div className="text-center py-16">
+            <svg className="mx-auto h-12 w-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" /></svg>
+            <p className="mt-4 text-slate-400 text-lg">Новинок пока нет</p>
           </div>
         )}
       </div>
