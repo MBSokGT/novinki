@@ -19,6 +19,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
   const [loading, setLoading] = useState(true)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [user, setUser] = useState<any>(null)
   const [bookmarks, setBookmarks] = useState<Set<string>>(new Set())
   const router = useRouter()
@@ -185,7 +186,10 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
               {filtered.map((product, idx) => (
                 <tr key={product.id} className="hover:bg-slate-100 transition-colors group">
                   <td className="px-6 py-4">
-                    <div className="relative w-20 h-20 rounded-lg overflow-hidden shadow-sm group-hover:shadow-md transition">
+                    <div 
+                      className="relative w-20 h-20 rounded-lg overflow-hidden shadow-sm group-hover:shadow-md transition cursor-pointer"
+                      onClick={() => setSelectedImage(product.image_url)}
+                    >
                       <Image src={product.image_url} alt={product.name} fill className="object-cover" />
                     </div>
                   </td>
@@ -245,11 +249,41 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
         )}
       </div>
 
+      {selectedImage && (
+        <div 
+          onClick={() => setSelectedImage(null)} 
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200"
+        >
+          <div className="relative max-w-4xl max-h-[90vh] w-full h-full">
+            <Image 
+              src={selectedImage} 
+              alt="Просмотр изображения" 
+              fill 
+              className="object-contain" 
+            />
+            <button 
+              onClick={() => setSelectedImage(null)} 
+              className="absolute top-4 right-4 bg-white/90 backdrop-blur rounded-full p-2.5 hover:bg-white transition shadow-lg"
+            >
+              <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
       {selectedProduct && (
         <div onClick={() => setSelectedProduct(null)} className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
           <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="relative h-80 bg-gradient-to-br from-slate-100 to-slate-200">
-              <Image src={selectedProduct.image_url} alt={selectedProduct.name} fill className="object-cover" />
+              <Image 
+                src={selectedProduct.image_url} 
+                alt={selectedProduct.name} 
+                fill 
+                className="object-cover cursor-pointer" 
+                onClick={() => setSelectedImage(selectedProduct.image_url)}
+              />
               <button onClick={() => setSelectedProduct(null)} className="absolute top-4 right-4 bg-white/90 backdrop-blur rounded-full p-2.5 hover:bg-white transition shadow-lg">
                 <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
