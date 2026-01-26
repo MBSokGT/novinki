@@ -70,7 +70,6 @@ export default function AdminPage() {
     const { data } = await supabase
       .from('products')
       .select('*')
-      .eq('is_archived', false)
       .order('created_at', { ascending: false })
     if (data) setProducts(data)
   }
@@ -168,18 +167,24 @@ export default function AdminPage() {
       try {
         console.log('Archiving product:', { id, isArchived, newStatus: !isArchived })
         
-        const { error } = await supabase
+        // Простое обновление без дополнительных проверок
+        const { data, error } = await supabase
           .from('products')
           .update({ is_archived: !isArchived })
           .eq('id', id)
+          .select()
         
         if (error) {
           console.error('Archive error:', error)
-          alert('Ошибка архивирования. Проверьте, что колонка is_archived существует.')
+          if (error.message.includes('column "is_archived" does not exist')) {
+            alert('Колонка is_archived не существует. Выполните SQL миграцию.')
+          } else {
+            alert(`Ошибка архивирования: ${error.message}`)
+          }
           return
         }
         
-        console.log('Product archived successfully')
+        console.log('Archive result:', data)
         fetchProducts()
       } catch (error) {
         console.error('Archive operation failed:', error)
