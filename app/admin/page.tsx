@@ -67,7 +67,11 @@ export default function AdminPage() {
   }
 
   const fetchProducts = async () => {
-    const { data } = await supabase.from('products').select('*').order('created_at', { ascending: false })
+    const { data } = await supabase
+      .from('products')
+      .select('*')
+      .eq('is_archived', false)
+      .order('created_at', { ascending: false })
     if (data) setProducts(data)
   }
 
@@ -112,9 +116,25 @@ export default function AdminPage() {
   }
 
   const handleDelete = async (id: string) => {
-    if (confirm('Удалить этот товар?')) {
-      await supabase.from('products').delete().eq('id', id)
-      fetchProducts()
+    if (confirm('Переместить товар в корзину? (автоочистка через 14 дней)')) {
+      const product = products.find(p => p.id === id)
+      if (product) {
+        // Перемещаем в корзину
+        await supabase.from('deleted_products').insert({
+          original_product_id: product.id,
+          name: product.name,
+          brand: product.brand,
+          description: product.description,
+          image_url: product.image_url,
+          advantages: product.advantages,
+          attention_points: product.attention_points,
+          website_link: product.website_link,
+          onec_link: product.onec_link
+        })
+        // Удаляем из основной таблицы
+        await supabase.from('products').delete().eq('id', id)
+        fetchProducts()
+      }
     }
   }
 
@@ -152,6 +172,9 @@ export default function AdminPage() {
             <h1 className="text-2xl font-bold text-red-900">Админ панель</h1>
           </div>
           <div className="flex gap-3">
+            <Link href="/admin/trash" className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition">
+              🗑️ Корзина
+            </Link>
             <Link href="/admin/users" className="px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-900 transition">
               👥 Пользователи
             </Link>
