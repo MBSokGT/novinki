@@ -118,24 +118,46 @@ export default function AdminPage() {
 
   const handleDelete = async (id: string) => {
     if (confirm('Переместить товар в корзину? (автоочистка через 14 дней)')) {
-      const product = products.find(p => p.id === id)
-      if (product) {
-        // Перемещаем в корзину
-        await supabase.from('deleted_products').insert({
-          original_product_id: product.id,
-          name: product.name,
-          brand: product.brand,
-          article_number: product.article_number,
-          description: product.description,
-          image_url: product.image_url,
-          advantages: product.advantages,
-          attention_points: product.attention_points,
-          website_link: product.website_link,
-          onec_link: product.onec_link
-        })
-        // Удаляем из основной таблицы
-        await supabase.from('products').delete().eq('id', id)
-        fetchProducts()
+      try {
+        const product = products.find(p => p.id === id)
+        if (product) {
+          console.log('Deleting product:', product)
+          
+          // Перемещаем в корзину
+          const { error: insertError } = await supabase.from('deleted_products').insert({
+            original_product_id: product.id,
+            name: product.name,
+            brand: product.brand,
+            article_number: product.article_number,
+            description: product.description,
+            image_url: product.image_url,
+            advantages: product.advantages,
+            attention_points: product.attention_points,
+            website_link: product.website_link,
+            onec_link: product.onec_link
+          })
+          
+          if (insertError) {
+            console.error('Error inserting to deleted_products:', insertError)
+            alert('Ошибка перемещения в корзину. Проверьте, что таблица deleted_products создана.')
+            return
+          }
+          
+          // Удаляем из основной таблицы
+          const { error: deleteError } = await supabase.from('products').delete().eq('id', id)
+          
+          if (deleteError) {
+            console.error('Error deleting from products:', deleteError)
+            alert('Ошибка удаления товара')
+            return
+          }
+          
+          console.log('Product moved to trash successfully')
+          fetchProducts()
+        }
+      } catch (error) {
+        console.error('Delete operation failed:', error)
+        alert('Ошибка операции удаления')
       }
     }
   }
@@ -143,8 +165,26 @@ export default function AdminPage() {
   const handleArchive = async (id: string, isArchived: boolean) => {
     const action = isArchived ? 'разархивировать' : 'архивировать'
     if (confirm(`${action.charAt(0).toUpperCase() + action.slice(1)} этот товар?`)) {
-      await supabase.from('products').update({ is_archived: !isArchived }).eq('id', id)
-      fetchProducts()
+      try {
+        console.log('Archiving product:', { id, isArchived, newStatus: !isArchived })
+        
+        const { error } = await supabase
+          .from('products')
+          .update({ is_archived: !isArchived })
+          .eq('id', id)
+        
+        if (error) {
+          console.error('Archive error:', error)
+          alert('Ошибка архивирования. Проверьте, что колонка is_archived существует.')
+          return
+        }
+        
+        console.log('Product archived successfully')
+        fetchProducts()
+      } catch (error) {
+        console.error('Archive operation failed:', error)
+        alert('Ошибка операции архивирования')
+      }
     }
   }
 
