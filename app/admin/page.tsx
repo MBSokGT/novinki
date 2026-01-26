@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation'
 
 export default function AdminPage() {
   const [products, setProducts] = useState<Product[]>([])
-  const [form, setForm] = useState({ name: '', brand: '', description: '', advantages: '', attention_points: '', website_link: '', onec_link: '' })
+  const [form, setForm] = useState({ name: '', brand: '', article_number: '', description: '', advantages: '', attention_points: '', website_link: '', onec_link: '' })
   const [image, setImage] = useState<File | null>(null)
   const [editId, setEditId] = useState<string | null>(null)
   const [user, setUser] = useState<any>(null)
@@ -97,7 +97,7 @@ export default function AdminPage() {
       await supabase.from('products').insert([productData])
     }
 
-    setForm({ name: '', brand: '', description: '', advantages: '', attention_points: '', website_link: '', onec_link: '' })
+    setForm({ name: '', brand: '', article_number: '', description: '', advantages: '', attention_points: '', website_link: '', onec_link: '' })
     setImage(null)
     fetchProducts()
   }
@@ -106,6 +106,7 @@ export default function AdminPage() {
     setForm({ 
       name: product.name, 
       brand: product.brand, 
+      article_number: product.article_number || '',
       description: product.description, 
       advantages: product.advantages, 
       attention_points: product.attention_points,
@@ -124,6 +125,7 @@ export default function AdminPage() {
           original_product_id: product.id,
           name: product.name,
           brand: product.brand,
+          article_number: product.article_number,
           description: product.description,
           image_url: product.image_url,
           advantages: product.advantages,
@@ -221,9 +223,10 @@ export default function AdminPage() {
             <h2 className="text-2xl font-bold text-slate-800">{editId ? 'Редактировать новинку' : 'Добавить новинку'}</h2>
           </div>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid md:grid-cols-3 gap-4">
               <input type="text" placeholder="Название" value={form.name} onChange={(e) => setForm({...form, name: e.target.value})} className="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 transition" required />
               <input type="text" placeholder="Бренд" value={form.brand} onChange={(e) => setForm({...form, brand: e.target.value})} className="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 transition" required />
+              <input type="text" placeholder="Артикул" value={form.article_number} onChange={(e) => setForm({...form, article_number: e.target.value})} className="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 transition" />
             </div>
             <textarea placeholder="Описание" value={form.description} onChange={(e) => setForm({...form, description: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 transition" rows={3} required />
             <textarea placeholder="Преимущества" value={form.advantages} onChange={(e) => setForm({...form, advantages: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 transition" rows={3} required />
@@ -258,7 +261,7 @@ export default function AdminPage() {
               {editId && (
                 <button 
                   type="button" 
-                  onClick={() => { setEditId(null); setForm({ name: '', brand: '', description: '', advantages: '', attention_points: '', website_link: '', onec_link: '' }) }} 
+                  onClick={() => { setEditId(null); setForm({ name: '', brand: '', article_number: '', description: '', advantages: '', attention_points: '', website_link: '', onec_link: '' }) }} 
                   className="inline-flex items-center px-6 py-3 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition-all duration-200 border border-slate-300 hover:border-slate-400"
                 >
                   <span className="mr-2">❌</span>
@@ -282,6 +285,7 @@ export default function AdminPage() {
                 <tr>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Название</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Бренд</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Артикул</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Ссылки</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Статус</th>
                   <th className="px-6 py-4 text-right text-sm font-semibold text-slate-700">Действия</th>
@@ -292,6 +296,7 @@ export default function AdminPage() {
                   <tr key={product.id} className={`hover:bg-slate-50 transition ${product.is_archived ? 'opacity-60 bg-slate-50' : ''}`}>
                     <td className="px-6 py-4 font-medium text-slate-900">{product.name}</td>
                     <td className="px-6 py-4 text-slate-600">{product.brand}</td>
+                    <td className="px-6 py-4 text-slate-500 text-sm">{product.article_number || '—'}</td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col gap-1">
                         {product.website_link && (

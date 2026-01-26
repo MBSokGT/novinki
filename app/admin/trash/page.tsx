@@ -11,6 +11,7 @@ interface DeletedProduct {
   original_product_id: string
   name: string
   brand: string
+  article_number?: string
   description: string
   image_url: string
   advantages: string
@@ -71,6 +72,7 @@ export default function TrashPage() {
       await supabase.from('products').insert({
         name: deletedProduct.name,
         brand: deletedProduct.brand,
+        article_number: deletedProduct.article_number,
         description: deletedProduct.description,
         image_url: deletedProduct.image_url,
         advantages: deletedProduct.advantages,
