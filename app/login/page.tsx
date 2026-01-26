@@ -45,7 +45,12 @@ export default function LoginPage() {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`
       })
-      if (error) throw error
+      if (error) {
+        if (error.message.includes('rate limit') || error.message.includes('too many')) {
+          throw new Error('Слишком много запросов. Попробуйте через 15 минут.')
+        }
+        throw error
+      }
       setMessage('Ссылка для восстановления пароля отправлена на email')
       setShowResetForm(false)
     } catch (error: any) {
