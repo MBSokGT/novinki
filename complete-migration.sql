@@ -45,14 +45,23 @@ CREATE INDEX IF NOT EXISTS idx_deleted_products_deleted_at ON deleted_products(d
 -- 6. Настраиваем RLS для deleted_products
 ALTER TABLE deleted_products ENABLE ROW LEVEL SECURITY;
 
--- 7. Политика для админов на deleted_products
-CREATE POLICY "Admins can manage deleted products" ON deleted_products
-FOR ALL USING (
-  EXISTS (
-    SELECT 1 FROM user_profiles 
-    WHERE id = auth.uid() AND is_admin = true
-  )
-);
+-- 7. Политика для админов на deleted_products (пропускаем если уже существует)
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'deleted_products' 
+        AND policyname = 'Admins can manage deleted products'
+    ) THEN
+        CREATE POLICY "Admins can manage deleted products" ON deleted_products
+        FOR ALL USING (
+          EXISTS (
+            SELECT 1 FROM user_profiles 
+            WHERE id = auth.uid() AND is_admin = true
+          )
+        );
+    END IF;
+END $$;
 
 -- 8. Функция для проверки прав админа (если еще не создана)
 CREATE OR REPLACE FUNCTION check_admin_status(user_id UUID)
