@@ -31,14 +31,23 @@ export default function Home() {
       }
       setUser(user)
       
-      const { data: profile } = await supabase
+      // Принудительная проверка прав админа
+      const { data: profile, error } = await supabase
         .from('user_profiles')
         .select('is_admin')
         .eq('id', user.id)
         .single()
       
-      if (profile && profile.is_admin) {
+      console.log('Admin check result:', { profile, error, userId: user.id })
+      
+      if (profile && profile.is_admin === true) {
         setIsAdmin(true)
+      } else {
+        // Дополнительная проверка через RPC если политики не работают
+        const { data: adminCheck } = await supabase.rpc('check_admin_status', { user_id: user.id })
+        if (adminCheck) {
+          setIsAdmin(true)
+        }
       }
     } catch (err) {
       setError('Ошибка загрузки данных')
