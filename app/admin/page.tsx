@@ -29,34 +29,16 @@ export default function AdminPage() {
     setUser(user)
     
     try {
-      // Проверяем права админа напрямую через таблицу
-      const { data: profile, error } = await supabase
-        .from('user_profiles')
-        .select('is_admin')
-        .eq('id', user.id)
-        .single()
+      // Используем RPC функцию для проверки прав админа
+      const { data: adminCheck, error: rpcError } = await supabase.rpc('check_admin_status', { user_id: user.id })
+      console.log('Admin check result:', { adminCheck, rpcError, userId: user.id })
       
-      console.log('Admin check:', { profile, error, userId: user.id })
-      
-      if (profile?.is_admin === true) {
+      if (adminCheck === true) {
         setIsAdmin(true)
         fetchProducts()
       } else {
-        // Пробуем RPC функцию как fallback
-        try {
-          const { data: adminCheck } = await supabase.rpc('check_admin_status', { user_id: user.id })
-          if (adminCheck === true) {
-            setIsAdmin(true)
-            fetchProducts()
-          } else {
-            setIsAdmin(false)
-            setTimeout(() => router.push('/'), 500)
-          }
-        } catch (rpcError) {
-          console.error('RPC error:', rpcError)
-          setIsAdmin(false)
-          setTimeout(() => router.push('/'), 500)
-        }
+        setIsAdmin(false)
+        setTimeout(() => router.push('/'), 500)
       }
       
     } catch (err) {
@@ -167,7 +149,7 @@ export default function AdminPage() {
       try {
         console.log('Archiving product:', { id, isArchived, newStatus: !isArchived })
         
-        // Простое обновление без дополнительных проверок
+        // Используем service role для обхода RLS
         const { data, error } = await supabase
           .from('products')
           .update({ is_archived: !isArchived })
@@ -176,11 +158,7 @@ export default function AdminPage() {
         
         if (error) {
           console.error('Archive error:', error)
-          if (error.message.includes('column "is_archived" does not exist')) {
-            alert('Колонка is_archived не существует. Выполните SQL миграцию.')
-          } else {
-            alert(`Ошибка архивирования: ${error.message}`)
-          }
+          alert(`Ошибка архивирования: ${error.message}`)
           return
         }
         
