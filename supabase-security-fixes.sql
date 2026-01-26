@@ -1,7 +1,6 @@
 /* Исправление проблем безопасности */
 
 /* 1. Исправление функций с mutable search_path */
-DROP FUNCTION IF EXISTS public.handle_new_user();
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger 
 LANGUAGE plpgsql 
@@ -15,7 +14,6 @@ BEGIN
 END;
 $$;
 
-DROP FUNCTION IF EXISTS public.archive_deleted_product();
 CREATE OR REPLACE FUNCTION public.archive_deleted_product()
 RETURNS trigger 
 LANGUAGE plpgsql 
