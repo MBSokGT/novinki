@@ -84,6 +84,17 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
     }
   }
 
+  const viewProduct = async (product: Product) => {
+    setSelectedProduct(product)
+    
+    const { data: { user } } = await supabase.auth.getUser()
+    await supabase.from('product_views').insert({
+      product_id: product.id,
+      user_id: user?.id,
+      ip_address: 'web'
+    })
+  }
+
   const filtered = products.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) ||
       p.brand.toLowerCase().includes(search.toLowerCase()) ||
@@ -176,7 +187,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                           <svg className="w-5 h-5" fill={bookmarks.has(product.id) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
                         </button>
                       )}
-                      <button onClick={() => setSelectedProduct(product)} className="inline-flex items-center px-3 py-1.5 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-800 transition">
+                      <button onClick={() => viewProduct(product)} className="inline-flex items-center px-3 py-1.5 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-800 transition">
                         Подробнее
                       </button>
                     </div>
@@ -230,6 +241,26 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                   </div>
                   <p className="text-orange-800 leading-relaxed">{selectedProduct.attention_points}</p>
                 </div>
+                {(selectedProduct.website_link || selectedProduct.onec_link) && (
+                  <div className="bg-blue-50 rounded-xl p-5 border border-blue-100">
+                    <div className="flex items-center gap-2 mb-3">
+                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+                      <h3 className="font-bold text-blue-900">Полезные ссылки</h3>
+                    </div>
+                    <div className="space-y-2">
+                      {selectedProduct.website_link && (
+                        <a href={selectedProduct.website_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-blue-700 hover:text-blue-900 font-medium">
+                          🌐 Посмотреть на сайте
+                        </a>
+                      )}
+                      {selectedProduct.onec_link && (
+                        <a href={selectedProduct.onec_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-green-700 hover:text-green-900 font-medium">
+                          📊 Открыть в 1С
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
