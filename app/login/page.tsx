@@ -22,11 +22,21 @@ export default function LoginPage() {
     try {
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
-        if (error) throw error
+        if (error) {
+          if (error.message.includes('rate limit') || error.message.includes('too many')) {
+            throw new Error('Слишком много попыток входа. Подождите немного.')
+          }
+          throw error
+        }
         router.push('/')
       } else {
         const { error } = await supabase.auth.signUp({ email, password })
-        if (error) throw error
+        if (error) {
+          if (error.message.includes('rate limit') || error.message.includes('too many')) {
+            throw new Error('Слишком много регистраций. Попробуйте позже.')
+          }
+          throw error
+        }
         setMessage('Проверьте email для подтверждения регистрации')
       }
     } catch (error: any) {
