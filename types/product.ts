@@ -8,5 +8,6 @@ export interface Product {
   attention_points: string
   website_link?: string
   onec_link?: string
+  is_archived?: boolean
   created_at: string
 }
