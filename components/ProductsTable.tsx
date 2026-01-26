@@ -87,12 +87,20 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
   const viewProduct = async (product: Product) => {
     setSelectedProduct(product)
     
-    const { data: { user } } = await supabase.auth.getUser()
-    await supabase.from('product_views').insert({
-      product_id: product.id,
-      user_id: user?.id,
-      ip_address: 'web'
-    })
+    // Отслеживание просмотра с ограничениями
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        await supabase.from('product_views').insert({
+          product_id: product.id,
+          user_id: user.id,
+          ip_address: 'web'
+        })
+      }
+    } catch (error) {
+      // Молчаливо игнорируем ошибки логирования
+      console.warn('Failed to log view:', error)
+    }
   }
 
   const filtered = products.filter(p => {

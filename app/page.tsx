@@ -2,6 +2,7 @@
 
 import ProductsTable from '@/components/ProductsTable'
 import RequestForm from '@/components/RequestForm'
+import SecurityMonitor from '@/components/SecurityMonitor'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useEffect, useState } from 'react'
@@ -101,6 +102,7 @@ export default function Home() {
       <main className="max-w-7xl mx-auto px-6 py-8">
         <ProductsTable isAdmin={isAdmin} />
       </main>
+      {isAdmin && <SecurityMonitor />}
     </div>
   )
 }

@@ -49,13 +49,19 @@ export default function UsersPage() {
   }
 
   const fetchUsers = async () => {
-    const { data } = await supabase
-      .from('user_profiles')
-      .select('*')
-      .order('created_at', { ascending: false })
-    
-    if (data) setUsers(data)
-    setLoading(false)
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('id, email, is_admin, is_blocked, blocked_reason, blocked_at, created_at')
+        .order('created_at', { ascending: false })
+      
+      if (error) throw error
+      if (data) setUsers(data)
+    } catch (error) {
+      console.error('Error fetching users:', error)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const toggleAdmin = async (userId: string, currentStatus: boolean) => {
