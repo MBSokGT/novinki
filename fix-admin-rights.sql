@@ -3,9 +3,10 @@ SELECT schemaname, tablename, policyname
 FROM pg_policies 
 WHERE tablename = 'user_profiles';
 
--- Удаление старых политик
+-- Удаление всех старых политик
 DROP POLICY IF EXISTS "Пользователи могут читать свой профиль" ON user_profiles;
 DROP POLICY IF EXISTS "Админы могут читать все профили" ON user_profiles;
+DROP POLICY IF EXISTS "Админы могут обновлять профили" ON user_profiles;
 
 -- Новая политика: все авторизованные могут читать все профили
 CREATE POLICY "Все авторизованные могут читать профили" ON user_profiles
