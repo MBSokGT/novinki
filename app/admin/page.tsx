@@ -6,6 +6,7 @@ import { Product } from '@/types/product'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
+import ExcelImport from '@/components/ExcelImport'
 
 export default function AdminPage() {
   const [products, setProducts] = useState<Product[]>([])
@@ -197,6 +198,7 @@ export default function AdminPage() {
             <h1 className="text-2xl font-bold text-red-900">Админ панель</h1>
           </div>
           <div className="flex gap-3">
+            <ExcelImport onSuccess={fetchProducts} />
             <Link href="/admin/trash" className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition">
               🗑️ Корзина
             </Link>
