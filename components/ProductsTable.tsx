@@ -9,6 +9,9 @@ import ProductSkeleton from './ProductSkeleton'
 import { showToast } from './Toast'
 import FilterBar from './FilterBar'
 import StarRating from './StarRating'
+import SearchBar from './SearchBar'
+import CompareBar from './CompareBar'
+import Breadcrumbs from './Breadcrumbs'
 
 interface ProductsTableProps {
   isAdmin: boolean
@@ -25,10 +28,13 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [bookmarks, setBookmarks] = useState<Set<string>>(new Set())
   const [currentPage, setCurrentPage] = useState(1)
-  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table')
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('cards')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [sortBy, setSortBy] = useState<'date' | 'name' | 'rating'>('date')
   const [userRatings, setUserRatings] = useState<Map<string, number>>(new Map())
+  const [compareProducts, setCompareProducts] = useState<Product[]>([])
+  const [viewHistory, setViewHistory] = useState<string[]>([])
+  const [hoveredProduct, setHoveredProduct] = useState<Product | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -88,6 +94,41 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
     } catch (error) {
       showToast('Ошибка при сохранении рейтинга', 'error')
     }
+  }
+
+  const toggleCompare = (product: Product) => {
+    setCompareProducts(prev => {
+      const exists = prev.find(p => p.id === product.id)
+      if (exists) {
+        return prev.filter(p => p.id !== product.id)
+      } else if (prev.length < 4) {
+        return [...prev, product]
+      } else {
+        showToast('Можно сравнить максимум 4 товара', 'info')
+        return prev
+      }
+    })
+  }
+
+  const addToHistory = async (productId: string) => {
+    if (viewHistory.includes(productId)) return
+    setViewHistory(prev => [productId, ...prev.slice(0, 9)])
+    
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      await supabase.from('view_history').insert({ user_id: user.id, product_id: productId })
+    }
+  }
+
+  const viewProduct = (product: Product) => {
+    setSelectedProduct(product)
+    addToHistory(product.id)
+  }
+
+  const getSimilarProducts = (product: Product) => {
+    return products
+      .filter(p => p.id !== product.id && (p.brand === product.brand || p.category === product.category))
+      .slice(0, 4)
   }
 
   const toggleBookmark = async (productId: string) => {
@@ -160,6 +201,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
 
   return (
     <div>
+      <Breadcrumbs />
       <FilterBar 
         products={products}
         selectedCategory={selectedCategory}
@@ -170,21 +212,15 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
         setViewMode={setViewMode}
       />
       
+      <SearchBar 
+        products={products}
+        search={search}
+        setSearch={setSearch}
+        onSelectProduct={viewProduct}
+      />
+      
       <div className="mb-6">
         <div className="relative">
-          <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-          <input
-            type="text"
-            placeholder="Поиск по названию, бренду или описанию..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-12 pr-12 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 focus:border-transparent transition shadow-sm"
-          />
-          {search && (
-            <button onClick={() => setSearch('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
-          )}
         </div>
       </div>
       
@@ -202,10 +238,25 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
       
       {viewMode === 'cards' ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {paginatedProducts.map((product) => (
-            <div key={product.id} className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-lg transition group">
+          {paginatedProducts.map((product, idx) => (
+            <div 
+              key={product.id} 
+              className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-lg transition group animate-in fade-in slide-in-from-bottom-4"
+              style={{ animationDelay: `${idx * 50}ms` }}
+              onMouseEnter={() => setHoveredProduct(product)}
+              onMouseLeave={() => setHoveredProduct(null)}
+            >
               <div className="relative h-48 bg-slate-100 cursor-pointer" onClick={() => setSelectedImage(product.image_url)}>
                 <Image src={product.image_url} alt={product.name} fill className="object-cover" loading="lazy" />
+                {!isAdmin && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); toggleCompare(product); }}
+                    className={`absolute top-2 right-2 p-2 rounded-lg transition ${compareProducts.find(p => p.id === product.id) ? 'bg-[#8B1538] text-white' : 'bg-white/90 text-gray-700'}`}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                  </button>
+                )}
+              </div>
               </div>
               <div className="p-4">
                 <div className="flex items-start justify-between mb-2">
@@ -222,6 +273,16 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                 {!isAdmin && <StarRating rating={product.rating || 0} userRating={userRatings.get(product.id)} onRate={(r) => rateProduct(product.id, r)} />}
                 <button onClick={() => setSelectedProduct(product)} className="w-full px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-800 transition mt-3">Подробнее</button>
               </div>
+              
+              {hoveredProduct?.id === product.id && (
+                <div className="absolute inset-0 bg-black/80 backdrop-blur-sm p-4 flex flex-col justify-center animate-in fade-in duration-200">
+                  <h4 className="text-white font-bold mb-2">{product.name}</h4>
+                  <p className="text-white/90 text-sm mb-3 line-clamp-3">{product.description}</p>
+                  <button onClick={() => viewProduct(product)} className="px-4 py-2 bg-white text-gray-900 rounded-lg hover:bg-gray-100 transition text-sm font-medium">
+                    Подробнее
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -373,9 +434,9 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-white/90 backdrop-blur text-red-900 shadow-lg">{selectedProduct.brand}</span>
               </div>
             </div>
-            <div className="p-8 overflow-y-auto max-h-[calc(90vh-20rem)]">
-              <h2 className="text-3xl font-bold mb-6 text-slate-900">{selectedProduct.name}</h2>
-              <div className="space-y-6">
+              <div className="p-8 overflow-y-auto max-h-[calc(90vh-20rem)]">
+                <h2 className="text-3xl font-bold mb-6 text-slate-900">{selectedProduct.name}</h2>
+                <div className="space-y-6">
                 <div className="bg-slate-50 rounded-xl p-5">
                   <div className="flex items-center gap-2 mb-2">
                     <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -417,11 +478,40 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                     </div>
                   </div>
                 )}
+                
+                {getSimilarProducts(selectedProduct).length > 0 && (
+                  <div className="bg-purple-50 rounded-xl p-5 border border-purple-100">
+                    <h3 className="font-bold text-purple-900 mb-3">🔍 Похожие товары</h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      {getSimilarProducts(selectedProduct).map(similar => (
+                        <button
+                          key={similar.id}
+                          onClick={() => viewProduct(similar)}
+                          className="flex items-center gap-2 p-2 bg-white rounded-lg hover:bg-purple-100 transition text-left"
+                        >
+                          <div className="relative w-12 h-12 rounded overflow-hidden flex-shrink-0">
+                            <Image src={similar.image_url} alt={similar.name} fill className="object-cover" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium text-gray-900 truncate">{similar.name}</div>
+                            <div className="text-xs text-gray-500">{similar.brand}</div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
       )}
+      
+      <CompareBar 
+        compareProducts={compareProducts}
+        onRemove={(id) => setCompareProducts(prev => prev.filter(p => p.id !== id))}
+        onClear={() => setCompareProducts([])}
+      />
     </div>
   )
 }
