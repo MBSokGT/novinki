@@ -31,38 +31,14 @@ export default function Home() {
       }
       setUser(user)
       
-      // Прямой запрос без RLS
-      const { data: profile, error: profileError } = await supabase
+      const { data: profile } = await supabase
         .from('user_profiles')
         .select('is_admin')
         .eq('id', user.id)
         .maybeSingle()
       
-      console.log('Admin check:', { 
-        userId: user.id, 
-        email: user.email,
-        profile, 
-        profileError, 
-        isAdmin: profile?.is_admin 
-      })
-      
-      // Если профиль не найден, создаем его
-      if (!profile && !profileError) {
-        console.log('Profile not found, creating...')
-        const { data: newProfile } = await supabase
-          .from('user_profiles')
-          .insert({ id: user.id, email: user.email, is_admin: false })
-          .select()
-          .single()
-        
-        if (newProfile?.is_admin) {
-          setIsAdmin(true)
-        }
-      } else if (profile?.is_admin === true) {
+      if (profile?.is_admin === true) {
         setIsAdmin(true)
-        console.log('User is admin!')
-      } else {
-        console.log('User is NOT admin')
       }
     } catch (err) {
       console.error('Auth error:', err)
