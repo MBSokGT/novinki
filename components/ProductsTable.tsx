@@ -24,11 +24,17 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
   const [bookmarks, setBookmarks] = useState<Set<string>>(new Set())
   const [currentPage, setCurrentPage] = useState(1)
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table')
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [sortBy, setSortBy] = useState<'date' | 'name' | 'rating'>('date')
+  const [userRatings, setUserRatings] = useState<Map<string, number>>(new Map())
   const router = useRouter()
 
   useEffect(() => {
     fetchProducts()
-    if (!isAdmin) fetchBookmarks()
+    if (!isAdmin) {
+      fetchBookmarks()
+      fetchUserRatings()
+    }
   }, [isAdmin])
 
   const fetchProducts = async () => {
@@ -51,6 +57,35 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
       .eq('user_id', user.id)
     
     if (data) setBookmarks(new Set(data.map(b => b.product_id)))
+  }
+
+  const fetchUserRatings = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const { data } = await supabase
+      .from('product_ratings')
+      .select('product_id, rating')
+      .eq('user_id', user.id)
+    
+    if (data) setUserRatings(new Map(data.map(r => [r.product_id, r.rating])))
+  }
+
+  const rateProduct = async (productId: string, rating: number) => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    try {
+      await supabase
+        .from('product_ratings')
+        .upsert({ product_id: productId, user_id: user.id, rating })
+      
+      setUserRatings(prev => new Map(prev).set(productId, rating))
+      fetchProducts()
+      showToast('Рейтинг сохранен', 'success')
+    } catch (error) {
+      showToast('Ошибка при сохранении рейтинга', 'error')
+    }
   }
 
   const toggleBookmark = async (productId: string) => {
@@ -85,14 +120,29 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
   }
 
   const filtered = useMemo(() => {
-    return products.filter(p => {
+    let result = products.filter(p => {
       const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) ||
         p.brand.toLowerCase().includes(search.toLowerCase()) ||
         p.description.toLowerCase().includes(search.toLowerCase())
       const matchesBrand = !selectedBrand || p.brand === selectedBrand
-      return matchesSearch && matchesBrand
+      const matchesCategory = !selectedCategory || p.category === selectedCategory
+      return matchesSearch && matchesBrand && matchesCategory
     })
-  }, [products, search, selectedBrand])
+
+    if (sortBy === 'name') {
+      result.sort((a, b) => a.name.localeCompare(b.name))
+    } else if (sortBy === 'rating') {
+      result.sort((a, b) => (b.rating || 0) - (a.rating || 0))
+    } else {
+      result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    }
+
+    return result
+  }, [products, search, selectedBrand, selectedCategory, sortBy])
+
+  const categories = useMemo(() => {
+    return Array.from(new Set(products.map(p => p.category).filter(Boolean)))
+  }, [products])
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE)
   const paginatedProducts = useMemo(() => {
@@ -102,7 +152,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [search, selectedBrand])
+  }, [search, selectedBrand, selectedCategory, sortBy])
 
   if (loading) return <ProductSkeleton />
 
