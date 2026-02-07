@@ -13,5 +13,6 @@ export interface Product {
   is_archived?: boolean
   category?: string
   rating?: number
+  price?: number
   created_at: string
 }

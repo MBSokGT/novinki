@@ -126,9 +126,50 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
   }
 
   const getSimilarProducts = (product: Product) => {
-    return products
-      .filter(p => p.id !== product.id && (p.brand === product.brand || p.category === product.category))
-      .slice(0, 4)
+    // Извлекаем размеры из описания (числа с единицами измерения)
+    const extractSizes = (text: string) => {
+      const matches = text.match(/\d+\s*(мм|см|м|мл|л|г|кг|шт)/gi)
+      return matches ? matches.map(m => m.toLowerCase()) : []
+    }
+
+    const currentSizes = extractSizes(product.description + ' ' + product.advantages)
+    const currentPrice = product.price || 0
+
+    // Вычисляем score похожести для каждого товара
+    const scored = products
+      .filter(p => p.id !== product.id)
+      .map(p => {
+        let score = 0
+        const pSizes = extractSizes(p.description + ' ' + p.advantages)
+        const pPrice = p.price || 0
+
+        // Та же категория И бренд = +10
+        if (p.category === product.category && p.brand === product.brand) score += 10
+        // Та же категория = +5
+        else if (p.category === product.category) score += 5
+        // Тот же бренд = +3
+        else if (p.brand === product.brand) score += 3
+
+        // Похожая цена (±30%) = +4
+        if (currentPrice > 0 && pPrice > 0) {
+          const priceDiff = Math.abs(pPrice - currentPrice) / currentPrice
+          if (priceDiff <= 0.3) score += 4
+          else if (priceDiff <= 0.5) score += 2
+        }
+
+        // Совпадающие размеры = +2 за каждый
+        const matchingSizes = currentSizes.filter(s => pSizes.includes(s)).length
+        score += matchingSizes * 2
+
+        // Высокий рейтинг = +1
+        if ((p.rating || 0) >= 4) score += 1
+
+        return { product: p, score }
+      })
+      .filter(item => item.score > 0)
+      .sort((a, b) => b.score - a.score)
+
+    return scored.slice(0, 4).map(item => item.product)
   }
 
   const toggleBookmark = async (productId: string) => {
