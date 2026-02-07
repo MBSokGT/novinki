@@ -257,7 +257,6 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                   </button>
                 )}
               </div>
-              </div>
               <div className="p-4">
                 <div className="flex items-start justify-between mb-2">
                   <h3 className="font-bold text-slate-900 text-lg">{product.name}</h3>
