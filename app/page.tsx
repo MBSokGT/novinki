@@ -31,16 +31,19 @@ export default function Home() {
       }
       setUser(user)
       
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('user_profiles')
         .select('is_admin')
         .eq('id', user.id)
-        .single()
+        .maybeSingle()
+      
+      console.log('Admin check:', { userId: user.id, profile, profileError, isAdmin: profile?.is_admin })
       
       if (profile?.is_admin === true) {
         setIsAdmin(true)
       }
     } catch (err) {
+      console.error('Auth error:', err)
       setError('Ошибка загрузки данных')
     } finally {
       setLoading(false)

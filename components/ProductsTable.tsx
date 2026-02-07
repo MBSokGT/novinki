@@ -7,6 +7,8 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import ProductSkeleton from './ProductSkeleton'
 import { showToast } from './Toast'
+import FilterBar from './FilterBar'
+import StarRating from './StarRating'
 
 interface ProductsTableProps {
   isAdmin: boolean
@@ -158,6 +160,16 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
 
   return (
     <div>
+      <FilterBar 
+        products={products}
+        selectedCategory={selectedCategory}
+        setSelectedCategory={setSelectedCategory}
+        sortBy={sortBy}
+        setSortBy={setSortBy}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+      />
+      
       <div className="mb-6 flex flex-col sm:flex-row gap-4">
         <div className="flex-1 relative">
           <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
@@ -171,6 +183,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
           {search && (
             <button onClick={() => setSearch('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
             </button>
           )}
         </div>
@@ -213,8 +226,10 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                   )}
                 </div>
                 <button onClick={() => setSelectedBrand(product.brand)} className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-900 mb-3">{product.brand}</button>
+                {product.category && <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-900 mb-3 ml-2">{product.category}</span>}
                 <p className="text-sm text-slate-600 line-clamp-2 mb-4">{product.description}</p>
-                <button onClick={() => setSelectedProduct(product)} className="w-full px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-800 transition">Подробнее</button>
+                {!isAdmin && <StarRating rating={product.rating || 0} userRating={userRatings.get(product.id)} onRate={(r) => rateProduct(product.id, r)} />}
+                <button onClick={() => setSelectedProduct(product)} className="w-full px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-800 transition mt-3">Подробнее</button>
               </div>
             </div>
           ))}
