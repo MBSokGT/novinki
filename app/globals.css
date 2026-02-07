@@ -3,11 +3,8 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-}
-
-.dark {
-  --background: #0a0a0a;
-  --foreground: #ededed;
+  --brand-burgundy: #8B1538;
+  --brand-burgundy-dark: #6B0F2A;
 }
 
 @theme inline {
@@ -21,27 +18,4 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
-  transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-.dark body {
-  background: #0a0a0a;
-  color: #ededed;
-}
-
-.dark nav {
-  background: #1a1a1a;
-  border-color: #2a2a2a;
-}
-
-.dark .bg-white {
-  background: #1a1a1a;
-}
-
-.dark .text-gray-700 {
-  color: #d1d5db;
-}
-
-.dark .border-gray-200 {
-  border-color: #2a2a2a;
 }
