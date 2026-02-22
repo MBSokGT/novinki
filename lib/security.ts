@@ -11,12 +11,16 @@ function getEncryptionKey(): string {
   return key
 }
 
-const ENCRYPTION_KEY = getEncryptionKey()
 const ALGORITHM = 'aes-256-gcm'
+
+function getEncryptionKeyBuffer(): Buffer {
+  const key = getEncryptionKey()
+  return Buffer.from(key.slice(0, 64), 'hex')
+}
 
 export function encrypt(text: string): string {
   const iv = crypto.randomBytes(16)
-  const key = Buffer.from(ENCRYPTION_KEY.slice(0, 64), 'hex')
+  const key = getEncryptionKeyBuffer()
   const cipher = crypto.createCipheriv(ALGORITHM, key, iv)
 
   let encrypted = cipher.update(text, 'utf8', 'hex')
@@ -33,7 +37,7 @@ export function decrypt(encryptedData: string): string {
   const authTag = Buffer.from(parts[1], 'hex')
   const encrypted = parts[2]
 
-  const key = Buffer.from(ENCRYPTION_KEY.slice(0, 64), 'hex')
+  const key = getEncryptionKeyBuffer()
   const decipher = crypto.createDecipheriv(ALGORITHM, key, iv)
   decipher.setAuthTag(authTag)
 
