@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Product } from '@/types/product'
 import Image from 'next/image'
@@ -17,6 +17,10 @@ interface ProductsTableProps {
 }
 
 const ITEMS_PER_PAGE = 30
+const VIEW_MODE_KEY = 'novinki:viewMode'
+const SORT_BY_KEY = 'novinki:sortBy'
+const CATEGORY_KEY = 'novinki:selectedCategory'
+const VIEW_HISTORY_KEY = 'novinki:viewHistory'
 
 export default function ProductsTable({ isAdmin }: ProductsTableProps) {
   // Текущая страница (серверная пагинация)
@@ -39,11 +43,70 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
   const [compareProducts, setCompareProducts] = useState<Product[]>([])
   const [viewHistory, setViewHistory] = useState<string[]>([])
   const [hoveredProduct, setHoveredProduct] = useState<Product | null>(null)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const savedViewMode = window.localStorage.getItem(VIEW_MODE_KEY)
+    if (savedViewMode === 'cards' || savedViewMode === 'table') {
+      setViewMode(savedViewMode)
+    }
+
+    const savedSortBy = window.localStorage.getItem(SORT_BY_KEY)
+    if (savedSortBy === 'date' || savedSortBy === 'name' || savedSortBy === 'rating') {
+      setSortBy(savedSortBy)
+    }
+
+    const savedCategory = window.localStorage.getItem(CATEGORY_KEY)
+    if (savedCategory) {
+      setSelectedCategory(savedCategory)
+    }
+
+    const savedHistory = window.localStorage.getItem(VIEW_HISTORY_KEY)
+    if (savedHistory) {
+      try {
+        const parsedHistory = JSON.parse(savedHistory)
+        if (Array.isArray(parsedHistory)) {
+          setViewHistory(parsedHistory.filter((id) => typeof id === 'string').slice(0, 10))
+        }
+      } catch {
+        // Ignore invalid JSON and continue with empty history.
+      }
+    }
+  }, [])
   // Дебаунс поиска: ждём 300мс после последнего символа
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300)
     return () => clearTimeout(t)
   }, [search])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    window.localStorage.setItem(VIEW_MODE_KEY, viewMode)
+  }, [viewMode])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    window.localStorage.setItem(SORT_BY_KEY, sortBy)
+  }, [sortBy])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (selectedCategory) {
+      window.localStorage.setItem(CATEGORY_KEY, selectedCategory)
+    } else {
+      window.localStorage.removeItem(CATEGORY_KEY)
+    }
+  }, [selectedCategory])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (viewHistory.length > 0) {
+      window.localStorage.setItem(VIEW_HISTORY_KEY, JSON.stringify(viewHistory))
+    } else {
+      window.localStorage.removeItem(VIEW_HISTORY_KEY)
+    }
+  }, [viewHistory])
 
   // Инициализация: загружаем мета-список (все товары, лёгкие поля) и остальное
   useEffect(() => {
@@ -163,8 +226,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
   }
 
   const addToHistory = async (productId: string) => {
-    if (viewHistory.includes(productId)) return
-    setViewHistory(prev => [productId, ...prev.slice(0, 9)])
+    setViewHistory((prev) => [productId, ...prev.filter((id) => id !== productId)].slice(0, 10))
     
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
@@ -255,6 +317,32 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
     }
   }
 
+  const clearAllFilters = () => {
+    setSearch('')
+    setSelectedBrand(null)
+    setSelectedCategory(null)
+    setSortBy('date')
+    setCurrentPage(1)
+  }
+
+  const activeFiltersCount =
+    (debouncedSearch ? 1 : 0) +
+    (selectedBrand ? 1 : 0) +
+    (selectedCategory ? 1 : 0) +
+    (sortBy !== 'date' ? 1 : 0)
+
+  const productsById = useMemo(() => {
+    const map = new Map<string, Product>()
+    productsMeta.forEach((product) => map.set(product.id, product))
+    products.forEach((product) => map.set(product.id, product))
+    return map
+  }, [productsMeta, products])
+
+  const recentViewedProducts = useMemo(
+    () => viewHistory.map((id) => productsById.get(id)).filter(Boolean) as Product[],
+    [viewHistory, productsById]
+  )
+
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE)
   // products уже является текущей страницей, пагинация сделана на сервере
 
@@ -271,6 +359,11 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
         setSortBy={setSortBy}
         viewMode={viewMode}
         setViewMode={setViewMode}
+        activeFiltersCount={activeFiltersCount}
+        totalCount={totalCount}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onClearFilters={clearAllFilters}
       />
 
       <SearchBar
@@ -280,17 +373,37 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
         onSelectProduct={viewProduct}
       />
       
-      <div className="mb-6">
-        <div className="relative">
+      {recentViewedProducts.length > 0 && (
+        <div className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-sm font-medium text-slate-700">Недавно просмотренные</p>
+            <button
+              onClick={() => setViewHistory([])}
+              className="text-xs text-slate-500 hover:text-slate-700"
+            >
+              Очистить
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {recentViewedProducts.map((product) => (
+              <button
+                key={product.id}
+                onClick={() => viewProduct(product)}
+                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100"
+              >
+                <span className="truncate max-w-[220px]">{product.name}</span>
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
       
       {selectedBrand && (
         <div className="mb-4 flex items-center gap-2">
           <span className="text-sm text-slate-600">Фильтр по бренду:</span>
-          <span className="inline-flex items-center gap-2 px-3 py-1 bg-red-100 text-red-900 rounded-lg text-sm font-medium">
+          <span className="inline-flex items-center gap-2 px-3 py-1 bg-slate-100 text-slate-900 rounded-lg text-sm font-medium">
             {selectedBrand}
-            <button onClick={() => setSelectedBrand(null)} className="hover:text-red-700">
+            <button onClick={() => setSelectedBrand(null)} className="hover:text-slate-700">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
           </span>
@@ -312,7 +425,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                 {!isAdmin && (
                   <button
                     onClick={(e) => { e.stopPropagation(); toggleCompare(product); }}
-                    className={`absolute top-2 right-2 p-2 rounded-lg transition ${compareProducts.find(p => p.id === product.id) ? 'bg-[#8B1538] text-white' : 'bg-white/90 text-gray-700'}`}
+                    className={`absolute top-2 right-2 p-2 rounded-lg transition ${compareProducts.find(p => p.id === product.id) ? 'bg-slate-800 text-white' : 'bg-white/90 text-gray-700'}`}
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
                   </button>
@@ -327,11 +440,11 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                     </button>
                   )}
                 </div>
-                <button onClick={() => setSelectedBrand(product.brand)} className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-900 mb-3">{product.brand}</button>
+                <button onClick={() => setSelectedBrand(product.brand)} className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-900 mb-3">{product.brand}</button>
                 {product.category && <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-900 mb-3 ml-2">{product.category}</span>}
                 <p className="text-sm text-slate-600 line-clamp-2 mb-4">{product.description}</p>
                 {!isAdmin && <StarRating rating={product.rating || 0} userRating={userRatings.get(product.id)} onRate={(r) => rateProduct(product.id, r)} />}
-                <button onClick={() => setSelectedProduct(product)} className="w-full px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-800 transition mt-3">Подробнее</button>
+                <button onClick={() => viewProduct(product)} className="w-full px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-800 transition mt-3">Подробнее</button>
               </div>
               
               {hoveredProduct?.id === product.id && (
@@ -376,7 +489,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                       <div className="font-semibold text-slate-900">{product.name}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <button onClick={() => setSelectedBrand(product.brand)} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-900 hover:bg-red-200 transition cursor-pointer">{product.brand}</button>
+                      <button onClick={() => setSelectedBrand(product.brand)} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-900 hover:bg-slate-200 transition cursor-pointer">{product.brand}</button>
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-600 max-w-xs">
                       <div className="line-clamp-2">{product.description}</div>
@@ -398,7 +511,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                             <svg className="w-5 h-5" fill={bookmarks.has(product.id) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
                           </button>
                         )}
-                        <button onClick={() => setSelectedProduct(product)} className="inline-flex items-center px-3 py-1.5 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-800 transition">
+                        <button onClick={() => viewProduct(product)} className="inline-flex items-center px-3 py-1.5 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-800 transition">
                           Подробнее
                         </button>
                       </div>
@@ -419,7 +532,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
           <div className="flex gap-1 flex-wrap justify-center">
             {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
               page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1) ? (
-                <button key={page} onClick={() => setCurrentPage(page)} className={`px-4 py-2 rounded-lg transition ${currentPage === page ? 'bg-red-800 text-white' : 'bg-white border border-slate-200 hover:bg-slate-50'}`}>
+                <button key={page} onClick={() => setCurrentPage(page)} className={`px-4 py-2 rounded-lg transition ${currentPage === page ? 'bg-slate-900 text-white' : 'bg-white border border-slate-200 hover:bg-slate-50'}`}>
                   {page}
                 </button>
               ) : page === currentPage - 2 || page === currentPage + 2 ? (
@@ -439,7 +552,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
           <p className="mt-4 text-slate-400 text-lg">Ничего не найдено по запросу "{debouncedSearch}"</p>
           <button 
             onClick={() => setSearch('')}
-            className="mt-2 text-red-800 hover:text-red-900 font-medium"
+            className="mt-2 text-slate-800 hover:text-slate-900 font-medium"
           >
             Очистить поиск
           </button>
@@ -491,7 +604,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                 <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
               <div className="absolute bottom-4 left-6">
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-white/90 backdrop-blur text-red-900 shadow-lg">{selectedProduct.brand}</span>
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-white/90 backdrop-blur text-slate-900 shadow-lg">{selectedProduct.brand}</span>
               </div>
             </div>
               <div className="p-8 overflow-y-auto max-h-[calc(90vh-20rem)]">
@@ -511,12 +624,12 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                   </div>
                   <p className="text-green-800 leading-relaxed">{selectedProduct.advantages}</p>
                 </div>
-                <div className="bg-orange-50 rounded-xl p-5 border border-orange-100">
+                <div className="bg-slate-100 rounded-xl p-5 border border-slate-200">
                   <div className="flex items-center gap-2 mb-2">
-                    <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                    <h3 className="font-bold text-orange-900">На что обратить внимание</h3>
+                    <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                    <h3 className="font-bold text-slate-900">На что обратить внимание</h3>
                   </div>
-                  <p className="text-orange-800 leading-relaxed">{selectedProduct.attention_points}</p>
+                  <p className="text-slate-700 leading-relaxed">{selectedProduct.attention_points}</p>
                 </div>
                 {(selectedProduct.website_link || selectedProduct.onec_link) && (
                   <div className="bg-blue-50 rounded-xl p-5 border border-blue-100">

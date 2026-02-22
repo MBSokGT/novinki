@@ -20,7 +20,7 @@ export default function CompareBar({ compareProducts, onRemove, onClear }: Compa
       <div className="fixed bottom-4 right-4 bg-white rounded-xl shadow-2xl border border-gray-200 p-4 z-40 max-w-md">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-bold text-gray-900">Сравнение ({compareProducts.length})</h3>
-          <button onClick={onClear} className="text-sm text-gray-500 hover:text-red-600">Очистить</button>
+          <button onClick={onClear} className="text-sm text-gray-500 hover:text-slate-600">Очистить</button>
         </div>
         <div className="flex gap-2 mb-3 overflow-x-auto">
           {compareProducts.map(p => (
@@ -28,11 +28,11 @@ export default function CompareBar({ compareProducts, onRemove, onClear }: Compa
               <div className="w-16 h-16 rounded-lg overflow-hidden border border-gray-200">
                 <Image src={p.image_url} alt={p.name} width={64} height={64} className="object-cover" />
               </div>
-              <button onClick={() => onRemove(p.id)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">×</button>
+              <button onClick={() => onRemove(p.id)} className="absolute -top-2 -right-2 bg-slate-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">×</button>
             </div>
           ))}
         </div>
-        <button onClick={() => setShowModal(true)} disabled={compareProducts.length < 2} className="w-full px-4 py-2 bg-[#8B1538] text-white rounded-lg hover:bg-[#6B0F2A] transition disabled:opacity-50 disabled:cursor-not-allowed">
+        <button onClick={() => setShowModal(true)} disabled={compareProducts.length < 2} className="w-full px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
           Сравнить
         </button>
       </div>
@@ -86,7 +86,7 @@ export default function CompareBar({ compareProducts, onRemove, onClear }: Compa
                   </tr>
                   <tr className="border-t">
                     <td className="p-4 font-medium">Внимание</td>
-                    {compareProducts.map(p => <td key={p.id} className="p-4 text-sm text-orange-700">{p.attention_points}</td>)}
+                    {compareProducts.map(p => <td key={p.id} className="p-4 text-sm text-slate-700">{p.attention_points}</td>)}
                   </tr>
                 </tbody>
               </table>

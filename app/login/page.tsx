@@ -71,14 +71,14 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4">
-      <div className="bg-white p-8 rounded-2xl shadow-lg max-w-md w-full">
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="surface-card p-8 rounded-2xl max-w-md w-full">
         <div className="text-center mb-8">
           <Image src="/logo.png" alt="Logo" width={150} height={50} className="mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-slate-900">
+          <h2 className="text-2xl font-semibold text-slate-900">
             {showResetForm ? 'Восстановление пароля' : isLogin ? 'Вход' : 'Регистрация'}
           </h2>
-          <p className="text-slate-600 mt-2">Новинки ассортимента</p>
+          <p className="text-slate-500 mt-2">Новинки ассортимента</p>
         </div>
 
         {showResetForm ? (
@@ -88,13 +88,13 @@ export default function LoginPage() {
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 transition"
+              className="input-neutral w-full px-4 py-3 rounded-xl"
               required
             />
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-red-800 text-white px-6 py-3 rounded-xl hover:bg-red-900 transition font-medium disabled:opacity-50"
+              className="btn-neutral w-full px-6 py-3 rounded-xl font-medium disabled:opacity-50"
             >
               {loading ? 'Отправка...' : 'Отправить ссылку'}
             </button>
@@ -106,7 +106,7 @@ export default function LoginPage() {
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 transition"
+              className="input-neutral w-full px-4 py-3 rounded-xl"
               required
             />
             <input
@@ -114,13 +114,13 @@ export default function LoginPage() {
               placeholder="Пароль"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 transition"
+              className="input-neutral w-full px-4 py-3 rounded-xl"
               required
             />
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-red-800 text-white px-6 py-3 rounded-xl hover:bg-red-900 transition font-medium disabled:opacity-50"
+              className="btn-neutral w-full px-6 py-3 rounded-xl font-medium disabled:opacity-50"
             >
               {loading ? 'Загрузка...' : isLogin ? 'Войти' : 'Зарегистрироваться'}
             </button>
@@ -137,7 +137,7 @@ export default function LoginPage() {
           {showResetForm ? (
             <button
               onClick={() => setShowResetForm(false)}
-              className="text-red-800 hover:text-red-900 text-sm font-medium"
+              className="text-slate-800 hover:text-slate-900 text-sm font-medium"
             >
               ← Назад к входу
             </button>
@@ -145,7 +145,7 @@ export default function LoginPage() {
             <>
               <button
                 onClick={() => setIsLogin(!isLogin)}
-                className="text-red-800 hover:text-red-900 text-sm font-medium block w-full"
+                className="text-slate-800 hover:text-slate-900 text-sm font-medium block w-full"
               >
                 {isLogin ? 'Нет аккаунта? Зарегистрируйтесь' : 'Уже есть аккаунт? Войдите'}
               </button>

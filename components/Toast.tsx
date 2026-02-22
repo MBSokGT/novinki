@@ -55,7 +55,7 @@ export default function ToastContainer() {
           key={toast.id}
           className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg backdrop-blur-sm animate-in slide-in-from-right duration-300 ${
             toast.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' :
-            toast.type === 'error' ? 'bg-red-50 text-red-800 border border-red-200' :
+            toast.type === 'error' ? 'bg-slate-100 text-slate-800 border border-slate-200' :
             'bg-blue-50 text-blue-800 border border-blue-200'
           }`}
         >

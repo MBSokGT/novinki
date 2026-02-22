@@ -22,7 +22,7 @@ export default function Breadcrumbs() {
 
   return (
     <nav className="flex items-center gap-2 text-sm text-gray-600 mb-4">
-      <Link href="/" className="hover:text-[#8B1538] transition">
+      <Link href="/" className="hover:text-slate-700 transition">
         🏠 Главная
       </Link>
       {paths.map((path, index) => {
@@ -34,9 +34,9 @@ export default function Breadcrumbs() {
           <span key={path} className="flex items-center gap-2">
             <span className="text-gray-400">/</span>
             {isLast ? (
-              <span className="text-[#8B1538] font-medium">{label}</span>
+              <span className="text-slate-700 font-medium">{label}</span>
             ) : (
-              <Link href={href} className="hover:text-[#8B1538] transition">
+              <Link href={href} className="hover:text-slate-700 transition">
                 {label}
               </Link>
             )}

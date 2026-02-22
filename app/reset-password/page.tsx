@@ -72,7 +72,7 @@ export default function ResetPasswordPage() {
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-50 text-red-800 rounded-lg text-sm text-center">
+          <div className="mb-4 p-3 bg-slate-100 text-slate-800 rounded-lg text-sm text-center">
             {error}
           </div>
         )}
@@ -89,7 +89,7 @@ export default function ResetPasswordPage() {
             placeholder="Новый пароль"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 transition"
+            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-700 transition"
             required
             minLength={6}
           />
@@ -98,14 +98,14 @@ export default function ResetPasswordPage() {
             placeholder="Подтвердите пароль"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 transition"
+            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-700 transition"
             required
             minLength={6}
           />
           <button
             type="submit"
             disabled={loading || !!error}
-            className="w-full bg-red-800 text-white px-6 py-3 rounded-xl hover:bg-red-900 transition font-medium disabled:opacity-50"
+            className="w-full bg-slate-900 text-white px-6 py-3 rounded-xl hover:bg-slate-800 transition font-medium disabled:opacity-50"
           >
             {loading ? 'Сохранение...' : 'Сохранить пароль'}
           </button>
@@ -114,7 +114,7 @@ export default function ResetPasswordPage() {
         <div className="mt-6 text-center">
           <button
             onClick={() => router.push('/login')}
-            className="text-red-800 hover:text-red-900 text-sm font-medium"
+            className="text-slate-800 hover:text-slate-900 text-sm font-medium"
           >
             ← Вернуться к входу
           </button>

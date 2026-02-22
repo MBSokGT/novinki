@@ -29,7 +29,7 @@ export default function GlobalError({
             <div className="space-x-4">
               <button 
                 onClick={reset}
-                className="inline-block px-6 py-3 bg-red-800 text-white rounded-lg hover:bg-red-900 transition font-medium"
+                className="inline-block px-6 py-3 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition font-medium"
               >
                 Попробовать снова
               </button>

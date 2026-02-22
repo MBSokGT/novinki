@@ -32,12 +32,12 @@ export default function SecurityMonitor() {
   if (suspiciousActivity.length === 0) return null
 
   return (
-    <div className="fixed bottom-4 right-4 bg-red-50 border border-red-200 rounded-lg p-4 max-w-sm shadow-lg">
+    <div className="fixed bottom-4 right-4 bg-slate-100 border border-slate-200 rounded-lg p-4 max-w-sm shadow-lg">
       <div className="flex items-center gap-2 mb-2">
-        <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-        <span className="font-bold text-red-900">Подозрительная активность</span>
+        <div className="w-3 h-3 bg-slate-700 rounded-full animate-pulse"></div>
+        <span className="font-bold text-slate-900">Подозрительная активность</span>
       </div>
-      <div className="text-sm text-red-800">
+      <div className="text-sm text-slate-800">
         Обнаружено {suspiciousActivity.length} подозрительных действий
       </div>
     </div>

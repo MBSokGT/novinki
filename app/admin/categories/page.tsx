@@ -56,7 +56,7 @@ export default function CategoriesPage() {
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
             <Image src="/logo.png" alt="Logo" width={120} height={40} className="object-contain" />
-            <h1 className="text-2xl font-bold text-red-900">🏷️ Категории и теги</h1>
+            <h1 className="text-2xl font-bold text-slate-900">🏷️ Категории и теги</h1>
           </div>
           <Link href="/admin" className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition">
             Назад
@@ -77,7 +77,7 @@ export default function CategoriesPage() {
                 onChange={(e) => setNewCategory(e.target.value)}
                 className="flex-1 px-4 py-2 border rounded-lg"
               />
-              <button onClick={addCategory} className="px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-900">
+              <button onClick={addCategory} className="px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800">
                 Добавить
               </button>
             </div>
@@ -85,7 +85,7 @@ export default function CategoriesPage() {
               {categories.map((cat) => (
                 <div key={cat.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
                   <span className="font-medium">{cat.name}</span>
-                  <button onClick={() => deleteCategory(cat.id)} className="text-red-600 hover:text-red-700">
+                  <button onClick={() => deleteCategory(cat.id)} className="text-slate-600 hover:text-slate-700">
                     Удалить
                   </button>
                 </div>
@@ -104,7 +104,7 @@ export default function CategoriesPage() {
                 onChange={(e) => setNewTag(e.target.value)}
                 className="flex-1 px-4 py-2 border rounded-lg"
               />
-              <button onClick={addTag} className="px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-900">
+              <button onClick={addTag} className="px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800">
                 Добавить
               </button>
             </div>

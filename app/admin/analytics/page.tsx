@@ -53,7 +53,7 @@ export default function AnalyticsPage() {
     setLoading(false)
   }
 
-  if (loading) return <div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-800"></div></div>
+  if (loading) return <div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-700"></div></div>
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
@@ -61,7 +61,7 @@ export default function AnalyticsPage() {
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
             <Image src="/logo.png" alt="Logo" width={120} height={40} className="object-contain" />
-            <h1 className="text-2xl font-bold text-red-900">📊 Аналитика</h1>
+            <h1 className="text-2xl font-bold text-slate-900">📊 Аналитика</h1>
           </div>
           <Link href="/admin" className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition">
             Назад
@@ -73,7 +73,7 @@ export default function AnalyticsPage() {
         {/* Общая статистика */}
         <div className="grid md:grid-cols-4 gap-6 mb-8">
           <div className="bg-white p-6 rounded-xl shadow-sm">
-            <div className="text-3xl font-bold text-red-900">{stats.totalProducts}</div>
+            <div className="text-3xl font-bold text-slate-900">{stats.totalProducts}</div>
             <div className="text-slate-600 mt-1">Всего новинок</div>
           </div>
           <div className="bg-white p-6 rounded-xl shadow-sm">
@@ -123,7 +123,7 @@ export default function AnalyticsPage() {
                     <span className="text-2xl font-bold text-slate-300">#{idx + 1}</span>
                     <span className="font-medium">{brand.brand}</span>
                   </div>
-                  <span className="px-3 py-1 bg-red-100 text-red-900 rounded-full text-sm font-bold">
+                  <span className="px-3 py-1 bg-slate-100 text-slate-900 rounded-full text-sm font-bold">
                     {brand.count} товаров
                   </span>
                 </div>

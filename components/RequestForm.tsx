@@ -38,7 +38,7 @@ export default function RequestForm() {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="inline-flex items-center gap-2 px-4 py-2 bg-red-800 text-white font-medium rounded-lg hover:bg-red-900 transition shadow-sm"
+        className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white font-medium rounded-lg hover:bg-slate-800 transition shadow-sm"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
         Сообщить о новинке
@@ -72,7 +72,7 @@ export default function RequestForm() {
                   placeholder="Ваше имя"
                   value={form.name}
                   onChange={(e) => setForm({...form, name: e.target.value})}
-                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 transition"
+                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-700 transition"
                   required
                 />
                 <input
@@ -80,7 +80,7 @@ export default function RequestForm() {
                   placeholder="Телефон или Email"
                   value={form.contact}
                   onChange={(e) => setForm({...form, contact: e.target.value})}
-                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 transition"
+                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-700 transition"
                   required
                 />
                 <input
@@ -88,7 +88,7 @@ export default function RequestForm() {
                   placeholder="Название товара"
                   value={form.product}
                   onChange={(e) => setForm({...form, product: e.target.value})}
-                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 transition"
+                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-700 transition"
                   required
                 />
                 <input
@@ -96,7 +96,7 @@ export default function RequestForm() {
                   placeholder="Артикул (если известен)"
                   value={form.article}
                   onChange={(e) => setForm({...form, article: e.target.value})}
-                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 transition"
+                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-700 transition"
                 />
                 <button
                   type="submit"

@@ -167,7 +167,7 @@ export default function ExcelImport({ onSuccess }: ExcelImportProps) {
               <button
                 onClick={handleImport}
                 disabled={!file || loading}
-                className="w-full px-4 py-3 bg-[#8B1538] text-white rounded-lg hover:bg-[#6B0F2A] transition disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                className="w-full px-4 py-3 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition disabled:opacity-50 disabled:cursor-not-allowed font-medium"
               >
                 {loading ? 'Импорт...' : 'Импортировать товары'}
               </button>

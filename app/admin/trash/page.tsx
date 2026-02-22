@@ -104,7 +104,7 @@ export default function TrashPage() {
   if (!user || isAdmin === null) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-800"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-700"></div>
       </div>
     )
   }
@@ -119,10 +119,10 @@ export default function TrashPage() {
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
             <Image src="/logo.png" alt="Logo" width={120} height={40} className="object-contain" />
-            <h1 className="text-2xl font-bold text-orange-700">🗑️ Корзина</h1>
+            <h1 className="text-2xl font-bold text-slate-700">🗑️ Корзина</h1>
           </div>
           <div className="flex gap-3">
-            <Link href="/admin" className="px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-900 transition">
+            <Link href="/admin" className="px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition">
               ← Админ панель
             </Link>
           </div>
@@ -131,14 +131,14 @@ export default function TrashPage() {
 
       <main className="max-w-7xl mx-auto px-6 py-8">
         <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
-          <div className="bg-gradient-to-r from-orange-50 to-orange-100 px-6 py-4 border-b border-orange-200 flex justify-between items-center">
-            <h3 className="text-lg font-semibold text-orange-800 flex items-center gap-2">
+          <div className="bg-gradient-to-r from-slate-50 to-slate-100 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+            <h3 className="text-lg font-semibold text-slate-700 flex items-center gap-2">
               <span className="text-xl">🗑️</span>
               Удаленные товары ({deletedProducts.length})
             </h3>
             <button 
               onClick={handleCleanup}
-              className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition text-sm"
+              className="px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition text-sm"
             >
               🧹 Очистить старые (14+ дней)
             </button>
@@ -179,7 +179,7 @@ export default function TrashPage() {
                           </button>
                           <button 
                             onClick={() => handlePermanentDelete(product.id)}
-                            className="inline-flex items-center px-3 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 hover:border-red-300 transition-all"
+                            className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-700 bg-slate-100 border border-slate-200 rounded-lg hover:bg-slate-100 hover:border-slate-300 transition-all"
                           >
                             <span className="mr-1.5">💀</span>
                             Удалить навсегда

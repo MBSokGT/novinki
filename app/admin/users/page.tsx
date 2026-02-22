@@ -109,7 +109,7 @@ export default function UsersPage() {
 
   if (loading || !isAdmin) return (
     <div className="flex items-center justify-center py-20">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-800"></div>
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-700"></div>
     </div>
   )
 
@@ -119,7 +119,7 @@ export default function UsersPage() {
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
             <Image src="/logo.png" alt="Logo" width={120} height={40} className="object-contain" />
-            <h1 className="text-2xl font-bold text-red-900">Управление пользователями</h1>
+            <h1 className="text-2xl font-bold text-slate-900">Управление пользователями</h1>
           </div>
           <div className="flex gap-3">
             <Link href="/admin" className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition">
@@ -175,7 +175,7 @@ export default function UsersPage() {
                     </td>
                     <td className="px-6 py-4">
                       {user.is_blocked ? (
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-900">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-900">
                           🚫 Заблокирован
                         </span>
                       ) : (
@@ -200,7 +200,7 @@ export default function UsersPage() {
                         className={`px-3 py-1 rounded-lg text-sm font-medium transition ${
                           user.is_blocked
                             ? 'bg-green-600 text-white hover:bg-green-700'
-                            : 'bg-red-600 text-white hover:bg-red-700'
+                            : 'bg-slate-700 text-white hover:bg-slate-600'
                         }`}
                       >
                         {user.is_blocked ? 'Разблокировать' : 'Заблокировать'}

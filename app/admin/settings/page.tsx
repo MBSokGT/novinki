@@ -38,7 +38,7 @@ export default function SettingsPage() {
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
             <Image src="/logo.png" alt="Logo" width={120} height={40} className="object-contain" />
-            <h1 className="text-2xl font-bold text-red-900">⚙️ Настройки</h1>
+            <h1 className="text-2xl font-bold text-slate-900">⚙️ Настройки</h1>
           </div>
           <Link href="/admin" className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition">
             Назад

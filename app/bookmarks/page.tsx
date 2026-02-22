@@ -51,7 +51,7 @@ export default function BookmarksPage() {
 
   if (loading) return (
     <div className="flex items-center justify-center py-20">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-800"></div>
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-700"></div>
     </div>
   )
 
@@ -61,7 +61,7 @@ export default function BookmarksPage() {
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
             <Image src="/logo.png" alt="Logo" width={120} height={40} className="object-contain" />
-            <h1 className="text-2xl font-bold text-red-900">Мои закладки</h1>
+            <h1 className="text-2xl font-bold text-slate-900">Мои закладки</h1>
           </div>
           <Link href="/" className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition">
             На главную
@@ -74,7 +74,7 @@ export default function BookmarksPage() {
           <div className="text-center py-20">
             <svg className="mx-auto h-16 w-16 text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
             <p className="text-slate-400 text-lg">У вас пока нет закладок</p>
-            <Link href="/" className="mt-4 inline-block px-6 py-3 bg-red-800 text-white rounded-lg hover:bg-red-900 transition">
+            <Link href="/" className="mt-4 inline-block px-6 py-3 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition">
               Перейти к новинкам
             </Link>
           </div>
@@ -89,11 +89,11 @@ export default function BookmarksPage() {
                     className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur rounded-lg hover:bg-white transition shadow"
                     title="Удалить из закладок"
                   >
-                    <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                   </button>
                 </div>
                 <div className="p-5">
-                  <span className="inline-block px-3 py-1 bg-red-100 text-red-900 text-xs font-medium rounded-full mb-3">{product.brand}</span>
+                  <span className="inline-block px-3 py-1 bg-slate-100 text-slate-900 text-xs font-medium rounded-full mb-3">{product.brand}</span>
                   <h3 className="text-lg font-bold text-slate-900 mb-2">{product.name}</h3>
                   <p className="text-sm text-slate-600 line-clamp-2 mb-4">{product.description}</p>
                   <button
@@ -118,7 +118,7 @@ export default function BookmarksPage() {
                 <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
               <div className="absolute bottom-4 left-6">
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-white/90 backdrop-blur text-red-900 shadow-lg">{selectedProduct.brand}</span>
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-white/90 backdrop-blur text-slate-900 shadow-lg">{selectedProduct.brand}</span>
               </div>
             </div>
             <div className="p-8 overflow-y-auto max-h-[calc(90vh-20rem)]">
@@ -138,12 +138,12 @@ export default function BookmarksPage() {
                   </div>
                   <p className="text-green-800 leading-relaxed">{selectedProduct.advantages}</p>
                 </div>
-                <div className="bg-orange-50 rounded-xl p-5 border border-orange-100">
+                <div className="bg-slate-100 rounded-xl p-5 border border-slate-200">
                   <div className="flex items-center gap-2 mb-2">
-                    <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                    <h3 className="font-bold text-orange-900">На что обратить внимание</h3>
+                    <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                    <h3 className="font-bold text-slate-900">На что обратить внимание</h3>
                   </div>
-                  <p className="text-orange-800 leading-relaxed">{selectedProduct.attention_points}</p>
+                  <p className="text-slate-700 leading-relaxed">{selectedProduct.attention_points}</p>
                 </div>
               </div>
             </div>
