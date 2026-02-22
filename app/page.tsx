@@ -82,7 +82,9 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
-              <Image src="/logo.png" alt="Logo" width={100} height={33} className="object-contain sm:w-[120px]" priority />
+              <Link href="/" aria-label="На главную" className="inline-flex items-center">
+                <Image src="/logo.png" alt="Logo" width={100} height={33} className="object-contain sm:w-[120px]" priority />
+              </Link>
               <div>
                 <h1 className="text-xl sm:text-2xl font-semibold text-slate-900">Новинки</h1>
                 <p className="text-xs text-slate-500 hidden sm:block tracking-wide uppercase">Ассортимент</p>

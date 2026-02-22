@@ -5,7 +5,9 @@ export default function NotFound() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
       <div className="text-center">
-        <Image src="/logo.png" alt="Logo" width={150} height={50} className="mx-auto mb-8" />
+        <Link href="/" aria-label="На главную" className="inline-block">
+          <Image src="/logo.png" alt="Logo" width={150} height={50} className="mx-auto mb-8" />
+        </Link>
         <div className="text-9xl font-bold text-slate-300 mb-4">404</div>
         <h1 className="text-3xl font-bold text-slate-900 mb-4">Страница не найдена</h1>
         <p className="text-slate-600 mb-8 max-w-md">

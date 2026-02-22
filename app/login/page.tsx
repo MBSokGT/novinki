@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import Link from 'next/link'
 
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true)
@@ -74,7 +75,9 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="surface-card p-8 rounded-2xl max-w-md w-full">
         <div className="text-center mb-8">
-          <Image src="/logo.png" alt="Logo" width={150} height={50} className="mx-auto mb-4" />
+          <Link href="/" aria-label="На главную" className="inline-block">
+            <Image src="/logo.png" alt="Logo" width={150} height={50} className="mx-auto mb-4" />
+          </Link>
           <h2 className="text-2xl font-semibold text-slate-900">
             {showResetForm ? 'Восстановление пароля' : isLogin ? 'Вход' : 'Регистрация'}
           </h2>
