@@ -29,8 +29,8 @@
   --foreground: #0f172a;
   --muted: #475569;
   --border: #e2e8f0;
-  --accent: #0f172a;
-  --accent-soft: #1e293b;
+  --accent: #8b1538;
+  --accent-soft: #6b0f2a;
 }
 
 @theme inline {
@@ -63,7 +63,7 @@ textarea {
 }
 
 :focus-visible {
-  outline: 2px solid #334155;
+  outline: 2px solid #8b1538;
   outline-offset: 2px;
 }
 
@@ -97,7 +97,7 @@ textarea {
 }
 
 .input-neutral:focus {
-  border-color: #334155;
-  box-shadow: 0 0 0 3px rgba(51, 65, 85, 0.18);
+  border-color: #8b1538;
+  box-shadow: 0 0 0 3px rgba(139, 21, 56, 0.18);
   outline: none;
 }

@@ -79,7 +79,7 @@ export default function CategoriesPage() {
                 onChange={(e) => setNewCategory(e.target.value)}
                 className="flex-1 px-4 py-2 border rounded-lg"
               />
-              <button onClick={addCategory} className="px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800">
+              <button onClick={addCategory} className="px-4 py-2 bg-[#8B1538] text-white rounded-lg hover:bg-[#6B0F2A]">
                 Добавить
               </button>
             </div>
@@ -106,7 +106,7 @@ export default function CategoriesPage() {
                 onChange={(e) => setNewTag(e.target.value)}
                 className="flex-1 px-4 py-2 border rounded-lg"
               />
-              <button onClick={addTag} className="px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800">
+              <button onClick={addTag} className="px-4 py-2 bg-[#8B1538] text-white rounded-lg hover:bg-[#6B0F2A]">
                 Добавить
               </button>
             </div>

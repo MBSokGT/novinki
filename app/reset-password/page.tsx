@@ -92,7 +92,7 @@ export default function ResetPasswordPage() {
             placeholder="Новый пароль"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-700 transition"
+            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8B1538] transition"
             required
             minLength={6}
           />
@@ -101,14 +101,14 @@ export default function ResetPasswordPage() {
             placeholder="Подтвердите пароль"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-700 transition"
+            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8B1538] transition"
             required
             minLength={6}
           />
           <button
             type="submit"
             disabled={loading || !!error}
-            className="w-full bg-slate-900 text-white px-6 py-3 rounded-xl hover:bg-slate-800 transition font-medium disabled:opacity-50"
+            className="w-full bg-[#8B1538] text-white px-6 py-3 rounded-xl hover:bg-[#6B0F2A] transition font-medium disabled:opacity-50"
           >
             {loading ? 'Сохранение...' : 'Сохранить пароль'}
           </button>

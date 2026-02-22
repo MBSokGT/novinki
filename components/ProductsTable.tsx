@@ -11,6 +11,7 @@ import StarRating from './StarRating'
 import SearchBar from './SearchBar'
 import CompareBar from './CompareBar'
 import Breadcrumbs from './Breadcrumbs'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 
 interface ProductsTableProps {
   isAdmin: boolean
@@ -43,6 +44,11 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
   const [compareProducts, setCompareProducts] = useState<Product[]>([])
   const [viewHistory, setViewHistory] = useState<string[]>([])
   const [hoveredProduct, setHoveredProduct] = useState<Product | null>(null)
+  const [isUrlStateReady, setIsUrlStateReady] = useState(false)
+  const [showScrollTop, setShowScrollTop] = useState(false)
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -74,11 +80,84 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
       }
     }
   }, [])
+
+  useEffect(() => {
+    const hasAnyQueryParam =
+      searchParams.has('q') ||
+      searchParams.has('brand') ||
+      searchParams.has('category') ||
+      searchParams.has('sort') ||
+      searchParams.has('view') ||
+      searchParams.has('page')
+
+    if (!hasAnyQueryParam) {
+      setIsUrlStateReady(true)
+      return
+    }
+
+    const q = searchParams.get('q') || ''
+    const brand = searchParams.get('brand')
+    const category = searchParams.get('category')
+    const sort = searchParams.get('sort')
+    const view = searchParams.get('view')
+    const pageFromQuery = Number.parseInt(searchParams.get('page') || '1', 10)
+    const page = Number.isFinite(pageFromQuery) && pageFromQuery > 0 ? pageFromQuery : 1
+
+    setSearch(q)
+    setDebouncedSearch(q)
+    setSelectedBrand(brand || null)
+    setSelectedCategory(category || null)
+    setSortBy(sort === 'name' || sort === 'rating' ? sort : 'date')
+    setViewMode(view === 'table' ? 'table' : 'cards')
+    setCurrentPage(page)
+    setIsUrlStateReady(true)
+  }, [searchParams])
   // Дебаунс поиска: ждём 300мс после последнего символа
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300)
     return () => clearTimeout(t)
   }, [search])
+
+  useEffect(() => {
+    if (!isUrlStateReady) return
+
+    const params = new URLSearchParams(searchParams.toString())
+
+    if (debouncedSearch.trim()) params.set('q', debouncedSearch.trim())
+    else params.delete('q')
+
+    if (selectedBrand) params.set('brand', selectedBrand)
+    else params.delete('brand')
+
+    if (selectedCategory) params.set('category', selectedCategory)
+    else params.delete('category')
+
+    if (sortBy !== 'date') params.set('sort', sortBy)
+    else params.delete('sort')
+
+    if (viewMode !== 'cards') params.set('view', viewMode)
+    else params.delete('view')
+
+    if (currentPage > 1) params.set('page', String(currentPage))
+    else params.delete('page')
+
+    const nextQuery = params.toString()
+    const currentQuery = searchParams.toString()
+    if (nextQuery !== currentQuery) {
+      router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false })
+    }
+  }, [
+    currentPage,
+    debouncedSearch,
+    isUrlStateReady,
+    pathname,
+    router,
+    searchParams,
+    selectedBrand,
+    selectedCategory,
+    sortBy,
+    viewMode,
+  ])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -107,6 +186,16 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
       window.localStorage.removeItem(VIEW_HISTORY_KEY)
     }
   }, [viewHistory])
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 520)
+    }
+
+    handleScroll()
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   // Инициализация: загружаем мета-список (все товары, лёгкие поля) и остальное
   useEffect(() => {
@@ -343,6 +432,18 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
     [viewHistory, productsById]
   )
 
+  const popularBrands = useMemo(() => {
+    const counts = new Map<string, number>()
+    productsMeta.forEach((product) => {
+      counts.set(product.brand, (counts.get(product.brand) || 0) + 1)
+    })
+
+    return Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6)
+      .map(([brand, count]) => ({ brand, count }))
+  }, [productsMeta])
+
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE)
   // products уже является текущей страницей, пагинация сделана на сервере
 
@@ -397,6 +498,26 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
           </div>
         </div>
       )}
+
+      {popularBrands.length > 0 && (
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <span className="text-sm text-slate-500">Популярные бренды:</span>
+          {popularBrands.map(({ brand, count }) => (
+            <button
+              key={brand}
+              onClick={() => setSelectedBrand(brand)}
+              className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition ${
+                selectedBrand === brand
+                  ? 'border-slate-300 bg-slate-100 text-slate-900'
+                  : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              <span>{brand}</span>
+              <span className="text-[10px] text-slate-500">({count})</span>
+            </button>
+          ))}
+        </div>
+      )}
       
       {selectedBrand && (
         <div className="mb-4 flex items-center gap-2">
@@ -425,7 +546,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                 {!isAdmin && (
                   <button
                     onClick={(e) => { e.stopPropagation(); toggleCompare(product); }}
-                    className={`absolute top-2 right-2 p-2 rounded-lg transition ${compareProducts.find(p => p.id === product.id) ? 'bg-slate-800 text-white' : 'bg-white/90 text-gray-700'}`}
+                    className={`absolute top-2 right-2 p-2 rounded-lg transition ${compareProducts.find(p => p.id === product.id) ? 'bg-[#8B1538] text-white' : 'bg-white/90 text-gray-700'}`}
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
                   </button>
@@ -444,7 +565,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                 {product.category && <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-900 mb-3 ml-2">{product.category}</span>}
                 <p className="text-sm text-slate-600 line-clamp-2 mb-4">{product.description}</p>
                 {!isAdmin && <StarRating rating={product.rating || 0} userRating={userRatings.get(product.id)} onRate={(r) => rateProduct(product.id, r)} />}
-                <button onClick={() => viewProduct(product)} className="w-full px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-800 transition mt-3">Подробнее</button>
+                <button onClick={() => viewProduct(product)} className="w-full px-4 py-2 bg-[#8B1538] text-white text-sm font-medium rounded-lg hover:bg-[#6B0F2A] transition mt-3">Подробнее</button>
               </div>
               
               {hoveredProduct?.id === product.id && (
@@ -511,7 +632,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                             <svg className="w-5 h-5" fill={bookmarks.has(product.id) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
                           </button>
                         )}
-                        <button onClick={() => viewProduct(product)} className="inline-flex items-center px-3 py-1.5 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-800 transition">
+                        <button onClick={() => viewProduct(product)} className="inline-flex items-center px-3 py-1.5 bg-[#8B1538] text-white text-sm font-medium rounded-lg hover:bg-[#6B0F2A] transition">
                           Подробнее
                         </button>
                       </div>
@@ -532,7 +653,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
           <div className="flex gap-1 flex-wrap justify-center">
             {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
               page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1) ? (
-                <button key={page} onClick={() => setCurrentPage(page)} className={`px-4 py-2 rounded-lg transition ${currentPage === page ? 'bg-slate-900 text-white' : 'bg-white border border-slate-200 hover:bg-slate-50'}`}>
+                <button key={page} onClick={() => setCurrentPage(page)} className={`px-4 py-2 rounded-lg transition ${currentPage === page ? 'bg-[#8B1538] text-white' : 'bg-white border border-slate-200 hover:bg-slate-50'}`}>
                   {page}
                 </button>
               ) : page === currentPage - 2 || page === currentPage + 2 ? (
@@ -678,6 +799,19 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
             </div>
           </div>
         </div>
+      )}
+
+      {showScrollTop && (
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="fixed bottom-4 left-4 z-40 rounded-full bg-[#8B1538] p-3 text-white shadow-lg hover:bg-[#6B0F2A] transition"
+          aria-label="Наверх"
+          title="Наверх"
+        >
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+          </svg>
+        </button>
       )}
       
       <CompareBar 

@@ -76,7 +76,7 @@ export default function BookmarksPage() {
           <div className="text-center py-20">
             <svg className="mx-auto h-16 w-16 text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
             <p className="text-slate-400 text-lg">У вас пока нет закладок</p>
-            <Link href="/" className="mt-4 inline-block px-6 py-3 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition">
+            <Link href="/" className="mt-4 inline-block px-6 py-3 bg-[#8B1538] text-white rounded-lg hover:bg-[#6B0F2A] transition">
               Перейти к новинкам
             </Link>
           </div>
@@ -100,7 +100,7 @@ export default function BookmarksPage() {
                   <p className="text-sm text-slate-600 line-clamp-2 mb-4">{product.description}</p>
                   <button
                     onClick={() => setSelectedProduct(product)}
-                    className="w-full px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition text-sm font-medium"
+                    className="w-full px-4 py-2 bg-[#8B1538] text-white rounded-lg hover:bg-[#6B0F2A] transition text-sm font-medium"
                   >
                     Подробнее
                   </button>

@@ -124,7 +124,7 @@ export default function TrashPage() {
             <h1 className="text-2xl font-bold text-slate-700">🗑️ Корзина</h1>
           </div>
           <div className="flex gap-3">
-            <Link href="/admin" className="px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition">
+            <Link href="/admin" className="px-4 py-2 bg-[#8B1538] text-white rounded-lg hover:bg-[#6B0F2A] transition">
               ← Админ панель
             </Link>
           </div>
@@ -140,7 +140,7 @@ export default function TrashPage() {
             </h3>
             <button 
               onClick={handleCleanup}
-              className="px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition text-sm"
+              className="px-4 py-2 bg-[#8B1538] text-white rounded-lg hover:bg-[#6B0F2A] transition text-sm"
             >
               🧹 Очистить старые (14+ дней)
             </button>
