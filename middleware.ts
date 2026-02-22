@@ -24,12 +24,16 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Обновляем сессию (продлеваем токен если нужно)
-  const { data: { session } } = await supabase.auth.getSession()
+  // Для защищенных роутов проверяем пользователя через Supabase Auth.
+  if (request.nextUrl.pathname.startsWith('/admin')) {
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser()
 
-  // Защищаем /admin — только для авторизованных пользователей
-  if (request.nextUrl.pathname.startsWith('/admin') && !session) {
-    return NextResponse.redirect(new URL('/login', request.url))
+    if (error || !user) {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
   }
 
   return supabaseResponse
