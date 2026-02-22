@@ -1,10 +1,9 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Product } from '@/types/product'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
 import ProductSkeleton from './ProductSkeleton'
 import { showToast } from './Toast'
 import FilterBar from './FilterBar'
@@ -20,8 +19,13 @@ interface ProductsTableProps {
 const ITEMS_PER_PAGE = 30
 
 export default function ProductsTable({ isAdmin }: ProductsTableProps) {
+  // Текущая страница (серверная пагинация)
   const [products, setProducts] = useState<Product[]>([])
+  // Лёгкий список всех товаров: автодополнение, категории, похожие товары
+  const [productsMeta, setProductsMeta] = useState<Product[]>([])
+  const [totalCount, setTotalCount] = useState(0)
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
@@ -35,23 +39,71 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
   const [compareProducts, setCompareProducts] = useState<Product[]>([])
   const [viewHistory, setViewHistory] = useState<string[]>([])
   const [hoveredProduct, setHoveredProduct] = useState<Product | null>(null)
-  const router = useRouter()
-
+  // Дебаунс поиска: ждём 300мс после последнего символа
   useEffect(() => {
-    fetchProducts()
+    const t = setTimeout(() => setDebouncedSearch(search), 300)
+    return () => clearTimeout(t)
+  }, [search])
+
+  // Инициализация: загружаем мета-список (все товары, лёгкие поля) и остальное
+  useEffect(() => {
+    fetchProductsMeta()
     if (!isAdmin) {
       fetchBookmarks()
       fetchUserRatings()
     }
   }, [isAdmin])
 
-  const fetchProducts = async () => {
+  // Сброс на 1-ю страницу при смене фильтров (не при смене самой страницы)
+  useEffect(() => {
+    if (currentPage !== 1) setCurrentPage(1)
+    else fetchProducts()
+  }, [debouncedSearch, selectedBrand, selectedCategory, sortBy])
+
+  // Загрузка страницы при изменении currentPage
+  useEffect(() => {
+    fetchProducts()
+  }, [currentPage])
+
+  // Полный список товаров с базовыми полями — для автодополнения и похожих товаров
+  const fetchProductsMeta = async () => {
     const { data } = await supabase
       .from('products')
-      .select('*')
+      .select('id, name, brand, category, article_number, price, rating, image_url, description, advantages')
       .order('created_at', { ascending: false })
-    
+    if (data) setProductsMeta(data as Product[])
+  }
+
+  // Серверная фильтрация + пагинация
+  const fetchProducts = async () => {
+    setLoading(true)
+
+    let query = supabase
+      .from('products')
+      .select('*', { count: 'exact' })
+
+    if (debouncedSearch) {
+      query = query.or(
+        `name.ilike.%${debouncedSearch}%,brand.ilike.%${debouncedSearch}%,description.ilike.%${debouncedSearch}%`
+      )
+    }
+    if (selectedBrand) query = query.eq('brand', selectedBrand)
+    if (selectedCategory) query = query.eq('category', selectedCategory)
+
+    if (sortBy === 'name') {
+      query = query.order('name', { ascending: true })
+    } else if (sortBy === 'rating') {
+      query = query.order('rating', { ascending: false, nullsFirst: false })
+    } else {
+      query = query.order('created_at', { ascending: false })
+    }
+
+    const start = (currentPage - 1) * ITEMS_PER_PAGE
+    query = query.range(start, start + ITEMS_PER_PAGE - 1)
+
+    const { data, count } = await query
     if (data) setProducts(data)
+    setTotalCount(count ?? 0)
     setLoading(false)
   }
 
@@ -135,8 +187,8 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
     const currentSizes = extractSizes(product.description + ' ' + product.advantages)
     const currentPrice = product.price || 0
 
-    // Вычисляем score похожести для каждого товара
-    const scored = products
+    // Вычисляем score похожести для каждого товара (работаем с полным мета-списком)
+    const scored = productsMeta
       .filter(p => p.id !== product.id)
       .map(p => {
         let score = 0
@@ -203,48 +255,16 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
     }
   }
 
-  const filtered = useMemo(() => {
-    let result = products.filter(p => {
-      const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) ||
-        p.brand.toLowerCase().includes(search.toLowerCase()) ||
-        p.description.toLowerCase().includes(search.toLowerCase())
-      const matchesBrand = !selectedBrand || p.brand === selectedBrand
-      const matchesCategory = !selectedCategory || p.category === selectedCategory
-      return matchesSearch && matchesBrand && matchesCategory
-    })
-
-    if (sortBy === 'name') {
-      result.sort((a, b) => a.name.localeCompare(b.name))
-    } else if (sortBy === 'rating') {
-      result.sort((a, b) => (b.rating || 0) - (a.rating || 0))
-    } else {
-      result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    }
-
-    return result
-  }, [products, search, selectedBrand, selectedCategory, sortBy])
-
-  const categories = useMemo(() => {
-    return Array.from(new Set(products.map(p => p.category).filter(Boolean)))
-  }, [products])
-
-  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE)
-  const paginatedProducts = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE
-    return filtered.slice(start, start + ITEMS_PER_PAGE)
-  }, [filtered, currentPage])
-
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [search, selectedBrand, selectedCategory, sortBy])
+  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE)
+  // products уже является текущей страницей, пагинация сделана на сервере
 
   if (loading) return <ProductSkeleton />
 
   return (
     <div>
       <Breadcrumbs />
-      <FilterBar 
-        products={products}
+      <FilterBar
+        products={productsMeta}
         selectedCategory={selectedCategory}
         setSelectedCategory={setSelectedCategory}
         sortBy={sortBy}
@@ -252,9 +272,9 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
         viewMode={viewMode}
         setViewMode={setViewMode}
       />
-      
-      <SearchBar 
-        products={products}
+
+      <SearchBar
+        products={productsMeta}
         search={search}
         setSearch={setSearch}
         onSelectProduct={viewProduct}
@@ -279,7 +299,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
       
       {viewMode === 'cards' ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {paginatedProducts.map((product, idx) => (
+          {products.map((product, idx) => (
             <div 
               key={product.id} 
               className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-lg transition group animate-in fade-in slide-in-from-bottom-4"
@@ -342,7 +362,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {paginatedProducts.map((product) => (
+                {products.map((product) => (
                   <tr key={product.id} className="hover:bg-slate-100 transition-colors group">
                     <td className="px-6 py-4">
                       <div 
@@ -413,10 +433,10 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
         </div>
       )}
 
-      {filtered.length === 0 && search && (
+      {totalCount === 0 && debouncedSearch && (
         <div className="text-center py-16">
           <svg className="mx-auto h-12 w-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-          <p className="mt-4 text-slate-400 text-lg">Ничего не найдено по запросу "{search}"</p>
+          <p className="mt-4 text-slate-400 text-lg">Ничего не найдено по запросу "{debouncedSearch}"</p>
           <button 
             onClick={() => setSearch('')}
             className="mt-2 text-red-800 hover:text-red-900 font-medium"
@@ -425,7 +445,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
           </button>
         </div>
       )}
-      {filtered.length === 0 && !search && (
+      {totalCount === 0 && !debouncedSearch && (
         <div className="text-center py-16">
           <svg className="mx-auto h-12 w-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" /></svg>
           <p className="mt-4 text-slate-400 text-lg">Новинок пока нет</p>
