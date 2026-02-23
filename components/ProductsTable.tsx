@@ -268,7 +268,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
       .select('product_id')
       .eq('user_id', user.id)
     
-    if (data) setBookmarks(new Set(data.map(b => b.product_id)))
+    if (data) setBookmarks(new Set(data.map((b: any) => b.product_id)))
   }
 
   const fetchUserRatings = async () => {
@@ -280,7 +280,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
       .select('product_id, rating')
       .eq('user_id', user.id)
     
-    if (data) setUserRatings(new Map(data.map(r => [r.product_id, r.rating])))
+    if (data) setUserRatings(new Map(data.map((r: any) => [r.product_id, r.rating])))
   }
 
   const rateProduct = async (productId: string, rating: number) => {

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { supabase } from '@/lib/supabase'
 
 export async function POST(request: Request) {
   try {
@@ -14,39 +15,41 @@ export async function POST(request: Request) {
 Артикул: ${article || 'Не указан'}
     `
 
-    // Отправка через Supabase Edge Function или внешний сервис
-    const response = await fetch('https://wbggwkteyecakxhrssct.supabase.co/functions/v1/send-email', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`
-      },
-      body: JSON.stringify({
-        to: 'M.B.Sokolova@kbmik.ru',
-        subject: 'Запрос на добавление новинки',
-        text: emailContent
-      })
-    })
+    const webhookUrl = process.env.REQUEST_WEBHOOK_URL
+    let delivered = false
 
-    if (!response.ok) {
-      // Fallback: сохранение в базу данных
-      const { createClient } = await import('@supabase/supabase-js')
-      const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      )
-      
-      await supabase.from('requests').insert([{
+    // Опциональная отправка во внешний email/webhook сервис.
+    if (webhookUrl) {
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: 'M.B.Sokolova@kbmik.ru',
+          subject: 'Запрос на добавление новинки',
+          text: emailContent,
+          payload: { name, contact, product, article },
+        }),
+      })
+      delivered = response.ok
+    }
+
+    // Гарантированно сохраняем заявку в PocketBase.
+    const { error } = await supabase.from('requests').insert([
+      {
         name,
         contact,
         product,
         article,
-        created_at: new Date().toISOString()
-      }])
-    }
+        delivered,
+        created_at: new Date().toISOString(),
+      },
+    ])
+
+    if (error) throw error
 
     return NextResponse.json({ success: true })
   } catch (error) {
+    console.error('Request API error:', error)
     return NextResponse.json({ error: 'Failed to send request' }, { status: 500 })
   }
 }

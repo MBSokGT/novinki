@@ -40,13 +40,8 @@ export default function TrashPage() {
     setUser(user)
     
     try {
-      const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('is_admin')
-        .eq('id', user.id)
-        .single()
-      
-      if (profile?.is_admin === true) {
+      const { data: isAdmin } = await supabase.rpc('check_admin_status', { user_id: user.id })
+      if (isAdmin === true) {
         setIsAdmin(true)
         fetchDeletedProducts()
       } else {

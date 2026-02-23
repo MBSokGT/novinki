@@ -12,17 +12,23 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+  const [resetToken, setResetToken] = useState<string | null>(null)
   const router = useRouter()
 
   useEffect(() => {
-    // Проверяем есть ли токен восстановления в URL
-    const hashParams = new URLSearchParams(window.location.hash.substring(1))
-    const accessToken = hashParams.get('access_token')
-    const refreshToken = hashParams.get('refresh_token')
-    
-    if (!accessToken) {
-      setError('Недействительная ссылка восстановления')
+    const queryParams = new URLSearchParams(window.location.search)
+    const tokenFromQuery = queryParams.get('token')
+    if (tokenFromQuery) {
+      setResetToken(tokenFromQuery)
+      return
     }
+
+    // Fallback: если нет токена, разрешаем смену только авторизованному пользователю.
+    supabase.auth.getUser().then(({ data }) => {
+      if (!data.user) {
+        setError('Недействительная ссылка восстановления')
+      }
+    })
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -44,11 +50,11 @@ export default function ResetPasswordPage() {
     }
 
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: password
-      })
+      const result = resetToken
+        ? await supabase.auth.confirmPasswordReset(resetToken, password, confirmPassword)
+        : await supabase.auth.updateUser({ password })
 
-      if (error) throw error
+      if (result.error) throw result.error
 
       setMessage('Пароль успешно изменен! Перенаправляем на страницу входа...')
       

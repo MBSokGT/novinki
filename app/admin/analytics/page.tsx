@@ -4,16 +4,41 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 
 export default function AnalyticsPage() {
   const [stats, setStats] = useState<any>(null)
   const [topProducts, setTopProducts] = useState<any[]>([])
   const [topBrands, setTopBrands] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const router = useRouter()
 
   useEffect(() => {
-    fetchAnalytics()
+    checkAdmin()
   }, [])
+
+  const checkAdmin = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      router.push('/login')
+      setLoading(false)
+      return
+    }
+
+    const { data: adminStatus } = await supabase.rpc('check_admin_status', { user_id: user.id })
+    if (!adminStatus) {
+      router.push('/')
+      setLoading(false)
+      return
+    }
+
+    setIsAdmin(true)
+    await fetchAnalytics()
+  }
 
   const fetchAnalytics = async () => {
     // Общая статистика
@@ -54,6 +79,7 @@ export default function AnalyticsPage() {
   }
 
   if (loading) return <div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-700"></div></div>
+  if (!isAdmin) return null
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">

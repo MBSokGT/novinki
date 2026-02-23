@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, Manrope } from "next/font/google";
 import "./globals.css";
 
@@ -18,8 +18,12 @@ export const metadata: Metadata = {
   description: "Управление и отображение новинок ассортимента с админ панелью",
   keywords: ["новинки", "ассортимент", "товары", "каталог"],
   authors: [{ name: "Admin" }],
-  viewport: "width=device-width, initial-scale=1",
   robots: "index, follow"
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({
