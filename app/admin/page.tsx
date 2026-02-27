@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { supabase, DEMO_MODE, compressImageToBlob, pocketbase } from '@/lib/supabase'
 import { Product } from '@/types/product'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -150,14 +150,48 @@ export default function AdminPage() {
     setSubmitLoading(true)
 
     try {
+      // ── PocketBase native FormData upload (non-demo mode with an image) ──────────────
+      // Requires the 'products' collection to have an 'image' file field in PocketBase.
+      if (!DEMO_MODE && pocketbase && image) {
+        const compressed = await compressImageToBlob(image)
+        const fd = new FormData()
+        fd.append('name', form.name)
+        fd.append('brand', form.brand)
+        fd.append('article_number', form.article_number)
+        fd.append('description', form.description)
+        fd.append('advantages', form.advantages)
+        fd.append('attention_points', form.attention_points)
+        fd.append('website_link', normalizeLink(form.website_link))
+        fd.append('onec_link', normalizeLink(form.onec_link))
+        fd.append('category', form.category)
+        if (form.price) fd.append('price', form.price)
+        fd.append('image', compressed)
+
+        if (editId) {
+          const record = await pocketbase.collection('products').update(editId, fd)
+          // Sync image_url text field from PocketBase file URL
+          const imageUrl = pocketbase.files.getURL(record, record.image as string)
+          await pocketbase.collection('products').update(editId, { image_url: imageUrl })
+          showToast('Товар обновлён', 'success')
+        } else {
+          const record = await pocketbase.collection('products').create(fd)
+          const imageUrl = pocketbase.files.getURL(record, record.image as string)
+          await pocketbase.collection('products').update(record.id, { image_url: imageUrl })
+          showToast('Товар добавлен', 'success')
+        }
+
+        resetForm()
+        await fetchProducts()
+        return
+      }
+
+      // ── Fallback: demo mode or no new image ───────────────────────────────────────────
       let imageUrl = ''
 
       if (image) {
         const fileName = `${Date.now()}_${image.name}`
         const { data, error: uploadError } = await supabase.storage.from('products').upload(fileName, image)
-        if (uploadError) {
-          throw uploadError
-        }
+        if (uploadError) throw uploadError
         if (data) {
           const { data: { publicUrl } } = supabase.storage.from('products').getPublicUrl(fileName)
           imageUrl = publicUrl
@@ -503,7 +537,62 @@ export default function AdminPage() {
               </span>
             </div>
           </div>
-          <div className="overflow-x-auto">
+          {/* Mobile card list — visible below md */}
+          <div className="md:hidden divide-y divide-slate-100">
+            {filteredProducts.map((product) => (
+              <div key={product.id} className={`p-4 ${product.is_archived ? 'opacity-60 bg-slate-50' : ''}`}>
+                <div className="flex justify-between items-start mb-2">
+                  <div className="flex-1 min-w-0 pr-3">
+                    <div className="font-medium text-slate-900 truncate">{product.name}</div>
+                    <div className="text-sm text-slate-500 mt-0.5">
+                      {product.brand}{product.article_number ? ` · ${product.article_number}` : ''}
+                    </div>
+                  </div>
+                  <span className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                    product.is_archived ? 'bg-gray-100 text-gray-800' : 'bg-green-100 text-green-800'
+                  }`}>
+                    {product.is_archived ? '🗄️ Архив' : '✅ Активный'}
+                  </span>
+                </div>
+                {(product.website_link || product.onec_link) && (
+                  <div className="flex gap-3 mb-3">
+                    {product.website_link && (
+                      <a href={product.website_link} target="_blank" rel="noopener noreferrer" className="text-blue-600 text-sm">🌐 Сайт</a>
+                    )}
+                    {product.onec_link && (
+                      <a href={product.onec_link} target="_blank" rel="noopener noreferrer" className="text-green-600 text-sm">📊 1С</a>
+                    )}
+                  </div>
+                )}
+                <div className="grid grid-cols-2 gap-2">
+                  <button onClick={() => handleEdit(product)} className="flex items-center justify-center gap-1 px-3 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg">
+                    ✏️ Редактировать
+                  </button>
+                  <button onClick={() => handleDuplicate(product)} className="flex items-center justify-center gap-1 px-3 py-2 text-sm font-medium text-violet-700 bg-violet-50 border border-violet-200 rounded-lg">
+                    📄 Копия
+                  </button>
+                  <button onClick={() => handleArchive(product.id, product.is_archived || false)} className={`flex items-center justify-center gap-1 px-3 py-2 text-sm font-medium rounded-lg border ${
+                    product.is_archived
+                      ? 'text-green-700 bg-green-50 border-green-200'
+                      : 'text-slate-700 bg-slate-100 border-slate-200'
+                  }`}>
+                    {product.is_archived ? '📄 Разархивировать' : '🗄️ Архивировать'}
+                  </button>
+                  <button onClick={() => handleDelete(product.id)} className="flex items-center justify-center gap-1 px-3 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg">
+                    🗑️ Удалить
+                  </button>
+                </div>
+              </div>
+            ))}
+            {filteredProducts.length === 0 && (
+              <div className="px-6 py-10 text-center text-slate-500">
+                По текущим фильтрам товары не найдены
+              </div>
+            )}
+          </div>
+
+          {/* Desktop table — hidden below md */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="min-w-full">
               <thead className="bg-slate-50">
                 <tr>
@@ -540,8 +629,8 @@ export default function AdminPage() {
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        product.is_archived 
-                          ? 'bg-gray-100 text-gray-800' 
+                        product.is_archived
+                          ? 'bg-gray-100 text-gray-800'
                           : 'bg-green-100 text-green-800'
                       }`}>
                         {product.is_archived ? '🗄️ Архив' : '✅ Активный'}
@@ -549,8 +638,8 @@ export default function AdminPage() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2">
-                        <button 
-                          onClick={() => handleEdit(product)} 
+                        <button
+                          onClick={() => handleEdit(product)}
                           className="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300 hover:shadow-md transition-all duration-200 transform hover:-translate-y-0.5"
                         >
                           <span className="mr-1.5">✏️</span>
@@ -563,8 +652,8 @@ export default function AdminPage() {
                           <span className="mr-1.5">📄</span>
                           Копия
                         </button>
-                        <button 
-                          onClick={() => handleArchive(product.id, product.is_archived || false)} 
+                        <button
+                          onClick={() => handleArchive(product.id, product.is_archived || false)}
                           className={`inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 transform hover:-translate-y-0.5 hover:shadow-md ${
                             product.is_archived
                               ? 'text-green-700 bg-green-50 border border-green-200 hover:bg-green-100 hover:border-green-300'
@@ -574,8 +663,8 @@ export default function AdminPage() {
                           <span className="mr-1.5">{product.is_archived ? '📄' : '🗄️'}</span>
                           {product.is_archived ? 'Разархивировать' : 'Архивировать'}
                         </button>
-                        <button 
-                          onClick={() => handleDelete(product.id)} 
+                        <button
+                          onClick={() => handleDelete(product.id)}
                           className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-700 bg-slate-100 border border-slate-200 rounded-lg hover:bg-slate-100 hover:border-slate-300 hover:shadow-md transition-all duration-200 transform hover:-translate-y-0.5"
                         >
                           <span className="mr-1.5">🗑️</span>

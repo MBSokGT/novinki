@@ -22,6 +22,7 @@ const VIEW_MODE_KEY = 'novinki:viewMode'
 const SORT_BY_KEY = 'novinki:sortBy'
 const CATEGORY_KEY = 'novinki:selectedCategory'
 const VIEW_HISTORY_KEY = 'novinki:viewHistory'
+const BOOKMARKS_SYNC_KEY = 'novinki:bookmarks_sync'
 
 export default function ProductsTable({ isAdmin }: ProductsTableProps) {
   // Текущая страница (серверная пагинация)
@@ -197,6 +198,17 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  // Cross-tab bookmark sync: refetch when another tab adds/removes a bookmark
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === BOOKMARKS_SYNC_KEY) fetchBookmarks()
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // Инициализация: загружаем мета-список (все товары, лёгкие поля) и остальное
   useEffect(() => {
     fetchProductsMeta()
@@ -287,15 +299,34 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
+    // Optimistic update: immediately reflect the new user rating in the UI
+    setUserRatings(prev => new Map(prev).set(productId, rating))
+
     try {
       await supabase
         .from('product_ratings')
         .upsert({ product_id: productId, user_id: user.id, rating })
-      
-      setUserRatings(prev => new Map(prev).set(productId, rating))
-      fetchProducts()
+
+      // Fetch only the single updated product to get the new average rating
+      const { data: updated } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', productId)
+        .single()
+
+      if (updated) {
+        setProducts(prev => prev.map(p => p.id === productId ? updated as Product : p))
+        setProductsMeta(prev => prev.map(p => p.id === productId ? updated as Product : p))
+      }
+
       showToast('Рейтинг сохранен', 'success')
     } catch (error) {
+      // Revert optimistic update on error
+      setUserRatings(prev => {
+        const next = new Map(prev)
+        next.delete(productId)
+        return next
+      })
       showToast('Ошибка при сохранении рейтинга', 'error')
     }
   }
@@ -393,19 +424,21 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
           .delete()
           .eq('user_id', user.id)
           .eq('product_id', productId)
-        
+
         setBookmarks(prev => {
           const next = new Set(prev)
           next.delete(productId)
           return next
         })
+        window.localStorage.setItem(BOOKMARKS_SYNC_KEY, Date.now().toString())
         showToast('Удалено из закладок', 'info')
       } else {
         await supabase
           .from('bookmarks')
           .insert({ user_id: user.id, product_id: productId })
-        
+
         setBookmarks(prev => new Set(prev).add(productId))
+        window.localStorage.setItem(BOOKMARKS_SYNC_KEY, Date.now().toString())
         showToast('Добавлено в закладки', 'success')
       }
     } catch (error) {

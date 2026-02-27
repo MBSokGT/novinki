@@ -45,8 +45,9 @@ export default function BookmarksPage() {
       .delete()
       .eq('user_id', user.id)
       .eq('product_id', productId)
-    
+
     setProducts(prev => prev.filter(p => p.id !== productId))
+    window.localStorage.setItem('novinki:bookmarks_sync', Date.now().toString())
   }
 
   if (loading) return (
