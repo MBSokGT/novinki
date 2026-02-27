@@ -89,7 +89,39 @@ function compactObject<T extends Record<string, any>>(value: T) {
   return next as T
 }
 
-// Image compression: resize to max 800px, JPEG 75% quality
+// Compress image to a smaller JPEG File (for FormData upload)
+export async function compressImageToBlob(file: File): Promise<File> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onerror = () => reject(new Error('Failed to read file'))
+    reader.onload = (e) => {
+      const img = new window.Image()
+      img.onerror = () => reject(new Error('Failed to load image'))
+      img.onload = () => {
+        const MAX = 800
+        let { width, height } = img
+        if (width > MAX || height > MAX) {
+          if (width > height) { height = Math.round((height * MAX) / width); width = MAX }
+          else { width = Math.round((width * MAX) / height); height = MAX }
+        }
+        const canvas = document.createElement('canvas')
+        canvas.width = width; canvas.height = height
+        const ctx = canvas.getContext('2d')
+        if (!ctx) { reject(new Error('No canvas context')); return }
+        ctx.drawImage(img, 0, 0, width, height)
+        canvas.toBlob((blob) => {
+          if (!blob) { reject(new Error('Failed to create blob')); return }
+          const name = file.name.replace(/\.[^.]+$/, '.jpg')
+          resolve(new File([blob], name, { type: 'image/jpeg' }))
+        }, 'image/jpeg', 0.75)
+      }
+      img.src = e.target?.result as string
+    }
+    reader.readAsDataURL(file)
+  })
+}
+
+// Image compression: resize to max 800px, JPEG 75% quality → base64 dataURL
 async function compressImage(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()

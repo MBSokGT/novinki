@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import Papa from 'papaparse'
+import * as XLSX from 'xlsx'
 import { supabase } from '@/lib/supabase'
 import { showToast } from './Toast'
 
@@ -8,30 +10,60 @@ interface ExcelImportProps {
   onSuccess: () => void
 }
 
-// RFC 4180-compliant CSV line parser (handles quoted values with commas)
-function parseCSVLine(line: string): string[] {
-  const values: string[] = []
-  let current = ''
-  let inQuotes = false
-
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i]
-    if (char === '"') {
-      if (inQuotes && line[i + 1] === '"') {
-        current += '"'
-        i++
-      } else {
-        inQuotes = !inQuotes
-      }
-    } else if (char === ',' && !inQuotes) {
-      values.push(current.trim())
-      current = ''
-    } else {
-      current += char
-    }
+function mapRow(row: Record<string, any>): Record<string, any> {
+  const product: Record<string, any> = {}
+  for (const [header, rawVal] of Object.entries(row)) {
+    const key = String(header).toLowerCase().trim()
+    const val = String(rawVal ?? '').trim()
+    if (key.includes('название') || key === 'name') product.name = val
+    else if (key.includes('бренд') || key === 'brand') product.brand = val
+    else if (key.includes('артикул') || key === 'article') product.article_number = val
+    else if (key.includes('категория') || key === 'category') product.category = val
+    else if (key.includes('описание') || key === 'description') product.description = val
+    else if (key.includes('преимущества') || key === 'advantages') product.advantages = val
+    else if (key.includes('внимание') || key === 'attention') product.attention_points = val
+    else if (key.includes('цена') || key === 'price') product.price = parseFloat(val) || null
+    else if (key.includes('ссылка') && key.includes('сайт')) product.website_link = val
+    else if (key.includes('1с') || key.includes('1c')) product.onec_link = val
   }
-  values.push(current.trim())
-  return values
+  return product
+}
+
+async function parseFile(file: File): Promise<Record<string, any>[]> {
+  const isExcel = /\.(xlsx|xls)$/i.test(file.name)
+
+  if (isExcel) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onerror = () => reject(new Error('Failed to read file'))
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target?.result as ArrayBuffer)
+          const workbook = XLSX.read(data, { type: 'array' })
+          const sheetName = workbook.SheetNames[0]
+          const sheet = workbook.Sheets[sheetName]
+          const rows: Record<string, any>[] = XLSX.utils.sheet_to_json(sheet, { defval: '' })
+          resolve(rows.map(mapRow))
+        } catch (err) {
+          reject(err)
+        }
+      }
+      reader.readAsArrayBuffer(file)
+    })
+  }
+
+  // CSV via PapaParse
+  return new Promise((resolve, reject) => {
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      encoding: 'UTF-8',
+      complete: (results) => {
+        resolve((results.data as Record<string, any>[]).map(mapRow))
+      },
+      error: (err: Error) => reject(err),
+    })
+  })
 }
 
 export default function ExcelImport({ onSuccess }: ExcelImportProps) {
@@ -39,86 +71,28 @@ export default function ExcelImport({ onSuccess }: ExcelImportProps) {
   const [loading, setLoading] = useState(false)
   const [showModal, setShowModal] = useState(false)
 
-  const isXlsx = file && /\.(xlsx|xls)$/i.test(file.name)
-
-  const parseCSV = async (file: File) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        try {
-          const text = e.target?.result as string
-          // Normalise line endings
-          const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter(l => l.trim())
-          const headers = parseCSVLine(lines[0])
-
-          const products = lines.slice(1).map(line => {
-            const values = parseCSVLine(line)
-            const product: any = {}
-
-            headers.forEach((header, index) => {
-              const key = header.toLowerCase()
-              const val = (values[index] ?? '').trim()
-              if (key.includes('название') || key === 'name') product.name = val
-              else if (key.includes('бренд') || key === 'brand') product.brand = val
-              else if (key.includes('артикул') || key === 'article') product.article_number = val
-              else if (key.includes('категория') || key === 'category') product.category = val
-              else if (key.includes('описание') || key === 'description') product.description = val
-              else if (key.includes('преимущества') || key === 'advantages') product.advantages = val
-              else if (key.includes('внимание') || key === 'attention') product.attention_points = val
-              else if (key.includes('цена') || key === 'price') product.price = parseFloat(val) || null
-              else if (key.includes('ссылка') && key.includes('сайт')) product.website_link = val
-              else if (key.includes('1с')) product.onec_link = val
-            })
-
-            return product
-          })
-
-          resolve(products)
-        } catch (error) {
-          reject(error)
-        }
-      }
-      reader.onerror = reject
-      reader.readAsText(file, 'UTF-8')
-    })
-  }
-
   const handleImport = async () => {
     if (!file) return
-    if (isXlsx) {
-      showToast('Для импорта используйте CSV формат. Сохраните файл через «Сохранить как» → CSV в Excel.', 'error')
-      return
-    }
-
     setLoading(true)
     try {
-      const products = await parseCSV(file) as any[]
-      
-      // Валидация
-      const valid = products.filter(p => p.name && p.brand && p.description && p.advantages && p.attention_points)
-      
+      const rows = await parseFile(file)
+      const valid = rows.filter(p => p.name && p.brand && p.description && p.advantages && p.attention_points)
+
       if (valid.length === 0) {
         showToast('Не найдено валидных товаров. Проверьте формат файла', 'error')
-        setLoading(false)
         return
       }
-      
-      // Добавляем placeholder для изображения
-      const withImages = valid.map(p => ({
-        ...p,
-        image_url: p.image_url || '',
-      }))
-      
+
+      const withImages = valid.map(p => ({ ...p, image_url: p.image_url || '' }))
       const { error } = await supabase.from('products').insert(withImages)
-      
       if (error) throw error
-      
+
       showToast(`Успешно импортировано ${valid.length} товаров`, 'success')
       setShowModal(false)
       setFile(null)
       onSuccess()
-    } catch (error) {
-      console.error(error)
+    } catch (err) {
+      console.error(err)
       showToast('Ошибка импорта. Проверьте формат файла', 'error')
     } finally {
       setLoading(false)
@@ -126,9 +100,7 @@ export default function ExcelImport({ onSuccess }: ExcelImportProps) {
   }
 
   const downloadTemplate = () => {
-    const template = `Название,Бренд,Артикул,Категория,Описание,Преимущества,Внимание,Цена,Ссылка на сайт,Ссылка 1С
-Пример товара,Бренд А,ART-001,Электроника,Описание товара,Преимущества товара,На что обратить внимание,1500,https://example.com,https://1c.example.com`
-    
+    const template = `Название,Бренд,Артикул,Категория,Описание,Преимущества,Внимание,Цена,Ссылка на сайт,Ссылка 1С\nПример товара,Бренд А,ART-001,Электроника,Описание товара,Преимущества товара,На что обратить внимание,1500,https://example.com,https://1c.example.com`
     const blob = new Blob(['\ufeff' + template], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
     link.href = URL.createObjectURL(blob)
@@ -157,17 +129,12 @@ export default function ExcelImport({ onSuccess }: ExcelImportProps) {
 
             <div className="space-y-4">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-sm text-blue-800 mb-2">
-                  📋 Формат CSV файла должен содержать колонки:
-                </p>
-                <ul className="text-xs text-blue-700 space-y-1 ml-4">
-                  <li>• Название (обязательно)</li>
-                  <li>• Бренд (обязательно)</li>
-                  <li>• Описание (обязательно)</li>
-                  <li>• Преимущества (обязательно)</li>
-                  <li>• Внимание (обязательно)</li>
-                  <li>• Артикул, Категория, Цена, Ссылки (опционально)</li>
+                <p className="text-sm text-blue-800 mb-2">📋 Поддерживаемые форматы: <strong>CSV</strong>, <strong>XLSX</strong>, <strong>XLS</strong></p>
+                <p className="text-xs text-blue-700 mb-1">Обязательные колонки:</p>
+                <ul className="text-xs text-blue-700 space-y-0.5 ml-4">
+                  <li>• Название, Бренд, Описание, Преимущества, Внимание</li>
                 </ul>
+                <p className="text-xs text-blue-700 mt-1">Опционально: Артикул, Категория, Цена, Ссылка на сайт, Ссылка 1С</p>
               </div>
 
               <button
@@ -191,17 +158,10 @@ export default function ExcelImport({ onSuccess }: ExcelImportProps) {
                 >
                   <div className="text-center">
                     <div className="text-2xl mb-1">📁</div>
-                    <div className="text-sm text-gray-600">
-                      {file ? file.name : 'Выберите CSV файл'}
-                    </div>
+                    <div className="text-sm text-gray-600">{file ? file.name : 'Выберите CSV или Excel файл'}</div>
                   </div>
                 </label>
               </div>
-              {isXlsx && (
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
-                  ⚠️ Формат .xlsx не поддерживается. Откройте файл в Excel и выберите <strong>«Сохранить как» → CSV</strong>, затем загрузите полученный .csv файл.
-                </div>
-              )}
 
               <button
                 onClick={handleImport}

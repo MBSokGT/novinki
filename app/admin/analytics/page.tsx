@@ -41,10 +41,10 @@ export default function AnalyticsPage() {
   }
 
   const fetchAnalytics = async () => {
-    // Общая статистика — каждый запрос защищён от ошибок
-    const { data: products } = await supabase.from('products').select('*').catch(() => ({ data: [] }))
-    const { data: users } = await supabase.from('user_profiles').select('*').catch(() => ({ data: [] }))
-    const { data: bookmarks } = await supabase.from('bookmarks').select('*').catch(() => ({ data: [] }))
+    // Для счётчиков выбираем только id — намного быстрее, чем select('*')
+    const { data: products } = await supabase.from('products').select('id, name, brand, rating').catch(() => ({ data: [] }))
+    const { data: users } = await supabase.from('user_profiles').select('id').catch(() => ({ data: [] }))
+    const { data: bookmarks } = await supabase.from('bookmarks').select('id').catch(() => ({ data: [] }))
 
     // product_views / product_statistics могут отсутствовать в схеме
     let totalViews = 0
@@ -57,7 +57,7 @@ export default function AnalyticsPage() {
     try {
       const { data: stats } = await supabase
         .from('product_statistics')
-        .select('*')
+        .select('id, name, brand, view_count, bookmark_count')
         .order('view_count', { ascending: false })
         .limit(10)
       topProds = stats || []
