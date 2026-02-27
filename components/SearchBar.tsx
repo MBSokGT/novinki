@@ -121,7 +121,7 @@ export default function SearchBar({ products, search, setSearch, onSelectProduct
               setActiveIndex(-1)
             }
           }}
-          className="w-full pl-12 pr-24 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8B1538] focus:border-transparent transition shadow-sm"
+          className="w-full pl-12 pr-24 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] focus:border-transparent transition shadow-sm"
         />
         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
           {isSpeechSupported && (
@@ -157,7 +157,7 @@ export default function SearchBar({ products, search, setSearch, onSelectProduct
             >
               <div className="font-medium text-gray-900">{product.name}</div>
               <div className="text-sm text-gray-500 flex items-center gap-2 mt-1">
-                <span className="px-2 py-0.5 bg-[#8B1538] text-white rounded text-xs">{product.brand}</span>
+                <span className="px-2 py-0.5 bg-[#9B1B1B] text-white rounded text-xs">{product.brand}</span>
                 {product.article_number && <span className="text-xs">Арт: {product.article_number}</span>}
               </div>
             </button>

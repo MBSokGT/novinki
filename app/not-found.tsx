@@ -14,7 +14,7 @@ export default function NotFound() {
           Запрашиваемая страница не существует или была перемещена.
         </p>
         <div className="space-x-4">
-          <Link href="/" className="inline-block px-6 py-3 bg-[#8B1538] text-white rounded-lg hover:bg-[#6B0F2A] transition font-medium">
+          <Link href="/" className="inline-block px-6 py-3 bg-[#9B1B1B] text-white rounded-lg hover:bg-[#7A1515] transition font-medium">
             На главную
           </Link>
           <Link href="/login" className="inline-block px-6 py-3 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition font-medium">
