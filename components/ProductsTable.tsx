@@ -582,7 +582,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
               onMouseLeave={() => setHoveredProduct(null)}
             >
               <div className="relative h-48 bg-slate-100 cursor-pointer" onClick={() => product.image_url && setSelectedImage(product.image_url)}>
-                <Image src={product.image_url || '/placeholder.svg'} alt={product.name} fill className="object-cover" loading="lazy" />
+                <Image src={product.image_url || (process.env.NEXT_PUBLIC_BASE_PATH||'')+'/placeholder.svg'} alt={product.name} fill className="object-cover" loading="lazy" />
                 {!isAdmin && (
                   <button
                     onClick={(e) => { e.stopPropagation(); toggleCompare(product); }}
@@ -643,7 +643,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                         className="relative w-20 h-20 rounded-lg overflow-hidden shadow-sm group-hover:shadow-md transition cursor-pointer"
                         onClick={() => product.image_url && setSelectedImage(product.image_url)}
                       >
-                        <Image src={product.image_url || '/placeholder.svg'} alt={product.name} fill className="object-cover" loading="lazy" />
+                        <Image src={product.image_url || (process.env.NEXT_PUBLIC_BASE_PATH||'')+'/placeholder.svg'} alt={product.name} fill className="object-cover" loading="lazy" />
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -824,7 +824,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                           className="flex items-center gap-2 p-2 bg-white rounded-lg hover:bg-purple-100 transition text-left"
                         >
                           <div className="relative w-12 h-12 rounded overflow-hidden flex-shrink-0">
-                            <Image src={similar.image_url || '/placeholder.svg'} alt={similar.name} fill className="object-cover" />
+                            <Image src={similar.image_url || (process.env.NEXT_PUBLIC_BASE_PATH||'')+'/placeholder.svg'} alt={similar.name} fill className="object-cover" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="text-sm font-medium text-gray-900 truncate">{similar.name}</div>

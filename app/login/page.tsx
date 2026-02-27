@@ -77,7 +77,7 @@ export default function LoginPage() {
       <div className="surface-card p-8 rounded-2xl max-w-md w-full">
         <div className="text-center mb-8">
           <Link href="/" aria-label="На главную" className="inline-block">
-            <Image src="/logo.png" alt="Logo" width={150} height={50} className="mx-auto mb-4" />
+            <Image src={(process.env.NEXT_PUBLIC_BASE_PATH||"")+ "/logo.png"} alt="Logo" width={150} height={50} className="mx-auto mb-4" />
           </Link>
           <h2 className="text-2xl font-semibold text-slate-900">
             {showResetForm ? 'Восстановление пароля' : isLogin ? 'Вход' : 'Регистрация'}
