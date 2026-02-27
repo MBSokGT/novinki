@@ -93,7 +93,7 @@ export default function CategoriesPage() {
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
             <Link href="/" aria-label="На главную" className="inline-flex items-center">
-              <Image src="/logo.png" alt="Logo" width={120} height={40} className="object-contain" />
+              <Image src={(process.env.NEXT_PUBLIC_BASE_PATH||"")+ "/logo.png"} alt="Logo" width={120} height={40} className="object-contain" />
             </Link>
             <h1 className="text-2xl font-bold text-white">🏷️ Категории и теги</h1>
           </div>

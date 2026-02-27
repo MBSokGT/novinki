@@ -29,6 +29,9 @@ const nextConfig: NextConfig = {
     trailingSlash: true,
     basePath: "/novinki",
   }),
+  env: {
+    NEXT_PUBLIC_BASE_PATH: isStaticExport ? "/novinki" : "",
+  },
   images: {
     // Static export requires unoptimized images (no server to optimise)
     unoptimized: isStaticExport || !pocketbaseUrl,

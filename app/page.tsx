@@ -83,7 +83,7 @@ export default function Home() {
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
               <Link href="/" aria-label="На главную" className="inline-flex items-center">
-                <Image src="/logo.png" alt="Logo" width={100} height={33} className="object-contain sm:w-[120px]" priority />
+                <Image src={(process.env.NEXT_PUBLIC_BASE_PATH||"")+ "/logo.png"} alt="Logo" width={100} height={33} className="object-contain sm:w-[120px]" priority />
               </Link>
             </div>
             <div className="hidden sm:flex items-center gap-2">
