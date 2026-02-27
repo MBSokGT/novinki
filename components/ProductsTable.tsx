@@ -335,7 +335,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
       return matches ? matches.map(m => m.toLowerCase()) : []
     }
 
-    const currentSizes = extractSizes(product.description + ' ' + product.advantages)
+    const currentSizes = extractSizes((product.description || '') + ' ' + (product.advantages || ''))
     const currentPrice = product.price || 0
 
     // Вычисляем score похожести для каждого товара (работаем с полным мета-списком)
@@ -374,6 +374,13 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
 
     return scored.slice(0, 4).map(item => item.product)
   }
+
+  // Compute once to avoid double-calling getSimilarProducts in the modal
+  const selectedProductSimilar = useMemo(
+    () => (selectedProduct ? getSimilarProducts(selectedProduct) : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [selectedProduct, productsMeta]
+  )
 
   const toggleBookmark = async (productId: string) => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -534,15 +541,15 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
       {viewMode === 'cards' ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {products.map((product, idx) => (
-            <div 
-              key={product.id} 
-              className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-lg transition group animate-in fade-in slide-in-from-bottom-4"
+            <div
+              key={product.id}
+              className="relative bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-lg transition group animate-in fade-in slide-in-from-bottom-4"
               style={{ animationDelay: `${idx * 50}ms` }}
               onMouseEnter={() => setHoveredProduct(product)}
               onMouseLeave={() => setHoveredProduct(null)}
             >
-              <div className="relative h-48 bg-slate-100 cursor-pointer" onClick={() => setSelectedImage(product.image_url)}>
-                <Image src={product.image_url} alt={product.name} fill className="object-cover" loading="lazy" />
+              <div className="relative h-48 bg-slate-100 cursor-pointer" onClick={() => product.image_url && setSelectedImage(product.image_url)}>
+                <Image src={product.image_url || '/placeholder.svg'} alt={product.name} fill className="object-cover" loading="lazy" />
                 {!isAdmin && (
                   <button
                     onClick={(e) => { e.stopPropagation(); toggleCompare(product); }}
@@ -601,9 +608,9 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                     <td className="px-6 py-4">
                       <div 
                         className="relative w-20 h-20 rounded-lg overflow-hidden shadow-sm group-hover:shadow-md transition cursor-pointer"
-                        onClick={() => setSelectedImage(product.image_url)}
+                        onClick={() => product.image_url && setSelectedImage(product.image_url)}
                       >
-                        <Image src={product.image_url} alt={product.name} fill className="object-cover" loading="lazy" />
+                        <Image src={product.image_url || '/placeholder.svg'} alt={product.name} fill className="object-cover" loading="lazy" />
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -773,18 +780,18 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                   </div>
                 )}
                 
-                {getSimilarProducts(selectedProduct).length > 0 && (
+                {selectedProductSimilar.length > 0 && (
                   <div className="bg-purple-50 rounded-xl p-5 border border-purple-100">
                     <h3 className="font-bold text-purple-900 mb-3">🔍 Похожие товары</h3>
                     <div className="grid grid-cols-2 gap-3">
-                      {getSimilarProducts(selectedProduct).map(similar => (
+                      {selectedProductSimilar.map(similar => (
                         <button
                           key={similar.id}
                           onClick={() => viewProduct(similar)}
                           className="flex items-center gap-2 p-2 bg-white rounded-lg hover:bg-purple-100 transition text-left"
                         >
                           <div className="relative w-12 h-12 rounded overflow-hidden flex-shrink-0">
-                            <Image src={similar.image_url} alt={similar.name} fill className="object-cover" />
+                            <Image src={similar.image_url || '/placeholder.svg'} alt={similar.name} fill className="object-cover" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="text-sm font-medium text-gray-900 truncate">{similar.name}</div>

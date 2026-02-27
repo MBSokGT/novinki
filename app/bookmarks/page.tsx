@@ -85,7 +85,7 @@ export default function BookmarksPage() {
             {products.map((product) => (
               <div key={product.id} className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition group">
                 <div className="relative h-48 bg-slate-100">
-                  <Image src={product.image_url} alt={product.name} fill className="object-cover" />
+                  <Image src={product.image_url || '/placeholder.svg'} alt={product.name} fill className="object-cover" />
                   <button
                     onClick={() => removeBookmark(product.id)}
                     className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur rounded-lg hover:bg-white transition shadow"
@@ -115,7 +115,7 @@ export default function BookmarksPage() {
         <div onClick={() => setSelectedProduct(null)} className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
           <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="relative h-80 bg-gradient-to-br from-slate-100 to-slate-200">
-              <Image src={selectedProduct.image_url} alt={selectedProduct.name} fill className="object-cover" />
+              <Image src={selectedProduct.image_url || '/placeholder.svg'} alt={selectedProduct.name} fill className="object-cover" />
               <button onClick={() => setSelectedProduct(null)} className="absolute top-4 right-4 bg-white/90 backdrop-blur rounded-full p-2.5 hover:bg-white transition shadow-lg">
                 <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
@@ -147,6 +147,20 @@ export default function BookmarksPage() {
                   </div>
                   <p className="text-slate-700 leading-relaxed">{selectedProduct.attention_points}</p>
                 </div>
+                {(selectedProduct.website_link || selectedProduct.onec_link) && (
+                  <div className="space-y-2">
+                    {selectedProduct.website_link && (
+                      <a href={selectedProduct.website_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-blue-700 hover:text-blue-900 font-medium">
+                        🌐 Посмотреть на сайте
+                      </a>
+                    )}
+                    {selectedProduct.onec_link && (
+                      <a href={selectedProduct.onec_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-green-700 hover:text-green-900 font-medium">
+                        📊 Открыть в 1С
+                      </a>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>

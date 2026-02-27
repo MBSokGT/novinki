@@ -24,7 +24,7 @@ export default function ResetPasswordPage() {
     }
 
     // Fallback: если нет токена, разрешаем смену только авторизованному пользователю.
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(({ data }: { data: any }) => {
       if (!data.user) {
         setError('Недействительная ссылка восстановления')
       }

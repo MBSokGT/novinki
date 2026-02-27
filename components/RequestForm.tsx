@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { DEMO_MODE, supabase } from '@/lib/supabase'
 
 export default function RequestForm() {
   const [isOpen, setIsOpen] = useState(false)
@@ -13,22 +14,34 @@ export default function RequestForm() {
     setSending(true)
 
     try {
-      const response = await fetch('/api/request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form)
-      })
-
-      if (response.ok) {
-        setSuccess(true)
-        setForm({ name: '', contact: '', product: '', article: '' })
-        setTimeout(() => {
-          setIsOpen(false)
-          setSuccess(false)
-        }, 2000)
+      if (DEMO_MODE) {
+        // In demo mode, save via the demo client (no real HTTP needed)
+        await supabase.from('product_requests').insert({
+          name: form.name,
+          contact: form.contact,
+          product_name: form.product,
+          article: form.article,
+        })
+      } else {
+        const response = await fetch('/api/request', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(form),
+        })
+        if (!response.ok) {
+          const text = await response.text().catch(() => '')
+          throw new Error(text || `Ошибка сервера: ${response.status}`)
+        }
       }
-    } catch (error) {
-      alert('Ошибка отправки. Попробуйте позже.')
+
+      setSuccess(true)
+      setForm({ name: '', contact: '', product: '', article: '' })
+      setTimeout(() => {
+        setIsOpen(false)
+        setSuccess(false)
+      }, 2000)
+    } catch (error: any) {
+      alert(error?.message || 'Ошибка отправки. Попробуйте позже.')
     } finally {
       setSending(false)
     }

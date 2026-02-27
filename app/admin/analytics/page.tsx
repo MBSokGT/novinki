@@ -41,39 +41,48 @@ export default function AnalyticsPage() {
   }
 
   const fetchAnalytics = async () => {
-    // Общая статистика
-    const { data: products } = await supabase.from('products').select('*')
-    const { data: users } = await supabase.from('user_profiles').select('*')
-    const { data: views } = await supabase.from('product_views').select('*')
-    const { data: bookmarks } = await supabase.from('bookmarks').select('*')
+    // Общая статистика — каждый запрос защищён от ошибок
+    const { data: products } = await supabase.from('products').select('*').catch(() => ({ data: [] }))
+    const { data: users } = await supabase.from('user_profiles').select('*').catch(() => ({ data: [] }))
+    const { data: bookmarks } = await supabase.from('bookmarks').select('*').catch(() => ({ data: [] }))
+
+    // product_views / product_statistics могут отсутствовать в схеме
+    let totalViews = 0
+    let topProds: any[] = []
+    try {
+      const { data: views } = await supabase.from('product_views').select('*')
+      totalViews = views?.length || 0
+    } catch { /* коллекция не существует */ }
+
+    try {
+      const { data: stats } = await supabase
+        .from('product_statistics')
+        .select('*')
+        .order('view_count', { ascending: false })
+        .limit(10)
+      topProds = stats || []
+    } catch { /* коллекция не существует */ }
 
     setStats({
       totalProducts: products?.length || 0,
       totalUsers: users?.length || 0,
-      totalViews: views?.length || 0,
-      totalBookmarks: bookmarks?.length || 0
+      totalViews,
+      totalBookmarks: bookmarks?.length || 0,
     })
 
-    // Топ-10 новинок по просмотрам
-    const { data: topProds } = await supabase
-      .from('product_statistics')
-      .select('*')
-      .order('view_count', { ascending: false })
-      .limit(10)
-    
-    setTopProducts(topProds || [])
+    setTopProducts(topProds)
 
-    // Популярные бренды
-    const brandStats: any = {}
+    // Популярные бренды — вычисляем из списка товаров
+    const brandStats: Record<string, number> = {}
     products?.forEach((p: any) => {
-      brandStats[p.brand] = (brandStats[p.brand] || 0) + 1
+      if (p.brand) brandStats[p.brand] = (brandStats[p.brand] || 0) + 1
     })
-    
+
     const brandsArray = Object.entries(brandStats)
       .map(([brand, count]) => ({ brand, count }))
-      .sort((a: any, b: any) => b.count - a.count)
+      .sort((a, b) => (b.count as number) - (a.count as number))
       .slice(0, 10)
-    
+
     setTopBrands(brandsArray)
     setLoading(false)
   }

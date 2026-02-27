@@ -8,41 +8,71 @@ interface ExcelImportProps {
   onSuccess: () => void
 }
 
+// RFC 4180-compliant CSV line parser (handles quoted values with commas)
+function parseCSVLine(line: string): string[] {
+  const values: string[] = []
+  let current = ''
+  let inQuotes = false
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i]
+    if (char === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"'
+        i++
+      } else {
+        inQuotes = !inQuotes
+      }
+    } else if (char === ',' && !inQuotes) {
+      values.push(current.trim())
+      current = ''
+    } else {
+      current += char
+    }
+  }
+  values.push(current.trim())
+  return values
+}
+
 export default function ExcelImport({ onSuccess }: ExcelImportProps) {
   const [file, setFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
   const [showModal, setShowModal] = useState(false)
 
-  const parseExcel = async (file: File) => {
+  const isXlsx = file && /\.(xlsx|xls)$/i.test(file.name)
+
+  const parseCSV = async (file: File) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader()
       reader.onload = (e) => {
         try {
           const text = e.target?.result as string
-          const lines = text.split('\n').filter(line => line.trim())
-          const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''))
-          
+          // Normalise line endings
+          const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter(l => l.trim())
+          const headers = parseCSVLine(lines[0])
+
           const products = lines.slice(1).map(line => {
-            const values = line.split(',').map(v => v.trim().replace(/"/g, ''))
+            const values = parseCSVLine(line)
             const product: any = {}
-            
+
             headers.forEach((header, index) => {
               const key = header.toLowerCase()
-              if (key.includes('название') || key === 'name') product.name = values[index]
-              else if (key.includes('бренд') || key === 'brand') product.brand = values[index]
-              else if (key.includes('артикул') || key === 'article') product.article_number = values[index]
-              else if (key.includes('категория') || key === 'category') product.category = values[index]
-              else if (key.includes('описание') || key === 'description') product.description = values[index]
-              else if (key.includes('преимущества') || key === 'advantages') product.advantages = values[index]
-              else if (key.includes('внимание') || key === 'attention') product.attention_points = values[index]
-              else if (key.includes('цена') || key === 'price') product.price = parseFloat(values[index]) || 0
-              else if (key.includes('ссылка') && key.includes('сайт')) product.website_link = values[index]
-              else if (key.includes('1с')) product.onec_link = values[index]
+              const val = (values[index] ?? '').trim()
+              if (key.includes('название') || key === 'name') product.name = val
+              else if (key.includes('бренд') || key === 'brand') product.brand = val
+              else if (key.includes('артикул') || key === 'article') product.article_number = val
+              else if (key.includes('категория') || key === 'category') product.category = val
+              else if (key.includes('описание') || key === 'description') product.description = val
+              else if (key.includes('преимущества') || key === 'advantages') product.advantages = val
+              else if (key.includes('внимание') || key === 'attention') product.attention_points = val
+              else if (key.includes('цена') || key === 'price') product.price = parseFloat(val) || null
+              else if (key.includes('ссылка') && key.includes('сайт')) product.website_link = val
+              else if (key.includes('1с')) product.onec_link = val
             })
-            
+
             return product
           })
-          
+
           resolve(products)
         } catch (error) {
           reject(error)
@@ -55,10 +85,14 @@ export default function ExcelImport({ onSuccess }: ExcelImportProps) {
 
   const handleImport = async () => {
     if (!file) return
-    
+    if (isXlsx) {
+      showToast('Для импорта используйте CSV формат. Сохраните файл через «Сохранить как» → CSV в Excel.', 'error')
+      return
+    }
+
     setLoading(true)
     try {
-      const products = await parseExcel(file) as any[]
+      const products = await parseCSV(file) as any[]
       
       // Валидация
       const valid = products.filter(p => p.name && p.brand && p.description && p.advantages && p.attention_points)
@@ -72,7 +106,7 @@ export default function ExcelImport({ onSuccess }: ExcelImportProps) {
       // Добавляем placeholder для изображения
       const withImages = valid.map(p => ({
         ...p,
-        image_url: 'https://via.placeholder.com/400x300?text=No+Image'
+        image_url: p.image_url || '',
       }))
       
       const { error } = await supabase.from('products').insert(withImages)
@@ -163,6 +197,11 @@ export default function ExcelImport({ onSuccess }: ExcelImportProps) {
                   </div>
                 </label>
               </div>
+              {isXlsx && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
+                  ⚠️ Формат .xlsx не поддерживается. Откройте файл в Excel и выберите <strong>«Сохранить как» → CSV</strong>, затем загрузите полученный .csv файл.
+                </div>
+              )}
 
               <button
                 onClick={handleImport}

@@ -7,6 +7,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import ExcelImport from '@/components/ExcelImport'
+import { showToast } from '@/components/Toast'
 
 const EMPTY_FORM = {
   name: '',
@@ -17,6 +18,8 @@ const EMPTY_FORM = {
   attention_points: '',
   website_link: '',
   onec_link: '',
+  price: '',
+  category: '',
 }
 
 const ADMIN_DRAFT_KEY = 'novinki:adminFormDraft'
@@ -162,40 +165,51 @@ export default function AdminPage() {
       }
 
       const productData = {
-        ...form,
+        name: form.name,
+        brand: form.brand,
+        article_number: form.article_number,
+        description: form.description,
+        advantages: form.advantages,
+        attention_points: form.attention_points,
         website_link: normalizeLink(form.website_link),
         onec_link: normalizeLink(form.onec_link),
+        category: form.category,
+        price: form.price ? parseFloat(form.price) : null,
         image_url: imageUrl || (editId ? products.find(p => p.id === editId)?.image_url : ''),
       }
 
       if (editId) {
         const { error } = await supabase.from('products').update(productData).eq('id', editId)
         if (error) throw error
+        showToast('Товар обновлён', 'success')
       } else {
         const { error } = await supabase.from('products').insert([productData])
         if (error) throw error
+        showToast('Товар добавлен', 'success')
       }
 
       resetForm()
       await fetchProducts()
     } catch (error: any) {
       console.error('Save error:', error)
-      alert(error?.message || 'Ошибка при сохранении товара')
+      showToast(error?.message || 'Ошибка при сохранении товара', 'error')
     } finally {
       setSubmitLoading(false)
     }
   }
 
   const handleEdit = (product: Product) => {
-    setForm({ 
-      name: product.name, 
-      brand: product.brand, 
+    setForm({
+      name: product.name,
+      brand: product.brand,
       article_number: product.article_number || '',
-      description: product.description, 
-      advantages: product.advantages, 
+      description: product.description,
+      advantages: product.advantages,
       attention_points: product.attention_points,
       website_link: product.website_link || '',
-      onec_link: product.onec_link || ''
+      onec_link: product.onec_link || '',
+      price: product.price != null ? String(product.price) : '',
+      category: (product as any).category || '',
     })
     setImage(null)
     setEditId(product.id)
@@ -223,10 +237,10 @@ export default function AdminPage() {
       if (error) throw error
 
       await fetchProducts()
-      alert('Копия товара создана')
+      showToast('Копия товара создана', 'success')
     } catch (error: any) {
       console.error('Duplicate error:', error)
-      alert(error?.message || 'Ошибка при копировании товара')
+      showToast(error?.message || 'Ошибка при копировании товара', 'error')
     }
   }
 
@@ -248,21 +262,22 @@ export default function AdminPage() {
             advantages: product.advantages,
             attention_points: product.attention_points,
             website_link: product.website_link,
-            onec_link: product.onec_link
+            onec_link: product.onec_link,
+            deleted_at: new Date().toISOString(),
           })
           
           if (insertError) {
             console.error('Error inserting to deleted_products:', insertError)
-            alert('Ошибка перемещения в корзину. Проверьте, что таблица deleted_products создана.')
+            showToast('Ошибка перемещения в корзину', 'error')
             return
           }
-          
+
           // Удаляем из основной таблицы
           const { error: deleteError } = await supabase.from('products').delete().eq('id', id)
-          
+
           if (deleteError) {
             console.error('Error deleting from products:', deleteError)
-            alert('Ошибка удаления товара')
+            showToast('Ошибка удаления товара', 'error')
             return
           }
           
@@ -271,7 +286,7 @@ export default function AdminPage() {
         }
       } catch (error) {
         console.error('Delete operation failed:', error)
-        alert('Ошибка операции удаления')
+        showToast('Ошибка операции удаления', 'error')
       }
     }
   }
@@ -291,7 +306,7 @@ export default function AdminPage() {
         
         if (error) {
           console.error('Archive error:', error)
-          alert(`Ошибка архивирования: ${error.message}`)
+          showToast(`Ошибка архивирования: ${error.message}`, 'error')
           return
         }
         
@@ -299,7 +314,7 @@ export default function AdminPage() {
         fetchProducts()
       } catch (error) {
         console.error('Archive operation failed:', error)
-        alert('Ошибка операции архивирования')
+        showToast('Ошибка операции архивирования', 'error')
       }
     }
   }
@@ -386,6 +401,10 @@ export default function AdminPage() {
               <input type="text" placeholder="Название" value={form.name} onChange={(e) => setForm({...form, name: e.target.value})} className="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8B1538] transition" required />
               <input type="text" placeholder="Бренд" value={form.brand} onChange={(e) => setForm({...form, brand: e.target.value})} className="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8B1538] transition" required />
               <input type="text" placeholder="Артикул" value={form.article_number} onChange={(e) => setForm({...form, article_number: e.target.value})} className="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8B1538] transition" />
+            </div>
+            <div className="grid md:grid-cols-2 gap-4">
+              <input type="number" min="0" step="0.01" placeholder="Цена (руб.)" value={form.price} onChange={(e) => setForm({...form, price: e.target.value})} className="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8B1538] transition" />
+              <input type="text" placeholder="Категория" value={form.category} onChange={(e) => setForm({...form, category: e.target.value})} className="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8B1538] transition" />
             </div>
             <textarea placeholder="Описание" value={form.description} onChange={(e) => setForm({...form, description: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8B1538] transition" rows={3} required />
             <textarea placeholder="Преимущества" value={form.advantages} onChange={(e) => setForm({...form, advantages: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8B1538] transition" rows={3} required />

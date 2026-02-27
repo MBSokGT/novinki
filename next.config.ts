@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-const pocketbaseUrl = process.env.NEXT_PUBLIC_POCKETBASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+const pocketbaseUrl = process.env.NEXT_PUBLIC_POCKETBASE_URL;
 type RemotePattern = NonNullable<NonNullable<NextConfig["images"]>["remotePatterns"]>[number];
 
 const pocketbasePattern = (() => {
@@ -21,32 +21,39 @@ const pocketbasePattern = (() => {
   }
 })();
 
+const isStaticExport = process.env.NEXT_PUBLIC_STATIC_EXPORT === "true";
+
 const nextConfig: NextConfig = {
-  outputFileTracingRoot: process.cwd(),
+  ...(isStaticExport && {
+    output: "export",
+    trailingSlash: true,
+    basePath: "/novinki",
+  }),
   images: {
-    remotePatterns: pocketbasePattern ? [pocketbasePattern] : [],
+    // Static export requires unoptimized images (no server to optimise)
+    unoptimized: isStaticExport || !pocketbaseUrl,
+    remotePatterns: [
+      ...(pocketbasePattern ? [pocketbasePattern] : []),
+      // picsum images used in demo mode
+      { protocol: "https", hostname: "picsum.photos" },
+    ],
   },
-  async headers() {
-    return [
-      {
-        source: '/(.*)',
-        headers: [
-          {
-            key: 'X-Frame-Options',
-            value: 'DENY',
-          },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff',
-          },
-          {
-            key: 'Referrer-Policy',
-            value: 'origin-when-cross-origin',
-          },
-        ],
-      },
-    ]
-  },
+  ...(isStaticExport
+    ? {}
+    : {
+        async headers() {
+          return [
+            {
+              source: "/(.*)",
+              headers: [
+                { key: "X-Frame-Options", value: "DENY" },
+                { key: "X-Content-Type-Options", value: "nosniff" },
+                { key: "Referrer-Policy", value: "origin-when-cross-origin" },
+              ],
+            },
+          ];
+        },
+      }),
 };
 
 export default nextConfig;

@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { supabase, DEMO_MODE } from '@/lib/supabase'
+import { DEMO_ADMIN_EMAIL, DEMO_ADMIN_PASSWORD } from '@/lib/demo-data'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -81,8 +82,24 @@ export default function LoginPage() {
           <h2 className="text-2xl font-semibold text-slate-900">
             {showResetForm ? 'Восстановление пароля' : isLogin ? 'Вход' : 'Регистрация'}
           </h2>
-          <p className="text-slate-500 mt-2">Новинки ассортимента</p>
+            <p className="text-slate-500 mt-2">Новинки ассортимента</p>
         </div>
+
+        {DEMO_MODE && (
+          <div className="mb-5 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm">
+            <p className="font-semibold text-amber-800 mb-2">🎭 Демо-режим</p>
+            <div className="space-y-1 text-amber-700">
+              <p>Администратор:</p>
+              <button
+                type="button"
+                onClick={() => { setEmail(DEMO_ADMIN_EMAIL); setPassword(DEMO_ADMIN_PASSWORD) }}
+                className="font-mono text-xs bg-amber-100 px-2 py-1 rounded hover:bg-amber-200 transition"
+              >
+                {DEMO_ADMIN_EMAIL} / {DEMO_ADMIN_PASSWORD}
+              </button>
+            </div>
+          </div>
+        )}
 
         {showResetForm ? (
           <form onSubmit={handleResetPassword} className="space-y-4">
