@@ -76,7 +76,7 @@ export default function ResetPasswordPage() {
           <Link href="/" aria-label="На главную" className="inline-block">
             <Image src="/logo.png" alt="Logo" width={150} height={50} className="mx-auto mb-4" />
           </Link>
-          <h2 className="text-2xl font-bold text-slate-900">Новый пароль</h2>
+          <h2 className="text-2xl font-bold text-white">Новый пароль</h2>
           <p className="text-slate-600 mt-2">Введите новый пароль для вашего аккаунта</p>
         </div>
 
@@ -98,7 +98,7 @@ export default function ResetPasswordPage() {
             placeholder="Новый пароль"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8B1538] transition"
+            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition"
             required
             minLength={6}
           />
@@ -107,14 +107,14 @@ export default function ResetPasswordPage() {
             placeholder="Подтвердите пароль"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8B1538] transition"
+            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition"
             required
             minLength={6}
           />
           <button
             type="submit"
             disabled={loading || !!error}
-            className="w-full bg-[#8B1538] text-white px-6 py-3 rounded-xl hover:bg-[#6B0F2A] transition font-medium disabled:opacity-50"
+            className="w-full bg-[#9B1B1B] text-white px-6 py-3 rounded-xl hover:bg-[#7A1515] transition font-medium disabled:opacity-50"
           >
             {loading ? 'Сохранение...' : 'Сохранить пароль'}
           </button>

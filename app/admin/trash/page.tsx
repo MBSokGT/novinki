@@ -110,7 +110,7 @@ export default function TrashPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <nav className="bg-white shadow-sm border-b">
+      <nav className="bg-[#1A1A1A] shadow-lg border-b border-[#333]">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
             <Link href="/" aria-label="На главную" className="inline-flex items-center">
@@ -119,7 +119,7 @@ export default function TrashPage() {
             <h1 className="text-2xl font-bold text-slate-700">🗑️ Корзина</h1>
           </div>
           <div className="flex gap-3">
-            <Link href="/admin" className="px-4 py-2 bg-[#8B1538] text-white rounded-lg hover:bg-[#6B0F2A] transition">
+            <Link href="/admin" className="px-4 py-2 bg-[#9B1B1B] text-white rounded-lg hover:bg-[#7A1515] transition">
               ← Админ панель
             </Link>
           </div>
@@ -135,7 +135,7 @@ export default function TrashPage() {
             </h3>
             <button 
               onClick={handleCleanup}
-              className="px-4 py-2 bg-[#8B1538] text-white rounded-lg hover:bg-[#6B0F2A] transition text-sm"
+              className="px-4 py-2 bg-[#9B1B1B] text-white rounded-lg hover:bg-[#7A1515] transition text-sm"
             >
               🧹 Очистить старые (14+ дней)
             </button>

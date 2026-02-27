@@ -32,7 +32,7 @@ export default function CompareBar({ compareProducts, onRemove, onClear }: Compa
             </div>
           ))}
         </div>
-        <button onClick={() => setShowModal(true)} disabled={compareProducts.length < 2} className="w-full px-4 py-2 bg-[#8B1538] text-white rounded-lg hover:bg-[#6B0F2A] transition disabled:opacity-50 disabled:cursor-not-allowed">
+        <button onClick={() => setShowModal(true)} disabled={compareProducts.length < 2} className="w-full px-4 py-2 bg-[#9B1B1B] text-white rounded-lg hover:bg-[#7A1515] transition disabled:opacity-50 disabled:cursor-not-allowed">
           Сравнить
         </button>
       </div>

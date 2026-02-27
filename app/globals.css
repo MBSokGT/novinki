@@ -29,8 +29,10 @@
   --foreground: #0f172a;
   --muted: #475569;
   --border: #e2e8f0;
-  --accent: #8b1538;
-  --accent-soft: #6b0f2a;
+  --accent: #9b1b1b;
+  --accent-soft: #7a1515;
+  --nav-bg: #1a1a1a;
+  --nav-border: #333333;
 }
 
 @theme inline {
@@ -63,7 +65,7 @@ textarea {
 }
 
 :focus-visible {
-  outline: 2px solid #8b1538;
+  outline: 2px solid #9b1b1b;
   outline-offset: 2px;
 }
 

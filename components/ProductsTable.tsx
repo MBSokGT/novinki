@@ -586,7 +586,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                 {!isAdmin && (
                   <button
                     onClick={(e) => { e.stopPropagation(); toggleCompare(product); }}
-                    className={`absolute top-2 right-2 p-2 rounded-lg transition ${compareProducts.find(p => p.id === product.id) ? 'bg-[#8B1538] text-white' : 'bg-white/90 text-gray-700'}`}
+                    className={`absolute top-2 right-2 p-2 rounded-lg transition ${compareProducts.find(p => p.id === product.id) ? 'bg-[#9B1B1B] text-white' : 'bg-white/90 text-gray-700'}`}
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
                   </button>
@@ -605,7 +605,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                 {product.category && <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-900 mb-3 ml-2">{product.category}</span>}
                 <p className="text-sm text-slate-600 line-clamp-2 mb-4">{product.description}</p>
                 {!isAdmin && <StarRating rating={product.rating || 0} userRating={userRatings.get(product.id)} onRate={(r) => rateProduct(product.id, r)} />}
-                <button onClick={() => viewProduct(product)} className="w-full px-4 py-2 bg-[#8B1538] text-white text-sm font-medium rounded-lg hover:bg-[#6B0F2A] transition mt-3">Подробнее</button>
+                <button onClick={() => viewProduct(product)} className="w-full px-4 py-2 bg-[#9B1B1B] text-white text-sm font-medium rounded-lg hover:bg-[#7A1515] transition mt-3">Подробнее</button>
               </div>
               
               {hoveredProduct?.id === product.id && (
@@ -672,7 +672,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                             <svg className="w-5 h-5" fill={bookmarks.has(product.id) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
                           </button>
                         )}
-                        <button onClick={() => viewProduct(product)} className="inline-flex items-center px-3 py-1.5 bg-[#8B1538] text-white text-sm font-medium rounded-lg hover:bg-[#6B0F2A] transition">
+                        <button onClick={() => viewProduct(product)} className="inline-flex items-center px-3 py-1.5 bg-[#9B1B1B] text-white text-sm font-medium rounded-lg hover:bg-[#7A1515] transition">
                           Подробнее
                         </button>
                       </div>
@@ -693,7 +693,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
           <div className="flex gap-1 flex-wrap justify-center">
             {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
               page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1) ? (
-                <button key={page} onClick={() => setCurrentPage(page)} className={`px-4 py-2 rounded-lg transition ${currentPage === page ? 'bg-[#8B1538] text-white' : 'bg-white border border-slate-200 hover:bg-slate-50'}`}>
+                <button key={page} onClick={() => setCurrentPage(page)} className={`px-4 py-2 rounded-lg transition ${currentPage === page ? 'bg-[#9B1B1B] text-white' : 'bg-white border border-slate-200 hover:bg-slate-50'}`}>
                   {page}
                 </button>
               ) : page === currentPage - 2 || page === currentPage + 2 ? (
@@ -844,7 +844,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
       {showScrollTop && (
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="fixed bottom-4 left-4 z-40 rounded-full bg-[#8B1538] p-3 text-white shadow-lg hover:bg-[#6B0F2A] transition"
+          className="fixed bottom-4 left-4 z-40 rounded-full bg-[#9B1B1B] p-3 text-white shadow-lg hover:bg-[#7A1515] transition"
           aria-label="Наверх"
           title="Наверх"
         >
