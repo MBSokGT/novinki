@@ -37,7 +37,41 @@ export default function AdminPage() {
   const router = useRouter()
 
   useEffect(() => {
+    let cancelled = false
+
+    const checkAuth = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (cancelled) return
+        if (!user) {
+          router.push('/login')
+          return
+        }
+        setUser(user)
+
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('is_admin')
+          .eq('id', user.id)
+          .maybeSingle()
+        if (cancelled) return
+
+        if (profile?.is_admin === true) {
+          setIsAdmin(true)
+          fetchProducts()
+        } else {
+          setIsAdmin(false)
+          router.push('/')
+        }
+      } catch (err) {
+        if (cancelled) return
+        setIsAdmin(false)
+        router.push('/')
+      }
+    }
+
     checkAuth()
+    return () => { cancelled = true }
   }, [])
 
   useEffect(() => {
@@ -68,34 +102,6 @@ export default function AdminPage() {
       window.localStorage.removeItem(ADMIN_DRAFT_KEY)
     }
   }, [form, editId])
-
-  const checkAuth = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      router.push('/login')
-      return
-    }
-    setUser(user)
-    
-    try {
-      // Используем RPC функцию для проверки прав админа
-      const { data: adminCheck, error: rpcError } = await supabase.rpc('check_admin_status', { user_id: user.id })
-      console.log('Admin check result:', { adminCheck, rpcError, userId: user.id })
-      
-      if (adminCheck === true) {
-        setIsAdmin(true)
-        fetchProducts()
-      } else {
-        setIsAdmin(false)
-        setTimeout(() => router.push('/'), 500)
-      }
-      
-    } catch (err) {
-      console.error('Auth check error:', err)
-      setIsAdmin(false)
-      setTimeout(() => router.push('/'), 500)
-    }
-  }
 
   const fetchProducts = async () => {
     const { data } = await supabase

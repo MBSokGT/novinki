@@ -5,7 +5,7 @@ import { DEMO_MODE, supabase } from '@/lib/supabase'
 
 export default function RequestForm() {
   const [isOpen, setIsOpen] = useState(false)
-  const [form, setForm] = useState({ name: '', contact: '', product: '', article: '' })
+  const [form, setForm] = useState({ product: '', article: '' })
   const [sending, setSending] = useState(false)
   const [success, setSuccess] = useState(false)
 
@@ -17,8 +17,6 @@ export default function RequestForm() {
       if (DEMO_MODE) {
         // In demo mode, save via the demo client (no real HTTP needed)
         await supabase.from('product_requests').insert({
-          name: form.name,
-          contact: form.contact,
           product_name: form.product,
           article: form.article,
         })
@@ -35,7 +33,7 @@ export default function RequestForm() {
       }
 
       setSuccess(true)
-      setForm({ name: '', contact: '', product: '', article: '' })
+      setForm({ product: '', article: '' })
       setTimeout(() => {
         setIsOpen(false)
         setSuccess(false)
@@ -82,23 +80,7 @@ export default function RequestForm() {
               <form onSubmit={handleSubmit} className="p-6 space-y-4">
                 <input
                   type="text"
-                  placeholder="Ваше имя"
-                  value={form.name}
-                  onChange={(e) => setForm({...form, name: e.target.value})}
-                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition"
-                  required
-                />
-                <input
-                  type="text"
-                  placeholder="Телефон или Email"
-                  value={form.contact}
-                  onChange={(e) => setForm({...form, contact: e.target.value})}
-                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition"
-                  required
-                />
-                <input
-                  type="text"
-                  placeholder="Название товара"
+                  placeholder="Название товара (Бренд и серия)"
                   value={form.product}
                   onChange={(e) => setForm({...form, product: e.target.value})}
                   className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition"
@@ -106,7 +88,7 @@ export default function RequestForm() {
                 />
                 <input
                   type="text"
-                  placeholder="Артикул (если известен)"
+                  placeholder="Артикул если известен"
                   value={form.article}
                   onChange={(e) => setForm({...form, article: e.target.value})}
                   className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition"
