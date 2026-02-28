@@ -14,9 +14,13 @@ function hasPocketbaseToken(rawValue?: string) {
 
 export async function proxy(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith('/admin')) {
-    const pocketbaseAuth = request.cookies.get('pb_auth')?.value
-    if (!hasPocketbaseToken(pocketbaseAuth)) {
-      return NextResponse.redirect(new URL('/login', request.url))
+    // Only enforce PocketBase cookie auth when PocketBase is configured.
+    // In demo mode (no NEXT_PUBLIC_POCKETBASE_URL) auth is handled client-side.
+    if (process.env.NEXT_PUBLIC_POCKETBASE_URL) {
+      const pocketbaseAuth = request.cookies.get('pb_auth')?.value
+      if (!hasPocketbaseToken(pocketbaseAuth)) {
+        return NextResponse.redirect(new URL('/login', request.url))
+      }
     }
   }
 

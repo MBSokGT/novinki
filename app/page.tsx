@@ -19,34 +19,40 @@ export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
-    checkAuth()
-  }, [])
+    let cancelled = false
 
-  const checkAuth = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.push('/login')
-        return
+    const checkAuth = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (cancelled) return
+        if (!user) {
+          router.push('/login')
+          return
+        }
+        setUser(user)
+
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('is_admin')
+          .eq('id', user.id)
+          .maybeSingle()
+        if (cancelled) return
+
+        if (profile?.is_admin === true) {
+          setIsAdmin(true)
+        }
+      } catch (err) {
+        if (cancelled) return
+        console.error('Auth error:', err)
+        setError('Ошибка загрузки данных')
+      } finally {
+        if (!cancelled) setLoading(false)
       }
-      setUser(user)
-      
-      const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('is_admin')
-        .eq('id', user.id)
-        .maybeSingle()
-      
-      if (profile?.is_admin === true) {
-        setIsAdmin(true)
-      }
-    } catch (err) {
-      console.error('Auth error:', err)
-      setError('Ошибка загрузки данных')
-    } finally {
-      setLoading(false)
     }
-  }
+
+    checkAuth()
+    return () => { cancelled = true }
+  }, [])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
