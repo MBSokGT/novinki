@@ -406,24 +406,24 @@ export default function AdminPage() {
 
       <main className="max-w-7xl mx-auto px-6 py-8">
         {/* Меню функций */}
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
-          <Link href="/admin/analytics" className="group p-6 bg-white rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl hover:border-slate-200 transition-all duration-300 text-center transform hover:-translate-y-1">
-            <div className="text-5xl mb-3 group-hover:scale-110 transition-transform duration-300">📊</div>
+        <div className="grid md:grid-cols-4 gap-4 mb-6">
+          <Link href="/admin/analytics" className="group p-3 bg-white rounded-xl shadow-lg border border-slate-200 hover:shadow-xl hover:border-slate-200 transition-all duration-300 text-center transform hover:-translate-y-1">
+            <div className="text-2xl mb-1 group-hover:scale-110 transition-transform duration-300">📊</div>
             <div className="font-bold text-slate-800 group-hover:text-slate-800 transition-colors">Аналитика</div>
             <div className="text-sm text-slate-500 mt-1">Отчеты и статистика</div>
           </Link>
-          <Link href="/admin/categories" className="group p-6 bg-white rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl hover:border-slate-200 transition-all duration-300 text-center transform hover:-translate-y-1">
-            <div className="text-5xl mb-3 group-hover:scale-110 transition-transform duration-300">🏷️</div>
+          <Link href="/admin/categories" className="group p-3 bg-white rounded-xl shadow-lg border border-slate-200 hover:shadow-xl hover:border-slate-200 transition-all duration-300 text-center transform hover:-translate-y-1">
+            <div className="text-2xl mb-1 group-hover:scale-110 transition-transform duration-300">🏷️</div>
             <div className="font-bold text-slate-800 group-hover:text-slate-800 transition-colors">Категории</div>
             <div className="text-sm text-slate-500 mt-1">Управление категориями</div>
           </Link>
-          <Link href="/admin/settings" className="group p-6 bg-white rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl hover:border-slate-200 transition-all duration-300 text-center transform hover:-translate-y-1">
-            <div className="text-5xl mb-3 group-hover:scale-110 transition-transform duration-300">⚙️</div>
+          <Link href="/admin/settings" className="group p-3 bg-white rounded-xl shadow-lg border border-slate-200 hover:shadow-xl hover:border-slate-200 transition-all duration-300 text-center transform hover:-translate-y-1">
+            <div className="text-2xl mb-1 group-hover:scale-110 transition-transform duration-300">⚙️</div>
             <div className="font-bold text-slate-800 group-hover:text-slate-800 transition-colors">Настройки</div>
             <div className="text-sm text-slate-500 mt-1">Конфигурация системы</div>
           </Link>
-          <Link href="/admin/archive" className="group p-6 bg-white rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl hover:border-slate-200 transition-all duration-300 text-center transform hover:-translate-y-1">
-            <div className="text-5xl mb-3 group-hover:scale-110 transition-transform duration-300">🗄️</div>
+          <Link href="/admin/archive" className="group p-3 bg-white rounded-xl shadow-lg border border-slate-200 hover:shadow-xl hover:border-slate-200 transition-all duration-300 text-center transform hover:-translate-y-1">
+            <div className="text-2xl mb-1 group-hover:scale-110 transition-transform duration-300">🗄️</div>
             <div className="font-bold text-slate-800 group-hover:text-slate-800 transition-colors">Архив</div>
             <div className="text-sm text-slate-500 mt-1">Архивные записи</div>
           </Link>
@@ -446,11 +446,13 @@ export default function AdminPage() {
               <input type="number" min="0" step="0.01" placeholder="Цена (руб.)" value={form.price} onChange={(e) => setForm({...form, price: e.target.value})} className="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" />
               <input type="text" placeholder="Категория" value={form.category} onChange={(e) => setForm({...form, category: e.target.value})} className="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" />
             </div>
-            <textarea placeholder="Описание" value={form.description} onChange={(e) => setForm({...form, description: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" rows={3} required />
-            <textarea placeholder="Преимущества" value={form.advantages} onChange={(e) => setForm({...form, advantages: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" rows={3} required />
-            <textarea placeholder="На что обратить внимание" value={form.attention_points} onChange={(e) => setForm({...form, attention_points: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" rows={3} required />
-            <input type="text" placeholder="Ссылка на товар на сайте" value={form.website_link} onChange={(e) => setForm({...form, website_link: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" />
-            <input type="text" placeholder="Ссылка на товар в 1С" value={form.onec_link} onChange={(e) => setForm({...form, onec_link: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" />
+            <textarea placeholder="Описание" value={form.description} onChange={(e) => setForm({...form, description: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" rows={2} required />
+            <textarea placeholder="Преимущества" value={form.advantages} onChange={(e) => setForm({...form, advantages: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" rows={2} required />
+            <textarea placeholder="На что обратить внимание" value={form.attention_points} onChange={(e) => setForm({...form, attention_points: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" rows={2} required />
+            <div className="grid md:grid-cols-2 gap-4">
+              <input type="text" placeholder="Ссылка на товар на сайте" value={form.website_link} onChange={(e) => setForm({...form, website_link: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" />
+              <input type="text" placeholder="Ссылка на товар в 1С" value={form.onec_link} onChange={(e) => setForm({...form, onec_link: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" />
+            </div>
             <div className="relative">
               <input 
                 type="file" 

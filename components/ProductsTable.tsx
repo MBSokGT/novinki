@@ -572,14 +572,14 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
       )}
       
       {viewMode === 'cards' ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {products.map((product, idx) => (
             <div
               key={product.id}
               className="relative flex flex-col bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-shadow group animate-in fade-in slide-in-from-bottom-4"
               style={{ animationDelay: `${idx * 40}ms` }}
             >
-              <div className="relative h-44 bg-slate-100 cursor-pointer" onClick={() => product.image_url && setSelectedImage(product.image_url)}>
+              <div className="relative h-36 bg-slate-100 cursor-pointer" onClick={() => product.image_url && setSelectedImage(product.image_url)}>
                 <Image src={product.image_url || (process.env.NEXT_PUBLIC_BASE_PATH||'')+'/placeholder.svg'} alt={product.name} fill className="object-cover" loading="lazy" />
                 {!isAdmin && (
                   <button
@@ -599,11 +599,12 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                     </button>
                   )}
                 </div>
-                <div className="flex flex-wrap justify-center gap-1 mb-2">
+                {product.article_number && <p className="text-[10px] text-slate-400 mb-1 font-mono">{product.article_number}</p>}
+                <div className="flex flex-wrap items-center justify-start gap-1 mb-2">
                   <button onClick={() => setSelectedBrand(product.brand)} className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 transition">{product.brand}</button>
                   {product.category && <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700">{product.category}</span>}
                 </div>
-                <p className="text-xs text-slate-500 line-clamp-2 mb-3">{product.description}</p>
+                <p className="text-xs text-slate-500 line-clamp-2 mb-2">{product.description}</p>
                 {!isAdmin && <StarRating rating={product.rating || 0} userRating={userRatings.get(product.id)} onRate={(r) => rateProduct(product.id, r)} />}
                 <button onClick={() => viewProduct(product)} className="w-full px-3 py-1.5 bg-[#9B1B1B] text-white text-xs font-medium rounded-lg hover:bg-[#7A1515] transition mt-auto">Подробнее</button>
               </div>
