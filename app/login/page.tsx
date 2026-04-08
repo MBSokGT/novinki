@@ -39,7 +39,9 @@ export default function LoginPage() {
           }
           throw error
         }
-        setMessage('Проверьте email для подтверждения регистрации')
+        setIsLogin(true)
+        setPassword('')
+        setMessage('Аккаунт создан. Теперь войдите с этим email и паролем')
       }
     } catch (error: any) {
       setMessage(error.message || 'Ошибка')
@@ -63,7 +65,7 @@ export default function LoginPage() {
         }
         throw error
       }
-      setMessage('Ссылка для восстановления пароля отправлена на email')
+      setMessage('Ссылка для восстановления сформирована. Если почтовый шлюз настроен, письмо будет отправлено')
       setShowResetForm(false)
     } catch (error: any) {
       setMessage(error.message || 'Ошибка отправки')

@@ -1,4 +1,4 @@
-/** Demo mode – mock data used when NEXT_PUBLIC_POCKETBASE_URL is not set */
+/** Demo mode: mock data used when NEXT_PUBLIC_DEMO_MODE=true */
 
 export const DEMO_ADMIN_EMAIL = 'admin@demo.ru'
 export const DEMO_ADMIN_PASSWORD = 'admin1234'

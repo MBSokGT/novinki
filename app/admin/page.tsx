@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase, DEMO_MODE, compressImageToBlob, pocketbase } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase'
 import { Product } from '@/types/product'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -150,42 +150,6 @@ export default function AdminPage() {
     setSubmitLoading(true)
 
     try {
-      // ── PocketBase native FormData upload (non-demo mode with an image) ──────────────
-      // Requires the 'products' collection to have an 'image' file field in PocketBase.
-      if (!DEMO_MODE && pocketbase && image) {
-        const compressed = await compressImageToBlob(image)
-        const fd = new FormData()
-        fd.append('name', form.name)
-        fd.append('brand', form.brand)
-        fd.append('article_number', form.article_number)
-        fd.append('description', form.description)
-        fd.append('advantages', form.advantages)
-        fd.append('attention_points', form.attention_points)
-        fd.append('website_link', normalizeLink(form.website_link))
-        fd.append('onec_link', normalizeLink(form.onec_link))
-        fd.append('category', form.category)
-        if (form.price) fd.append('price', form.price)
-        fd.append('image', compressed)
-
-        if (editId) {
-          const record = await pocketbase.collection('products').update(editId, fd)
-          // Sync image_url text field from PocketBase file URL
-          const imageUrl = pocketbase.files.getURL(record, record.image as string)
-          await pocketbase.collection('products').update(editId, { image_url: imageUrl })
-          showToast('Товар обновлён', 'success')
-        } else {
-          const record = await pocketbase.collection('products').create(fd)
-          const imageUrl = pocketbase.files.getURL(record, record.image as string)
-          await pocketbase.collection('products').update(record.id, { image_url: imageUrl })
-          showToast('Товар добавлен', 'success')
-        }
-
-        resetForm()
-        await fetchProducts()
-        return
-      }
-
-      // ── Fallback: demo mode or no new image ───────────────────────────────────────────
       let imageUrl = ''
 
       if (image) {

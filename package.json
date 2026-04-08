@@ -6,25 +6,32 @@
     "dev": "next dev",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "cf:build": "next build --webpack && opennextjs-cloudflare build --skipNextBuild",
+    "cf:preview": "next build --webpack && opennextjs-cloudflare build --skipNextBuild && wrangler dev",
+    "cf:deploy": "next build --webpack && opennextjs-cloudflare build --skipNextBuild && opennextjs-cloudflare deploy",
+    "db:create": "wrangler d1 create my-db-name",
+    "db:migrate": "wrangler d1 migrations apply my-db-name"
   },
   "dependencies": {
     "@types/papaparse": "^5.5.2",
-    "next": "16.1.1",
+    "next": "^16.1.5",
     "papaparse": "^5.5.3",
-    "pocketbase": "^0.26.8",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260408.1",
+    "@opennextjs/cloudflare": "^1.18.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.1.1",
+    "eslint-config-next": "^16.1.5",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wrangler": "^4.81.0"
   }
 }

@@ -1,10 +1,22 @@
 import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { getCloudflareEnv, insertRequest } from '@/lib/d1'
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json()
-    const { name, contact, product, article } = body
+    const body = (await request.json()) as {
+      name?: string
+      contact?: string
+      product?: string
+      article?: string
+    }
+    const name = String(body.name || '').trim()
+    const contact = String(body.contact || '').trim()
+    const product = String(body.product || '').trim()
+    const article = String(body.article || '').trim()
+
+    if (!name || !contact || !product) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    }
 
     const emailContent = `
 Новый запрос на добавление товара:
@@ -15,10 +27,10 @@ export async function POST(request: Request) {
 Артикул: ${article || 'Не указан'}
     `
 
-    const webhookUrl = process.env.REQUEST_WEBHOOK_URL
+    const env = await getCloudflareEnv()
+    const webhookUrl = env.REQUEST_WEBHOOK_URL || process.env.REQUEST_WEBHOOK_URL
     let delivered = false
 
-    // Опциональная отправка во внешний email/webhook сервис.
     if (webhookUrl) {
       const response = await fetch(webhookUrl, {
         method: 'POST',
@@ -33,19 +45,13 @@ export async function POST(request: Request) {
       delivered = response.ok
     }
 
-    // Гарантированно сохраняем заявку в PocketBase.
-    const { error } = await supabase.from('requests').insert([
-      {
-        name,
-        contact,
-        product,
-        article,
-        delivered,
-        created_at: new Date().toISOString(),
-      },
-    ])
-
-    if (error) throw error
+    await insertRequest({
+      name,
+      contact,
+      product,
+      article,
+      delivered,
+    })
 
     return NextResponse.json({ success: true })
   } catch (error) {

@@ -1,0 +1,22 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "main": ".open-next/worker.js",
+  "name": "novinki-app",
+  "compatibility_date": "2026-04-08",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "vars": {
+    "APP_URL": "https://novinki-app.nkv2pghg5d.workers.dev/reset-password"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "my-db-name",
+      "database_id": "6d95bc84-b954-4639-82ce-207b6fdc4765",
+      "migrations_dir": "migrations"
+    }
+  ]
+}

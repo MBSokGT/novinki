@@ -18,7 +18,12 @@ export const metadata: Metadata = {
   description: "Управление и отображение новинок ассортимента с админ панелью",
   keywords: ["новинки", "ассортимент", "товары", "каталог"],
   authors: [{ name: "Admin" }],
-  robots: "index, follow"
+  robots: "index, follow",
+  icons: {
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export const viewport: Viewport = {

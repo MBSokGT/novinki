@@ -1,26 +1,23 @@
-# Статус настройки (PocketBase)
+# Статус настройки (Cloudflare D1)
 
 ## Выполнено
-- Приложение переведено с Supabase на PocketBase-клиент
-- Добавлен совместимый data layer в `lib/supabase.ts`
-- Обновлены auth-методы (login/signup/reset/update user)
-- Переведены API-запросы и middleware-логика на PocketBase
-- Проверена production-сборка (`npm run build`)
+- проект переведен на `Cloudflare D1`
+- добавлен `wrangler.jsonc`
+- добавлен `open-next.config.ts`
+- создана D1 база `my-db-name`
+- применена миграция [migrations/0001_initial.sql](/Users/admin/Desktop/Новинки/novinki-app/migrations/0001_initial.sql)
+- фронт переведен с PocketBase-клиента на внутренний fetch-клиент к D1 route handlers
+- runtime-ориентация на Vercel убрана
+- `logo.png` подключен как browser icon
 
-## Обновленная инфраструктура
-- `proxy.ts` защищает `/admin*`
-- Admin-страницы дополнительно проверяют права через `check_admin_status`
-- `/api/request` сохраняет заявки в коллекцию `requests`
+## Ключевые runtime-файлы
+- [lib/d1.ts](/Users/admin/Desktop/Новинки/novinki-app/lib/d1.ts)
+- [lib/supabase.ts](/Users/admin/Desktop/Новинки/novinki-app/lib/supabase.ts)
+- [app/api/internal/auth/route.ts](/Users/admin/Desktop/Новинки/novinki-app/app/api/internal/auth/route.ts)
+- [app/api/internal/data/route.ts](/Users/admin/Desktop/Новинки/novinki-app/app/api/internal/data/route.ts)
+- [app/api/internal/rpc/route.ts](/Users/admin/Desktop/Новинки/novinki-app/app/api/internal/rpc/route.ts)
+- [wrangler.jsonc](/Users/admin/Desktop/Новинки/novinki-app/wrangler.jsonc)
 
-## Что нужно заполнить в окружении
-```bash
-NEXT_PUBLIC_POCKETBASE_URL=http://127.0.0.1:8090
-REQUEST_WEBHOOK_URL=
-ENCRYPTION_KEY=
-```
-
-## Чеклист перед релизом
-1. Проверить права коллекций в PocketBase.
-2. Назначить первого администратора (`user_profiles.is_admin = true`).
-3. Проверить вход, админку, CRUD товаров, закладки и восстановление пароля.
-4. Выполнить `npm run build`.
+## Проверка
+- `npm run build` проходит
+- удаленная D1 схема создана и применена
