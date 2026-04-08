@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build --webpack",
+    "build:pages": "bash ./scripts/build-pages.sh",
     "start": "next start",
     "lint": "eslint",
     "cf:build": "next build --webpack && opennextjs-cloudflare build --skipNextBuild",

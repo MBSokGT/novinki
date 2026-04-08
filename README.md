@@ -84,3 +84,11 @@ npm run cf:deploy
 ```
 
 Проект больше не ориентирован на Vercel. Runtime и база теперь Cloudflare-first.
+
+## GitHub Pages
+В репозитории настроен отдельный workflow для GitHub Pages через `npm run build:pages`.
+
+Важно:
+- GitHub Pages получает только статический demo-export
+- production-версия с `D1`, `app/api/*`, cookie-auth и `middleware` остается на Cloudflare
+- Pages URL для этого репозитория будет вида `https://mbsokgt.github.io/novinki/`
