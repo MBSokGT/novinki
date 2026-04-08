@@ -44,7 +44,6 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
   const [userRatings, setUserRatings] = useState<Map<string, number>>(new Map())
   const [compareProducts, setCompareProducts] = useState<Product[]>([])
   const [viewHistory, setViewHistory] = useState<string[]>([])
-  const [hoveredProduct, setHoveredProduct] = useState<Product | null>(null)
   const [isUrlStateReady, setIsUrlStateReady] = useState(false)
   const [showScrollTop, setShowScrollTop] = useState(false)
   const router = useRouter()
@@ -492,6 +491,14 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
   return (
     <div>
       <Breadcrumbs />
+      <div className="mb-4">
+        <SearchBar
+          products={productsMeta}
+          search={search}
+          setSearch={setSearch}
+          onSelectProduct={viewProduct}
+        />
+      </div>
       <FilterBar
         products={productsMeta}
         selectedCategory={selectedCategory}
@@ -505,13 +512,6 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
         currentPage={currentPage}
         totalPages={totalPages}
         onClearFilters={clearAllFilters}
-      />
-
-      <SearchBar
-        products={productsMeta}
-        search={search}
-        setSearch={setSearch}
-        onSelectProduct={viewProduct}
       />
       
       {recentViewedProducts.length > 0 && (
@@ -572,51 +572,42 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
       )}
       
       {viewMode === 'cards' ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {products.map((product, idx) => (
             <div
               key={product.id}
-              className="relative bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-lg transition group animate-in fade-in slide-in-from-bottom-4"
-              style={{ animationDelay: `${idx * 50}ms` }}
-              onMouseEnter={() => setHoveredProduct(product)}
-              onMouseLeave={() => setHoveredProduct(null)}
+              className="relative flex flex-col bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-shadow group animate-in fade-in slide-in-from-bottom-4"
+              style={{ animationDelay: `${idx * 40}ms` }}
             >
-              <div className="relative h-48 bg-slate-100 cursor-pointer" onClick={() => product.image_url && setSelectedImage(product.image_url)}>
+              <div className="relative h-36 bg-slate-100 cursor-pointer" onClick={() => product.image_url && setSelectedImage(product.image_url)}>
                 <Image src={product.image_url || (process.env.NEXT_PUBLIC_BASE_PATH||'')+'/placeholder.svg'} alt={product.name} fill className="object-cover" loading="lazy" />
                 {!isAdmin && (
                   <button
                     onClick={(e) => { e.stopPropagation(); toggleCompare(product); }}
-                    className={`absolute top-2 right-2 p-2 rounded-lg transition ${compareProducts.find(p => p.id === product.id) ? 'bg-[#9B1B1B] text-white' : 'bg-white/90 text-gray-700'}`}
+                    className={`absolute top-2 right-2 p-1.5 rounded-lg transition ${compareProducts.find(p => p.id === product.id) ? 'bg-[#9B1B1B] text-white' : 'bg-white/90 text-gray-600 hover:bg-white'}`}
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
                   </button>
                 )}
               </div>
-              <div className="p-4">
-                <div className="flex items-start justify-between mb-2">
-                  <h3 className="font-bold text-slate-900 text-lg">{product.name}</h3>
+              <div className="p-3 flex flex-col flex-1">
+                <div className="flex items-start justify-between mb-1.5">
+                  <h3 className="font-semibold text-slate-900 text-sm leading-snug line-clamp-2 flex-1 mr-1">{product.name}</h3>
                   {!isAdmin && (
-                    <button onClick={() => toggleBookmark(product.id)} className={`p-2 rounded-lg transition ${bookmarks.has(product.id) ? 'text-yellow-600' : 'text-slate-400'}`}>
-                      <svg className="w-5 h-5" fill={bookmarks.has(product.id) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
+                    <button onClick={() => toggleBookmark(product.id)} className={`p-1.5 rounded-lg transition flex-shrink-0 ${bookmarks.has(product.id) ? 'text-yellow-500' : 'text-slate-300 hover:text-slate-500'}`}>
+                      <svg className="w-4 h-4" fill={bookmarks.has(product.id) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
                     </button>
                   )}
                 </div>
-                <button onClick={() => setSelectedBrand(product.brand)} className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-900 mb-3">{product.brand}</button>
-                {product.category && <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-900 mb-3 ml-2">{product.category}</span>}
-                <p className="text-sm text-slate-600 line-clamp-2 mb-4">{product.description}</p>
-                {!isAdmin && <StarRating rating={product.rating || 0} userRating={userRatings.get(product.id)} onRate={(r) => rateProduct(product.id, r)} />}
-                <button onClick={() => viewProduct(product)} className="w-full px-4 py-2 bg-[#9B1B1B] text-white text-sm font-medium rounded-lg hover:bg-[#7A1515] transition mt-3">Подробнее</button>
-              </div>
-              
-              {hoveredProduct?.id === product.id && (
-                <div className="absolute inset-0 bg-black/80 backdrop-blur-sm p-4 flex flex-col justify-center animate-in fade-in duration-200">
-                  <h4 className="text-white font-bold mb-2">{product.name}</h4>
-                  <p className="text-white/90 text-sm mb-3 line-clamp-3">{product.description}</p>
-                  <button onClick={() => viewProduct(product)} className="px-4 py-2 bg-white text-gray-900 rounded-lg hover:bg-gray-100 transition text-sm font-medium">
-                    Подробнее
-                  </button>
+                {product.article_number && <p className="text-[10px] text-slate-400 mb-1 font-mono">{product.article_number}</p>}
+                <div className="flex flex-wrap items-center justify-start gap-1 mb-2">
+                  <button onClick={() => setSelectedBrand(product.brand)} className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 transition">{product.brand}</button>
+                  {product.category && <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700">{product.category}</span>}
                 </div>
-              )}
+                <p className="text-xs text-slate-500 line-clamp-2 mb-2">{product.description}</p>
+                {!isAdmin && <StarRating rating={product.rating || 0} userRating={userRatings.get(product.id)} onRate={(r) => rateProduct(product.id, r)} />}
+                <button onClick={() => viewProduct(product)} className="w-full px-3 py-1.5 bg-[#9B1B1B] text-white text-xs font-medium rounded-lg hover:bg-[#7A1515] transition mt-auto">Подробнее</button>
+              </div>
             </div>
           ))}
         </div>
@@ -844,7 +835,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
       {showScrollTop && (
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="fixed bottom-4 left-4 z-40 rounded-full bg-[#9B1B1B] p-3 text-white shadow-lg hover:bg-[#7A1515] transition"
+          className="fixed bottom-6 right-6 z-40 rounded-full bg-[#9B1B1B] p-3 text-white shadow-lg hover:bg-[#7A1515] transition"
           aria-label="Наверх"
           title="Наверх"
         >
