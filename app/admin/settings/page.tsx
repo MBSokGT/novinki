@@ -70,14 +70,14 @@ export default function SettingsPage() {
   if (!isAdmin) return null
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen overflow-x-hidden bg-gradient-to-br from-slate-50 to-slate-100">
       <nav className="bg-[#1A1A1A] shadow-lg border-b border-[#333]">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-4">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
             <Link href="/" aria-label="На главную" className="inline-flex items-center">
               <Image src={(process.env.NEXT_PUBLIC_BASE_PATH||"")+ "/logo.png"} alt="Logo" width={120} height={40} className="object-contain" />
             </Link>
-            <h1 className="text-2xl font-bold text-white">⚙️ Настройки</h1>
+            <h1 className="truncate text-xl font-bold text-white sm:text-2xl">⚙️ Настройки</h1>
           </div>
           <Link href="/admin" className="px-4 py-2 bg-white/10 text-gray-200 rounded-lg hover:bg-white/20 transition">
             Назад
@@ -85,7 +85,7 @@ export default function SettingsPage() {
         </div>
       </nav>
 
-      <main className="max-w-4xl mx-auto px-6 py-8">
+      <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
         <div className="bg-white p-6 rounded-xl shadow-sm space-y-6">
           <div>
             <label className="block text-sm font-medium mb-2">Название сайта</label>
@@ -100,13 +100,13 @@ export default function SettingsPage() {
 
           <div>
             <label className="block text-sm font-medium mb-2">Основной цвет</label>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <input
                 type="color"
                 value={settings.primary_color}
                 onChange={(e) => setSettings({...settings, primary_color: e.target.value})}
                 onBlur={(e) => saveSetting('primary_color', e.target.value)}
-                className="h-10 w-20"
+                className="h-10 w-full sm:w-20"
               />
               <input
                 type="text"

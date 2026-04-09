@@ -109,16 +109,16 @@ export default function TrashPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen overflow-x-hidden bg-gradient-to-br from-slate-50 to-slate-100">
       <nav className="bg-[#1A1A1A] shadow-lg border-b border-[#333]">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-4">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
             <Link href="/" aria-label="На главную" className="inline-flex items-center">
               <Image src={(process.env.NEXT_PUBLIC_BASE_PATH||"")+ "/logo.png"} alt="Logo" width={120} height={40} className="object-contain" />
             </Link>
-            <h1 className="text-2xl font-bold text-slate-700">🗑️ Корзина</h1>
+            <h1 className="truncate text-xl font-bold text-slate-700 sm:text-2xl">🗑️ Корзина</h1>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <Link href="/admin" className="px-4 py-2 bg-[#9B1B1B] text-white rounded-lg hover:bg-[#7A1515] transition">
               ← Админ панель
             </Link>
@@ -126,16 +126,16 @@ export default function TrashPage() {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
-          <div className="bg-gradient-to-r from-slate-50 to-slate-100 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+          <div className="flex flex-col gap-3 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
             <h3 className="text-lg font-semibold text-slate-700 flex items-center gap-2">
               <span className="text-xl">🗑️</span>
               Удаленные товары ({deletedProducts.length})
             </h3>
             <button 
               onClick={handleCleanup}
-              className="px-4 py-2 bg-[#9B1B1B] text-white rounded-lg hover:bg-[#7A1515] transition text-sm"
+              className="w-full rounded-lg bg-[#9B1B1B] px-4 py-2 text-sm text-white transition hover:bg-[#7A1515] sm:w-auto"
             >
               🧹 Очистить старые (14+ дней)
             </button>
@@ -147,26 +147,54 @@ export default function TrashPage() {
               <p className="text-lg">Корзина пуста</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full">
+            <>
+              <div className="lg:hidden divide-y divide-slate-100">
+                {deletedProducts.map((product) => (
+                  <div key={product.id} className="space-y-3 p-4">
+                    <div className="space-y-1">
+                      <div className="break-words font-medium text-slate-900">{product.name}</div>
+                      <div className="break-words text-sm text-slate-600">{product.brand}</div>
+                      <div className="text-sm text-slate-500">
+                        Удален: {new Date(product.deleted_at).toLocaleDateString('ru-RU')}
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      <button 
+                        onClick={() => handleRestore(product)}
+                        className="inline-flex items-center justify-center rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm font-medium text-green-700"
+                      >
+                        ↩️ Восстановить
+                      </button>
+                      <button 
+                        onClick={() => handlePermanentDelete(product.id)}
+                        className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm font-medium text-slate-700"
+                      >
+                        💀 Удалить навсегда
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="hidden lg:block">
+                <table className="w-full table-fixed">
                 <thead className="bg-slate-50">
                   <tr>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Название</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Бренд</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Удален</th>
-                    <th className="px-6 py-4 text-right text-sm font-semibold text-slate-700">Действия</th>
+                    <th className="w-[34%] px-4 py-4 text-left text-sm font-semibold text-slate-700">Название</th>
+                    <th className="w-[20%] px-4 py-4 text-left text-sm font-semibold text-slate-700">Бренд</th>
+                    <th className="w-[18%] px-4 py-4 text-left text-sm font-semibold text-slate-700">Удален</th>
+                    <th className="w-[28%] px-4 py-4 text-right text-sm font-semibold text-slate-700">Действия</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {deletedProducts.map((product) => (
                     <tr key={product.id} className="hover:bg-slate-50 transition">
-                      <td className="px-6 py-4 font-medium text-slate-900">{product.name}</td>
-                      <td className="px-6 py-4 text-slate-600">{product.brand}</td>
-                      <td className="px-6 py-4 text-slate-500 text-sm">
+                      <td className="break-words px-4 py-4 font-medium text-slate-900">{product.name}</td>
+                      <td className="break-words px-4 py-4 text-slate-600">{product.brand}</td>
+                      <td className="px-4 py-4 text-slate-500 text-sm">
                         {new Date(product.deleted_at).toLocaleDateString('ru-RU')}
                       </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex justify-end gap-2">
+                      <td className="px-4 py-4 text-right">
+                        <div className="flex flex-wrap justify-end gap-2">
                           <button 
                             onClick={() => handleRestore(product)}
                             className="inline-flex items-center px-3 py-2 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 hover:border-green-300 transition-all"
@@ -186,8 +214,9 @@ export default function TrashPage() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
-            </div>
+                </table>
+              </div>
+            </>
           )}
         </div>
       </main>

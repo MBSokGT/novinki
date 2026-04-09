@@ -341,16 +341,16 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen overflow-x-hidden bg-gradient-to-br from-slate-50 to-slate-100">
       <nav className="bg-[#1A1A1A] shadow-lg border-b border-[#333]">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-4">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
             <Link href="/" aria-label="На главную" className="inline-flex items-center">
               <Image src={(process.env.NEXT_PUBLIC_BASE_PATH||"")+ "/logo.png"} alt="Logo" width={120} height={40} className="object-contain" />
             </Link>
-            <h1 className="text-2xl font-bold text-white">Админ панель</h1>
+            <h1 className="truncate text-xl font-bold text-white sm:text-2xl">Админ панель</h1>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <ExcelImport onSuccess={fetchProducts} />
             <Link href="/admin/trash" className="px-4 py-2 bg-[#9B1B1B] text-white rounded-lg hover:bg-[#7A1515] transition">
               🗑️ Корзина
@@ -368,9 +368,9 @@ export default function AdminPage() {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         {/* Меню функций */}
-        <div className="grid md:grid-cols-4 gap-4 mb-6">
+        <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <Link href="/admin/analytics" className="group p-3 bg-white rounded-xl shadow-lg border border-slate-200 hover:shadow-xl hover:border-slate-200 transition-all duration-300 text-center transform hover:-translate-y-1">
             <div className="text-2xl mb-1 group-hover:scale-110 transition-transform duration-300">📊</div>
             <div className="font-bold text-slate-800 group-hover:text-slate-800 transition-colors">Аналитика</div>
@@ -393,27 +393,27 @@ export default function AdminPage() {
           </Link>
         </div>
 
-        <div className="bg-white p-8 rounded-2xl shadow-lg border border-slate-200 mb-8">
+        <div className="mb-8 rounded-2xl border border-slate-200 bg-white p-4 shadow-lg sm:p-6 lg:p-8">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 bg-gradient-to-r from-[#9B1B1B] to-[#7A1515] rounded-xl flex items-center justify-center text-white text-xl">
               {editId ? '✏️' : '➕'}
             </div>
-            <h2 className="text-2xl font-bold text-slate-800">{editId ? 'Редактировать новинку' : 'Добавить новинку'}</h2>
+            <h2 className="text-xl font-bold text-slate-800 sm:text-2xl">{editId ? 'Редактировать новинку' : 'Добавить новинку'}</h2>
           </div>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid gap-4 lg:grid-cols-3">
               <input type="text" placeholder="Название" value={form.name} onChange={(e) => setForm({...form, name: e.target.value})} className="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" required />
               <input type="text" placeholder="Бренд" value={form.brand} onChange={(e) => setForm({...form, brand: e.target.value})} className="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" required />
               <input type="text" placeholder="Артикул" value={form.article_number} onChange={(e) => setForm({...form, article_number: e.target.value})} className="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" />
             </div>
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid gap-4 lg:grid-cols-2">
               <input type="number" min="0" step="0.01" placeholder="Цена (руб.)" value={form.price} onChange={(e) => setForm({...form, price: e.target.value})} className="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" />
               <input type="text" placeholder="Категория" value={form.category} onChange={(e) => setForm({...form, category: e.target.value})} className="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" />
             </div>
             <textarea placeholder="Описание" value={form.description} onChange={(e) => setForm({...form, description: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" rows={2} required />
             <textarea placeholder="Преимущества" value={form.advantages} onChange={(e) => setForm({...form, advantages: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" rows={2} required />
             <textarea placeholder="На что обратить внимание" value={form.attention_points} onChange={(e) => setForm({...form, attention_points: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" rows={2} required />
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid gap-4 lg:grid-cols-2">
               <input type="text" placeholder="Ссылка на товар на сайте" value={form.website_link} onChange={(e) => setForm({...form, website_link: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" />
               <input type="text" placeholder="Ссылка на товар в 1С" value={form.onec_link} onChange={(e) => setForm({...form, onec_link: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" />
             </div>
@@ -437,7 +437,7 @@ export default function AdminPage() {
                 </div>
               </label>
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row">
               <button
                 type="submit"
                 disabled={submitLoading}
@@ -474,7 +474,7 @@ export default function AdminPage() {
                 value={tableSearch}
                 onChange={(e) => setTableSearch(e.target.value)}
                 placeholder="Поиск по названию, бренду или артикулу"
-                className="flex-1 min-w-[260px] px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9B1B1B]"
+                className="w-full min-w-0 flex-1 px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] sm:min-w-[260px]"
               />
               <select
                 value={statusFilter}
@@ -510,7 +510,7 @@ export default function AdminPage() {
             </div>
           </div>
           {/* Mobile card list — visible below md */}
-          <div className="md:hidden divide-y divide-slate-100">
+          <div className="xl:hidden divide-y divide-slate-100">
             {filteredProducts.map((product) => (
               <div key={product.id} className={`p-4 ${product.is_archived ? 'opacity-60 bg-slate-50' : ''}`}>
                 <div className="flex justify-between items-start mb-2">
@@ -564,33 +564,33 @@ export default function AdminPage() {
           </div>
 
           {/* Desktop table — hidden below md */}
-          <div className="hidden md:block overflow-x-auto">
-            <table className="min-w-full">
+          <div className="hidden xl:block overflow-hidden">
+            <table className="w-full table-fixed">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Название</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Бренд</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Артикул</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Ссылки</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Статус</th>
-                  <th className="px-6 py-4 text-right text-sm font-semibold text-slate-700">Действия</th>
+                  <th className="w-[24%] px-4 py-4 text-left text-sm font-semibold text-slate-700">Название</th>
+                  <th className="w-[14%] px-4 py-4 text-left text-sm font-semibold text-slate-700">Бренд</th>
+                  <th className="w-[14%] px-4 py-4 text-left text-sm font-semibold text-slate-700">Артикул</th>
+                  <th className="w-[14%] px-4 py-4 text-left text-sm font-semibold text-slate-700">Ссылки</th>
+                  <th className="w-[12%] px-4 py-4 text-left text-sm font-semibold text-slate-700">Статус</th>
+                  <th className="w-[22%] px-4 py-4 text-right text-sm font-semibold text-slate-700">Действия</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filteredProducts.map((product) => (
                   <tr key={product.id} className={`hover:bg-slate-50 transition ${product.is_archived ? 'opacity-60 bg-slate-50' : ''}`}>
-                    <td className="px-6 py-4 font-medium text-slate-900">{product.name}</td>
-                    <td className="px-6 py-4 text-slate-600">{product.brand}</td>
-                    <td className="px-6 py-4 text-slate-500 text-sm">{product.article_number || '—'}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col gap-1">
+                    <td className="break-words px-4 py-4 align-top font-medium text-slate-900">{product.name}</td>
+                    <td className="break-words px-4 py-4 align-top text-slate-600">{product.brand}</td>
+                    <td className="break-words px-4 py-4 align-top text-sm text-slate-500">{product.article_number || '—'}</td>
+                    <td className="px-4 py-4 align-top">
+                      <div className="flex flex-col gap-1 break-words">
                         {product.website_link && (
-                          <a href={product.website_link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1">
+                          <a href={product.website_link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1 break-all">
                             🌐 Сайт
                           </a>
                         )}
                         {product.onec_link && (
-                          <a href={product.onec_link} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-800 text-sm flex items-center gap-1">
+                          <a href={product.onec_link} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-800 text-sm flex items-center gap-1 break-all">
                             📊 1С
                           </a>
                         )}
@@ -599,7 +599,7 @@ export default function AdminPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4 align-top">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         product.is_archived
                           ? 'bg-gray-100 text-gray-800'
@@ -608,25 +608,25 @@ export default function AdminPage() {
                         {product.is_archived ? '🗄️ Архив' : '✅ Активный'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-2">
+                    <td className="px-4 py-4 text-right align-top">
+                      <div className="ml-auto grid max-w-[18rem] grid-cols-2 gap-2">
                         <button
                           onClick={() => handleEdit(product)}
-                          className="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300 hover:shadow-md transition-all duration-200 transform hover:-translate-y-0.5"
+                          className="inline-flex items-center justify-center px-3 py-2 text-center text-sm leading-tight font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300 hover:shadow-md transition-all duration-200 transform hover:-translate-y-0.5"
                         >
                           <span className="mr-1.5">✏️</span>
                           Редактировать
                         </button>
                         <button
                           onClick={() => handleDuplicate(product)}
-                          className="inline-flex items-center px-3 py-2 text-sm font-medium text-violet-700 bg-violet-50 border border-violet-200 rounded-lg hover:bg-violet-100 hover:border-violet-300 hover:shadow-md transition-all duration-200 transform hover:-translate-y-0.5"
+                          className="inline-flex items-center justify-center px-3 py-2 text-center text-sm leading-tight font-medium text-violet-700 bg-violet-50 border border-violet-200 rounded-lg hover:bg-violet-100 hover:border-violet-300 hover:shadow-md transition-all duration-200 transform hover:-translate-y-0.5"
                         >
                           <span className="mr-1.5">📄</span>
                           Копия
                         </button>
                         <button
                           onClick={() => handleArchive(product.id, product.is_archived || false)}
-                          className={`inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 transform hover:-translate-y-0.5 hover:shadow-md ${
+                          className={`inline-flex items-center justify-center px-3 py-2 text-center text-sm leading-tight font-medium rounded-lg transition-all duration-200 transform hover:-translate-y-0.5 hover:shadow-md ${
                             product.is_archived
                               ? 'text-green-700 bg-green-50 border border-green-200 hover:bg-green-100 hover:border-green-300'
                               : 'text-slate-700 bg-slate-100 border border-slate-200 hover:bg-slate-200 hover:border-slate-300'
@@ -637,7 +637,7 @@ export default function AdminPage() {
                         </button>
                         <button
                           onClick={() => handleDelete(product.id)}
-                          className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-700 bg-slate-100 border border-slate-200 rounded-lg hover:bg-slate-100 hover:border-slate-300 hover:shadow-md transition-all duration-200 transform hover:-translate-y-0.5"
+                          className="inline-flex items-center justify-center px-3 py-2 text-center text-sm leading-tight font-medium text-slate-700 bg-slate-100 border border-slate-200 rounded-lg hover:bg-slate-100 hover:border-slate-300 hover:shadow-md transition-all duration-200 transform hover:-translate-y-0.5"
                         >
                           <span className="mr-1.5">🗑️</span>
                           Удалить
