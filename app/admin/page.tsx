@@ -175,8 +175,7 @@ export default function AdminPage() {
         const { data, error: uploadError } = await apiClient.storage.from('products').upload(fileName, image)
         if (uploadError) throw uploadError
         if (data) {
-          const { data: { publicUrl } } = apiClient.storage.from('products').getPublicUrl(fileName)
-          imageUrl = publicUrl
+          imageUrl = data.path
         }
       }
 
@@ -185,8 +184,7 @@ export default function AdminPage() {
         const { data, error: uploadError } = await apiClient.storage.from('flyers').upload(fileName, flyer)
         if (uploadError) throw uploadError
         if (data) {
-          const { data: { publicUrl } } = apiClient.storage.from('flyers').getPublicUrl(fileName)
-          flyerUrl = publicUrl
+          flyerUrl = data.path
         }
       }
 
