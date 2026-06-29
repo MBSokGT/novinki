@@ -10,7 +10,6 @@ export default function Breadcrumbs() {
   const breadcrumbMap: Record<string, string> = {
     'admin': 'Админ панель',
     'bookmarks': 'Закладки',
-    'users': 'Пользователи',
     'trash': 'Корзина',
     'archive': 'Архив',
     'analytics': 'Аналитика',

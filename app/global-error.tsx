@@ -20,9 +20,9 @@ export default function GlobalError({
       <body>
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
           <div className="text-center">
-            <Link href="/" aria-label="На главную" className="inline-block">
+            <a href="https://complexbar.ru" aria-label="complexbar.ru" className="inline-block">
               <Image src={(process.env.NEXT_PUBLIC_BASE_PATH||"")+ "/logo.png"} alt="Logo" width={150} height={50} className="mx-auto mb-8" />
-            </Link>
+            </a>
             <div className="text-6xl mb-4">⚠️</div>
             <h1 className="text-3xl font-bold text-slate-900 mb-4">Что-то пошло не так</h1>
             <p className="text-slate-600 mb-8 max-w-md">

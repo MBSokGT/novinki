@@ -1,0 +1,18 @@
+services:
+  novinki-app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - novinki-data:/app/data
+    environment:
+      NEXT_PUBLIC_DEMO_MODE: "false"
+      SINGLE_ADMIN_MODE: "true"
+      APP_URL: "https://your-domain.example/reset-password"
+      ENCRYPTION_KEY: "${ENCRYPTION_KEY}"
+      SQLITE_DB_PATH: /app/data/novinki.db
+      NEXT_PUBLIC_BASE_PATH: ""
+
+volumes:
+  novinki-data:

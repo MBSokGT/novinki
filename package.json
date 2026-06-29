@@ -5,17 +5,13 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build --webpack",
-    "build:pages": "bash ./scripts/build-pages.sh",
     "start": "next start",
     "lint": "eslint",
-    "cf:build": "next build --webpack && opennextjs-cloudflare build --skipNextBuild",
-    "cf:preview": "next build --webpack && opennextjs-cloudflare build --skipNextBuild && wrangler dev",
-    "cf:deploy": "next build --webpack && opennextjs-cloudflare build --skipNextBuild && opennextjs-cloudflare deploy",
-    "db:create": "wrangler d1 create my-db-name",
-    "db:migrate": "wrangler d1 migrations apply my-db-name"
+    "seed:admin": "tsx scripts/seed-admin.ts"
   },
   "dependencies": {
     "@types/papaparse": "^5.5.2",
+    "better-sqlite3": "^12.11.1",
     "next": "^16.1.5",
     "papaparse": "^5.5.3",
     "react": "19.2.3",
@@ -23,16 +19,15 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20260408.1",
-    "@opennextjs/cloudflare": "^1.18.1",
     "@tailwindcss/postcss": "^4",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "^16.1.5",
     "tailwindcss": "^4",
-    "typescript": "^5",
-    "wrangler": "^4.81.0"
+    "tsx": "^4.19.2",
+    "typescript": "^5"
   }
 }

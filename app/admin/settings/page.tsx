@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { apiClient } from '@/lib/api-client'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -23,7 +23,7 @@ export default function SettingsPage() {
   const checkAdmin = async () => {
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await apiClient.auth.getUser()
 
     if (!user) {
       router.push('/login')
@@ -31,7 +31,7 @@ export default function SettingsPage() {
       return
     }
 
-    const { data: adminStatus } = await supabase.rpc('check_admin_status', { user_id: user.id })
+    const { data: adminStatus } = await apiClient.rpc('check_admin_status', { user_id: user.id })
     if (!adminStatus) {
       router.push('/')
       setLoading(false)
@@ -44,7 +44,7 @@ export default function SettingsPage() {
   }
 
   const fetchSettings = async () => {
-    const { data } = await supabase.from('site_settings').select('*')
+    const { data } = await apiClient.from('site_settings').select('*')
     if (data) {
       const settingsObj: any = {}
       data.forEach((s: any) => {
@@ -55,7 +55,7 @@ export default function SettingsPage() {
   }
 
   const saveSetting = async (key: string, value: string) => {
-    await supabase.from('site_settings').upsert({ key, value, updated_by: (await supabase.auth.getUser()).data.user?.id })
+    await apiClient.from('site_settings').upsert({ key, value, updated_by: (await apiClient.auth.getUser()).data.user?.id })
     fetchSettings()
   }
 
@@ -74,9 +74,9 @@ export default function SettingsPage() {
       <nav className="bg-[#1A1A1A] shadow-lg border-b border-[#333]">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-            <Link href="/" aria-label="На главную" className="inline-flex items-center">
+            <a href="https://complexbar.ru" aria-label="complexbar.ru" className="inline-flex items-center">
               <Image src={(process.env.NEXT_PUBLIC_BASE_PATH||"")+ "/logo.png"} alt="Logo" width={120} height={40} className="object-contain" />
-            </Link>
+            </a>
             <h1 className="truncate text-xl font-bold text-white sm:text-2xl">⚙️ Настройки</h1>
           </div>
           <Link href="/admin" className="px-4 py-2 bg-white/10 text-gray-200 rounded-lg hover:bg-white/20 transition">

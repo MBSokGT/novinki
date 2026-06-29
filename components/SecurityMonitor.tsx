@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { apiClient } from '@/lib/api-client'
 
 export default function SecurityMonitor() {
   const [suspiciousActivity, setSuspiciousActivity] = useState<any[]>([])
@@ -16,7 +16,7 @@ export default function SecurityMonitor() {
 
   const fetchSuspiciousActivity = async () => {
     try {
-      const { data } = await supabase
+      const { data } = await apiClient
         .from('audit_logs')
         .select('*')
         .eq('status', 'suspicious')

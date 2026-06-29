@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { apiClient } from '@/lib/api-client'
 import { Product } from '@/types/product'
 import Image from 'next/image'
 import ProductSkeleton from './ProductSkeleton'
@@ -21,6 +21,7 @@ const ITEMS_PER_PAGE = 30
 const VIEW_MODE_KEY = 'novinki:viewMode'
 const SORT_BY_KEY = 'novinki:sortBy'
 const CATEGORY_KEY = 'novinki:selectedCategory'
+const YEAR_KEY = 'novinki:selectedYear'
 const VIEW_HISTORY_KEY = 'novinki:viewHistory'
 const BOOKMARKS_SYNC_KEY = 'novinki:bookmarks_sync'
 
@@ -37,9 +38,11 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [bookmarks, setBookmarks] = useState<Set<string>>(new Set())
+  const [hasUserSession, setHasUserSession] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('cards')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [selectedYear, setSelectedYear] = useState<string | null>(null)
   const [sortBy, setSortBy] = useState<'date' | 'name' | 'rating'>('date')
   const [userRatings, setUserRatings] = useState<Map<string, number>>(new Map())
   const [compareProducts, setCompareProducts] = useState<Product[]>([])
@@ -68,6 +71,11 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
       setSelectedCategory(savedCategory)
     }
 
+    const savedYear = window.localStorage.getItem(YEAR_KEY)
+    if (savedYear) {
+      setSelectedYear(savedYear)
+    }
+
     const savedHistory = window.localStorage.getItem(VIEW_HISTORY_KEY)
     if (savedHistory) {
       try {
@@ -86,6 +94,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
       searchParams.has('q') ||
       searchParams.has('brand') ||
       searchParams.has('category') ||
+      searchParams.has('year') ||
       searchParams.has('sort') ||
       searchParams.has('view') ||
       searchParams.has('page')
@@ -98,6 +107,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
     const q = searchParams.get('q') || ''
     const brand = searchParams.get('brand')
     const category = searchParams.get('category')
+    const year = searchParams.get('year')
     const sort = searchParams.get('sort')
     const view = searchParams.get('view')
     const pageFromQuery = Number.parseInt(searchParams.get('page') || '1', 10)
@@ -107,6 +117,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
     setDebouncedSearch(q)
     setSelectedBrand(brand || null)
     setSelectedCategory(category || null)
+    setSelectedYear(year || null)
     setSortBy(sort === 'name' || sort === 'rating' ? sort : 'date')
     setViewMode(view === 'table' ? 'table' : 'cards')
     setCurrentPage(page)
@@ -132,6 +143,9 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
     if (selectedCategory) params.set('category', selectedCategory)
     else params.delete('category')
 
+    if (selectedYear) params.set('year', selectedYear)
+    else params.delete('year')
+
     if (sortBy !== 'date') params.set('sort', sortBy)
     else params.delete('sort')
 
@@ -155,6 +169,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
     searchParams,
     selectedBrand,
     selectedCategory,
+    selectedYear,
     sortBy,
     viewMode,
   ])
@@ -177,6 +192,15 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
       window.localStorage.removeItem(CATEGORY_KEY)
     }
   }, [selectedCategory])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (selectedYear) {
+      window.localStorage.setItem(YEAR_KEY, selectedYear)
+    } else {
+      window.localStorage.removeItem(YEAR_KEY)
+    }
+  }, [selectedYear])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -221,7 +245,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
   useEffect(() => {
     if (currentPage !== 1) setCurrentPage(1)
     else fetchProducts()
-  }, [debouncedSearch, selectedBrand, selectedCategory, sortBy])
+  }, [debouncedSearch, selectedBrand, selectedCategory, selectedYear, sortBy])
 
   // Загрузка страницы при изменении currentPage
   useEffect(() => {
@@ -230,9 +254,9 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
 
   // Полный список товаров с базовыми полями — для автодополнения и похожих товаров
   const fetchProductsMeta = async () => {
-    const { data } = await supabase
+    const { data } = await apiClient
       .from('products')
-      .select('id, name, brand, category, article_number, price, rating, image_url, description, advantages')
+      .select('id, name, brand, category, year, article_number, price, rating, image_url, description, advantages')
       .order('created_at', { ascending: false })
     if (data) setProductsMeta(data as Product[])
   }
@@ -241,7 +265,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
   const fetchProducts = async () => {
     setLoading(true)
 
-    let query = supabase
+    let query = apiClient
       .from('products')
       .select('*', { count: 'exact' })
 
@@ -252,6 +276,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
     }
     if (selectedBrand) query = query.eq('brand', selectedBrand)
     if (selectedCategory) query = query.eq('category', selectedCategory)
+    if (selectedYear) query = query.eq('year', selectedYear)
 
     if (sortBy === 'name') {
       query = query.order('name', { ascending: true })
@@ -271,10 +296,14 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
   }
 
   const fetchBookmarks = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    const { data: { user } } = await apiClient.auth.getUser()
+    setHasUserSession(Boolean(user))
+    if (!user) {
+      setBookmarks(new Set())
+      return
+    }
 
-    const { data } = await supabase
+    const { data } = await apiClient
       .from('bookmarks')
       .select('product_id')
       .eq('user_id', user.id)
@@ -283,10 +312,10 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
   }
 
   const fetchUserRatings = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { user } } = await apiClient.auth.getUser()
     if (!user) return
 
-    const { data } = await supabase
+    const { data } = await apiClient
       .from('product_ratings')
       .select('product_id, rating')
       .eq('user_id', user.id)
@@ -295,19 +324,19 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
   }
 
   const rateProduct = async (productId: string, rating: number) => {
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { user } } = await apiClient.auth.getUser()
     if (!user) return
 
     // Optimistic update: immediately reflect the new user rating in the UI
     setUserRatings(prev => new Map(prev).set(productId, rating))
 
     try {
-      await supabase
+      await apiClient
         .from('product_ratings')
         .upsert({ product_id: productId, user_id: user.id, rating })
 
       // Fetch only the single updated product to get the new average rating
-      const { data: updated } = await supabase
+      const { data: updated } = await apiClient
         .from('products')
         .select('*')
         .eq('id', productId)
@@ -347,9 +376,9 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
   const addToHistory = async (productId: string) => {
     setViewHistory((prev) => [productId, ...prev.filter((id) => id !== productId)].slice(0, 10))
     
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { user } } = await apiClient.auth.getUser()
     if (user) {
-      await supabase.from('view_history').insert({ user_id: user.id, product_id: productId })
+      await apiClient.from('view_history').insert({ user_id: user.id, product_id: productId })
     }
   }
 
@@ -413,12 +442,12 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
   )
 
   const toggleBookmark = async (productId: string) => {
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { user } } = await apiClient.auth.getUser()
     if (!user) return
 
     try {
       if (bookmarks.has(productId)) {
-        await supabase
+        await apiClient
           .from('bookmarks')
           .delete()
           .eq('user_id', user.id)
@@ -432,7 +461,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
         window.localStorage.setItem(BOOKMARKS_SYNC_KEY, Date.now().toString())
         showToast('Удалено из закладок', 'info')
       } else {
-        await supabase
+        await apiClient
           .from('bookmarks')
           .insert({ user_id: user.id, product_id: productId })
 
@@ -449,6 +478,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
     setSearch('')
     setSelectedBrand(null)
     setSelectedCategory(null)
+    setSelectedYear(null)
     setSortBy('date')
     setCurrentPage(1)
   }
@@ -457,6 +487,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
     (debouncedSearch ? 1 : 0) +
     (selectedBrand ? 1 : 0) +
     (selectedCategory ? 1 : 0) +
+    (selectedYear ? 1 : 0) +
     (sortBy !== 'date' ? 1 : 0)
 
   const productsById = useMemo(() => {
@@ -503,6 +534,8 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
         products={productsMeta}
         selectedCategory={selectedCategory}
         setSelectedCategory={setSelectedCategory}
+        selectedYear={selectedYear}
+        setSelectedYear={setSelectedYear}
         sortBy={sortBy}
         setSortBy={setSortBy}
         viewMode={viewMode}
@@ -593,7 +626,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
               <div className="p-3 flex flex-col flex-1">
                 <div className="flex items-start justify-between mb-1.5">
                   <h3 className="font-semibold text-slate-900 text-sm leading-snug line-clamp-2 flex-1 mr-1">{product.name}</h3>
-                  {!isAdmin && (
+                  {!isAdmin && hasUserSession && (
                     <button onClick={() => toggleBookmark(product.id)} className={`p-1.5 rounded-lg transition flex-shrink-0 ${bookmarks.has(product.id) ? 'text-yellow-500' : 'text-slate-300 hover:text-slate-500'}`}>
                       <svg className="w-4 h-4" fill={bookmarks.has(product.id) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
                     </button>
@@ -603,9 +636,10 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                 <div className="flex flex-wrap items-center justify-start gap-1 mb-2">
                   <button onClick={() => setSelectedBrand(product.brand)} className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 transition">{product.brand}</button>
                   {product.category && <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700">{product.category}</span>}
+                  {product.year && <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-50 text-amber-700">{product.year}</span>}
                 </div>
                 <p className="text-xs text-slate-500 line-clamp-2 mb-2">{product.description}</p>
-                {!isAdmin && <StarRating rating={product.rating || 0} userRating={userRatings.get(product.id)} onRate={(r) => rateProduct(product.id, r)} />}
+                {!isAdmin && hasUserSession && <StarRating rating={product.rating || 0} userRating={userRatings.get(product.id)} onRate={(r) => rateProduct(product.id, r)} />}
                 <button onClick={() => viewProduct(product)} className="w-full px-3 py-1.5 bg-[#9B1B1B] text-white text-xs font-medium rounded-lg hover:bg-[#7A1515] transition mt-auto">Подробнее</button>
               </div>
             </div>
@@ -654,7 +688,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                     </td>
                     <td className="px-6 py-4 text-center">
                       <div className="flex items-center justify-center gap-2">
-                        {!isAdmin && (
+                        {!isAdmin && hasUserSession && (
                           <button
                             onClick={() => toggleBookmark(product.id)}
                             className={`p-2 rounded-lg transition ${bookmarks.has(product.id) ? 'bg-yellow-100 text-yellow-600 hover:bg-yellow-200' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}

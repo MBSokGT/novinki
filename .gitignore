@@ -1,9 +1,13 @@
 node_modules
 .next
-.open-next
-.wrangler
 out
 .env*.local
-.vercel
 *.log
 .DS_Store
+tsconfig.tsbuildinfo
+data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+.claude/

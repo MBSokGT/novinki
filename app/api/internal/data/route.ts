@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { executeDataRequest, type DataRequestPayload } from '@/lib/d1'
+import { executeDataRequest, type DataRequestPayload } from '@/lib/db'
 
 export async function POST(request: NextRequest) {
   try {

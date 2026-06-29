@@ -5,7 +5,6 @@ export const DEMO_ADMIN_PASSWORD = 'admin1234'
 
 export const DEMO_USERS = [
   { id: 'demo-admin-001', email: DEMO_ADMIN_EMAIL, is_admin: true, name: 'Demo Admin' },
-  { id: 'demo-user-001', email: 'user@demo.ru', is_admin: false, name: 'Demo User' },
 ]
 
 const img = (seed: string) =>

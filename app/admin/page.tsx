@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { apiClient } from '@/lib/api-client'
 import { Product } from '@/types/product'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -20,12 +20,15 @@ const EMPTY_FORM = {
   onec_link: '',
   price: '',
   category: '',
+  year: '',
 }
 
 const ADMIN_DRAFT_KEY = 'novinki:adminFormDraft'
+const YEAR_OPTIONS = ['2025', '2026', '2027']
 
 export default function AdminPage() {
   const [products, setProducts] = useState<Product[]>([])
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([])
   const [form, setForm] = useState(EMPTY_FORM)
   const [image, setImage] = useState<File | null>(null)
   const [editId, setEditId] = useState<string | null>(null)
@@ -41,7 +44,7 @@ export default function AdminPage() {
 
     const checkAuth = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser()
+        const { data: { user } } = await apiClient.auth.getUser()
         if (cancelled) return
         if (!user) {
           router.push('/login')
@@ -49,7 +52,7 @@ export default function AdminPage() {
         }
         setUser(user)
 
-        const { data: profile } = await supabase
+        const { data: profile } = await apiClient
           .from('user_profiles')
           .select('is_admin')
           .eq('id', user.id)
@@ -59,6 +62,7 @@ export default function AdminPage() {
         if (profile?.is_admin === true) {
           setIsAdmin(true)
           fetchProducts()
+          fetchCategories()
         } else {
           setIsAdmin(false)
           router.push('/')
@@ -104,11 +108,16 @@ export default function AdminPage() {
   }, [form, editId])
 
   const fetchProducts = async () => {
-    const { data } = await supabase
+    const { data } = await apiClient
       .from('products')
       .select('*')
       .order('created_at', { ascending: false })
     if (data) setProducts(data)
+  }
+
+  const fetchCategories = async () => {
+    const { data } = await apiClient.from('categories').select('*').order('name', { ascending: true })
+    if (data) setCategories(data)
   }
 
   const normalizeLink = (link?: string) => {
@@ -160,10 +169,10 @@ export default function AdminPage() {
 
       if (image) {
         const fileName = `${Date.now()}_${image.name}`
-        const { data, error: uploadError } = await supabase.storage.from('products').upload(fileName, image)
+        const { data, error: uploadError } = await apiClient.storage.from('products').upload(fileName, image)
         if (uploadError) throw uploadError
         if (data) {
-          const { data: { publicUrl } } = supabase.storage.from('products').getPublicUrl(fileName)
+          const { data: { publicUrl } } = apiClient.storage.from('products').getPublicUrl(fileName)
           imageUrl = publicUrl
         }
       }
@@ -178,16 +187,17 @@ export default function AdminPage() {
         website_link: normalizeLink(form.website_link),
         onec_link: normalizeLink(form.onec_link),
         category: form.category,
+        year: form.year,
         price: form.price ? parseFloat(form.price) : null,
         image_url: imageUrl || (editId ? products.find(p => p.id === editId)?.image_url : ''),
       }
 
       if (editId) {
-        const { error } = await supabase.from('products').update(productData).eq('id', editId)
+        const { error } = await apiClient.from('products').update(productData).eq('id', editId)
         if (error) throw error
         showToast('Товар обновлён', 'success')
       } else {
-        const { error } = await supabase.from('products').insert([productData])
+        const { error } = await apiClient.from('products').insert([productData])
         if (error) throw error
         showToast('Товар добавлен', 'success')
       }
@@ -214,6 +224,7 @@ export default function AdminPage() {
       onec_link: product.onec_link || '',
       price: product.price != null ? String(product.price) : '',
       category: (product as any).category || '',
+      year: product.year || '',
     })
     setImage(null)
     setEditId(product.id)
@@ -234,10 +245,13 @@ export default function AdminPage() {
         attention_points: product.attention_points,
         website_link: product.website_link || '',
         onec_link: product.onec_link || '',
+        category: (product as any).category || '',
+        year: product.year || '',
+        price: product.price ?? null,
         is_archived: false,
       }
 
-      const { error } = await supabase.from('products').insert([payload])
+      const { error } = await apiClient.from('products').insert([payload])
       if (error) throw error
 
       await fetchProducts()
@@ -256,7 +270,7 @@ export default function AdminPage() {
           console.log('Deleting product:', product)
           
           // Перемещаем в корзину
-          const { error: insertError } = await supabase.from('deleted_products').insert({
+          const { error: insertError } = await apiClient.from('deleted_products').insert({
             original_product_id: product.id,
             name: product.name,
             brand: product.brand,
@@ -277,7 +291,7 @@ export default function AdminPage() {
           }
 
           // Удаляем из основной таблицы
-          const { error: deleteError } = await supabase.from('products').delete().eq('id', id)
+          const { error: deleteError } = await apiClient.from('products').delete().eq('id', id)
 
           if (deleteError) {
             console.error('Error deleting from products:', deleteError)
@@ -302,7 +316,7 @@ export default function AdminPage() {
         console.log('Archiving product:', { id, isArchived, newStatus: !isArchived })
         
         // Используем service role для обхода RLS
-        const { data, error } = await supabase
+        const { data, error } = await apiClient
           .from('products')
           .update({ is_archived: !isArchived })
           .eq('id', id)
@@ -324,7 +338,7 @@ export default function AdminPage() {
   }
 
   const handleLogout = async () => {
-    await supabase.auth.signOut()
+    await apiClient.auth.signOut()
     router.push('/login')
   }
 
@@ -345,18 +359,15 @@ export default function AdminPage() {
       <nav className="bg-[#1A1A1A] shadow-lg border-b border-[#333]">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-            <Link href="/" aria-label="На главную" className="inline-flex items-center">
+            <a href="https://complexbar.ru" aria-label="complexbar.ru" className="inline-flex items-center">
               <Image src={(process.env.NEXT_PUBLIC_BASE_PATH||"")+ "/logo.png"} alt="Logo" width={120} height={40} className="object-contain" />
-            </Link>
+            </a>
             <h1 className="truncate text-xl font-bold text-white sm:text-2xl">Админ панель</h1>
           </div>
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <ExcelImport onSuccess={fetchProducts} />
             <Link href="/admin/trash" className="px-4 py-2 bg-[#9B1B1B] text-white rounded-lg hover:bg-[#7A1515] transition">
               🗑️ Корзина
-            </Link>
-            <Link href="/admin/users" className="px-4 py-2 bg-[#9B1B1B] text-white rounded-lg hover:bg-[#7A1515] transition">
-              👥 Пользователи
             </Link>
             <Link href="/" className="px-4 py-2 bg-white/10 text-gray-200 rounded-lg hover:bg-white/20 transition">
               На главную
@@ -370,7 +381,7 @@ export default function AdminPage() {
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         {/* Меню функций */}
-        <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
           <Link href="/admin/analytics" className="group p-3 bg-white rounded-xl shadow-lg border border-slate-200 hover:shadow-xl hover:border-slate-200 transition-all duration-300 text-center transform hover:-translate-y-1">
             <div className="text-2xl mb-1 group-hover:scale-110 transition-transform duration-300">📊</div>
             <div className="font-bold text-slate-800 group-hover:text-slate-800 transition-colors">Аналитика</div>
@@ -380,6 +391,11 @@ export default function AdminPage() {
             <div className="text-2xl mb-1 group-hover:scale-110 transition-transform duration-300">🏷️</div>
             <div className="font-bold text-slate-800 group-hover:text-slate-800 transition-colors">Категории</div>
             <div className="text-sm text-slate-500 mt-1">Управление категориями</div>
+          </Link>
+          <Link href="/admin/users" className="group p-3 bg-white rounded-xl shadow-lg border border-slate-200 hover:shadow-xl hover:border-slate-200 transition-all duration-300 text-center transform hover:-translate-y-1">
+            <div className="text-2xl mb-1 group-hover:scale-110 transition-transform duration-300">👥</div>
+            <div className="font-bold text-slate-800 group-hover:text-slate-800 transition-colors">Пользователи</div>
+            <div className="text-sm text-slate-500 mt-1">Сотрудники и админы</div>
           </Link>
           <Link href="/admin/settings" className="group p-3 bg-white rounded-xl shadow-lg border border-slate-200 hover:shadow-xl hover:border-slate-200 transition-all duration-300 text-center transform hover:-translate-y-1">
             <div className="text-2xl mb-1 group-hover:scale-110 transition-transform duration-300">⚙️</div>
@@ -406,9 +422,20 @@ export default function AdminPage() {
               <input type="text" placeholder="Бренд" value={form.brand} onChange={(e) => setForm({...form, brand: e.target.value})} className="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" required />
               <input type="text" placeholder="Артикул" value={form.article_number} onChange={(e) => setForm({...form, article_number: e.target.value})} className="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" />
             </div>
-            <div className="grid gap-4 lg:grid-cols-2">
+            <div className="grid gap-4 lg:grid-cols-3">
               <input type="number" min="0" step="0.01" placeholder="Цена (руб.)" value={form.price} onChange={(e) => setForm({...form, price: e.target.value})} className="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" />
-              <input type="text" placeholder="Категория" value={form.category} onChange={(e) => setForm({...form, category: e.target.value})} className="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" />
+              <select value={form.category} onChange={(e) => setForm({...form, category: e.target.value})} className="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition bg-white">
+                <option value="">Категория...</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.name}>{cat.name}</option>
+                ))}
+              </select>
+              <select value={form.year} onChange={(e) => setForm({...form, year: e.target.value})} className="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition bg-white">
+                <option value="">Год...</option>
+                {YEAR_OPTIONS.map((year) => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
             </div>
             <textarea placeholder="Описание" value={form.description} onChange={(e) => setForm({...form, description: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" rows={2} required />
             <textarea placeholder="Преимущества" value={form.advantages} onChange={(e) => setForm({...form, advantages: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" rows={2} required />
@@ -536,21 +563,21 @@ export default function AdminPage() {
                     )}
                   </div>
                 )}
-                <div className="grid grid-cols-2 gap-2">
-                  <button onClick={() => handleEdit(product)} className="flex items-center justify-center gap-1 px-3 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <button onClick={() => handleEdit(product)} className="flex min-h-[44px] w-full items-center justify-center gap-1 px-3 py-2 text-center text-sm font-medium leading-tight whitespace-normal break-words text-blue-700 bg-blue-50 border border-blue-200 rounded-lg">
                     ✏️ Редактировать
                   </button>
-                  <button onClick={() => handleDuplicate(product)} className="flex items-center justify-center gap-1 px-3 py-2 text-sm font-medium text-violet-700 bg-violet-50 border border-violet-200 rounded-lg">
+                  <button onClick={() => handleDuplicate(product)} className="flex min-h-[44px] w-full items-center justify-center gap-1 px-3 py-2 text-center text-sm font-medium leading-tight whitespace-normal break-words text-violet-700 bg-violet-50 border border-violet-200 rounded-lg">
                     📄 Копия
                   </button>
-                  <button onClick={() => handleArchive(product.id, product.is_archived || false)} className={`flex items-center justify-center gap-1 px-3 py-2 text-sm font-medium rounded-lg border ${
+                  <button onClick={() => handleArchive(product.id, product.is_archived || false)} className={`flex min-h-[44px] w-full items-center justify-center gap-1 px-3 py-2 text-center text-sm leading-tight whitespace-normal break-words rounded-lg border ${
                     product.is_archived
                       ? 'text-green-700 bg-green-50 border-green-200'
                       : 'text-slate-700 bg-slate-100 border-slate-200'
                   }`}>
                     {product.is_archived ? '📄 Разархивировать' : '🗄️ Архивировать'}
                   </button>
-                  <button onClick={() => handleDelete(product.id)} className="flex items-center justify-center gap-1 px-3 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg">
+                  <button onClick={() => handleDelete(product.id)} className="flex min-h-[44px] w-full items-center justify-center gap-1 px-3 py-2 text-center text-sm font-medium leading-tight whitespace-normal break-words text-red-700 bg-red-50 border border-red-200 rounded-lg">
                     🗑️ Удалить
                   </button>
                 </div>
@@ -609,24 +636,24 @@ export default function AdminPage() {
                       </span>
                     </td>
                     <td className="px-4 py-4 text-right align-top">
-                      <div className="ml-auto grid max-w-[18rem] grid-cols-2 gap-2">
+                      <div className="ml-auto grid max-w-[13rem] grid-cols-1 gap-2">
                         <button
                           onClick={() => handleEdit(product)}
-                          className="inline-flex items-center justify-center px-3 py-2 text-center text-sm leading-tight font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300 hover:shadow-md transition-all duration-200 transform hover:-translate-y-0.5"
+                          className="inline-flex min-h-[44px] items-center justify-center px-3 py-2 text-center text-sm leading-tight whitespace-normal break-words font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300 hover:shadow-md transition-all duration-200 transform hover:-translate-y-0.5"
                         >
                           <span className="mr-1.5">✏️</span>
                           Редактировать
                         </button>
                         <button
                           onClick={() => handleDuplicate(product)}
-                          className="inline-flex items-center justify-center px-3 py-2 text-center text-sm leading-tight font-medium text-violet-700 bg-violet-50 border border-violet-200 rounded-lg hover:bg-violet-100 hover:border-violet-300 hover:shadow-md transition-all duration-200 transform hover:-translate-y-0.5"
+                          className="inline-flex min-h-[44px] items-center justify-center px-3 py-2 text-center text-sm leading-tight whitespace-normal break-words font-medium text-violet-700 bg-violet-50 border border-violet-200 rounded-lg hover:bg-violet-100 hover:border-violet-300 hover:shadow-md transition-all duration-200 transform hover:-translate-y-0.5"
                         >
                           <span className="mr-1.5">📄</span>
                           Копия
                         </button>
                         <button
                           onClick={() => handleArchive(product.id, product.is_archived || false)}
-                          className={`inline-flex items-center justify-center px-3 py-2 text-center text-sm leading-tight font-medium rounded-lg transition-all duration-200 transform hover:-translate-y-0.5 hover:shadow-md ${
+                          className={`inline-flex min-h-[52px] items-center justify-center px-3 py-2 text-center text-sm leading-tight whitespace-normal break-words font-medium rounded-lg transition-all duration-200 transform hover:-translate-y-0.5 hover:shadow-md ${
                             product.is_archived
                               ? 'text-green-700 bg-green-50 border border-green-200 hover:bg-green-100 hover:border-green-300'
                               : 'text-slate-700 bg-slate-100 border border-slate-200 hover:bg-slate-200 hover:border-slate-300'
@@ -637,7 +664,7 @@ export default function AdminPage() {
                         </button>
                         <button
                           onClick={() => handleDelete(product.id)}
-                          className="inline-flex items-center justify-center px-3 py-2 text-center text-sm leading-tight font-medium text-slate-700 bg-slate-100 border border-slate-200 rounded-lg hover:bg-slate-100 hover:border-slate-300 hover:shadow-md transition-all duration-200 transform hover:-translate-y-0.5"
+                          className="inline-flex min-h-[44px] items-center justify-center px-3 py-2 text-center text-sm leading-tight whitespace-normal break-words font-medium text-slate-700 bg-slate-100 border border-slate-200 rounded-lg hover:bg-slate-100 hover:border-slate-300 hover:shadow-md transition-all duration-200 transform hover:-translate-y-0.5"
                         >
                           <span className="mr-1.5">🗑️</span>
                           Удалить

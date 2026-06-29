@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { apiClient } from '@/lib/api-client'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -21,7 +21,7 @@ export default function AnalyticsPage() {
   const checkAdmin = async () => {
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await apiClient.auth.getUser()
 
     if (!user) {
       router.push('/login')
@@ -29,7 +29,7 @@ export default function AnalyticsPage() {
       return
     }
 
-    const { data: adminStatus } = await supabase.rpc('check_admin_status', { user_id: user.id })
+    const { data: adminStatus } = await apiClient.rpc('check_admin_status', { user_id: user.id })
     if (!adminStatus) {
       router.push('/')
       setLoading(false)
@@ -42,20 +42,19 @@ export default function AnalyticsPage() {
 
   const fetchAnalytics = async () => {
     // Для счётчиков выбираем только id — намного быстрее, чем select('*')
-    const { data: products } = await supabase.from('products').select('id, name, brand, rating').catch(() => ({ data: [] }))
-    const { data: users } = await supabase.from('user_profiles').select('id').catch(() => ({ data: [] }))
-    const { data: bookmarks } = await supabase.from('bookmarks').select('id').catch(() => ({ data: [] }))
+    const { data: products } = await apiClient.from('products').select('id, name, brand, rating, is_archived').catch(() => ({ data: [] }))
+    const { data: bookmarks } = await apiClient.from('bookmarks').select('id').catch(() => ({ data: [] }))
 
     // product_views / product_statistics могут отсутствовать в схеме
     let totalViews = 0
     let topProds: any[] = []
     try {
-      const { data: views } = await supabase.from('product_views').select('*')
+      const { data: views } = await apiClient.from('product_views').select('*')
       totalViews = views?.length || 0
     } catch { /* коллекция не существует */ }
 
     try {
-      const { data: stats } = await supabase
+      const { data: stats } = await apiClient
         .from('product_statistics')
         .select('id, name, brand, view_count, bookmark_count')
         .order('view_count', { ascending: false })
@@ -65,7 +64,7 @@ export default function AnalyticsPage() {
 
     setStats({
       totalProducts: products?.length || 0,
-      totalUsers: users?.length || 0,
+      activeProducts: products?.filter((product: any) => !product.is_archived).length || 0,
       totalViews,
       totalBookmarks: bookmarks?.length || 0,
     })
@@ -95,9 +94,9 @@ export default function AnalyticsPage() {
       <nav className="bg-[#1A1A1A] shadow-lg border-b border-[#333]">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-            <Link href="/" aria-label="На главную" className="inline-flex items-center">
+            <a href="https://complexbar.ru" aria-label="complexbar.ru" className="inline-flex items-center">
               <Image src={(process.env.NEXT_PUBLIC_BASE_PATH||"")+ "/logo.png"} alt="Logo" width={120} height={40} className="object-contain" />
-            </Link>
+            </a>
             <h1 className="truncate text-xl font-bold text-white sm:text-2xl">📊 Аналитика</h1>
           </div>
           <Link href="/admin" className="px-4 py-2 bg-white/10 text-gray-200 rounded-lg hover:bg-white/20 transition">
@@ -114,8 +113,8 @@ export default function AnalyticsPage() {
             <div className="text-slate-600 mt-1">Всего новинок</div>
           </div>
           <div className="bg-white p-6 rounded-xl shadow-sm">
-            <div className="text-3xl font-bold text-blue-900">{stats.totalUsers}</div>
-            <div className="text-slate-600 mt-1">Пользователей</div>
+            <div className="text-3xl font-bold text-blue-900">{stats.activeProducts}</div>
+            <div className="text-slate-600 mt-1">Активных товаров</div>
           </div>
           <div className="bg-white p-6 rounded-xl shadow-sm">
             <div className="text-3xl font-bold text-green-900">{stats.totalViews}</div>

@@ -1,10 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
+import { apiClient } from '@/lib/api-client'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import Link from 'next/link'
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState('')
@@ -24,7 +23,7 @@ export default function ResetPasswordPage() {
     }
 
     // Fallback: если нет токена, разрешаем смену только авторизованному пользователю.
-    supabase.auth.getUser().then(({ data }: { data: any }) => {
+    apiClient.auth.getUser().then(({ data }: { data: any }) => {
       if (!data.user) {
         setError('Недействительная ссылка восстановления')
       }
@@ -51,8 +50,8 @@ export default function ResetPasswordPage() {
 
     try {
       const result = resetToken
-        ? await supabase.auth.confirmPasswordReset(resetToken, password, confirmPassword)
-        : await supabase.auth.updateUser({ password })
+        ? await apiClient.auth.confirmPasswordReset(resetToken, password, confirmPassword)
+        : await apiClient.auth.updateUser({ password })
 
       if (result.error) throw result.error
 
@@ -73,9 +72,9 @@ export default function ResetPasswordPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4">
       <div className="bg-white p-8 rounded-2xl shadow-lg max-w-md w-full">
         <div className="text-center mb-8">
-          <Link href="/" aria-label="На главную" className="inline-block">
+          <a href="https://complexbar.ru" aria-label="complexbar.ru" className="inline-block">
             <Image src={(process.env.NEXT_PUBLIC_BASE_PATH||"")+ "/logo.png"} alt="Logo" width={150} height={50} className="mx-auto mb-4" />
-          </Link>
+          </a>
           <h2 className="text-2xl font-bold text-white">Новый пароль</h2>
           <p className="text-slate-600 mt-2">Введите новый пароль для вашего аккаунта</p>
         </div>

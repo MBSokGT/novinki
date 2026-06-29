@@ -1,11 +1,15 @@
 import crypto from 'crypto'
-import { getCloudflareContext } from '@opennextjs/cloudflare'
 import type { NextRequest } from 'next/server'
 import { hashPassword, sanitizeInput, verifyPassword } from './security'
+import { getLocalD1, type LocalD1Database } from './sqlite'
 
 export const SESSION_COOKIE_NAME = 'novinki_session'
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30
 const RESET_TOKEN_TTL_MS = 1000 * 60 * 60
+
+function isSingleAdminModeEnabled() {
+  return process.env.SINGLE_ADMIN_MODE !== 'false'
+}
 
 type DataOperation = 'select' | 'insert' | 'update' | 'upsert' | 'delete'
 type FilterOperator = 'eq' | 'ilike'
@@ -42,7 +46,7 @@ type QueryResult<T = unknown> = {
   count?: number | null
 }
 
-type AppDatabase = CloudflareEnv['DB']
+type AppDatabase = LocalD1Database
 
 export type SessionUser = {
   id: string
@@ -78,6 +82,7 @@ const PRODUCT_COLUMNS = [
   'onec_link',
   'is_archived',
   'category',
+  'year',
   'rating',
   'price',
   'created_at',
@@ -319,17 +324,12 @@ function buildWhereClause(collection: string, filters: DataFilter[] = [], orFilt
   }
 }
 
-async function getDb() {
-  const { env } = await getCloudflareContext({ async: true })
-  if (!env.DB) {
-    throw new Error('Cloudflare D1 binding "DB" is missing')
-  }
-  return env.DB
+async function getDb(): Promise<AppDatabase> {
+  return getLocalD1()
 }
 
-export async function getCloudflareEnv() {
-  const { env } = await getCloudflareContext({ async: true })
-  return env
+export async function getAppEnv() {
+  return process.env as Record<string, string | undefined>
 }
 
 export async function getCurrentUser(request: NextRequest): Promise<SessionUser | null> {
@@ -359,7 +359,12 @@ export async function getCurrentUser(request: NextRequest): Promise<SessionUser 
     .bind(tokenHash, nowIso())
     .first<Record<string, unknown>>()
 
-  return row ? (normalizeRow('user_profiles', row) as SessionUser) : null
+  const user = row ? (normalizeRow('user_profiles', row) as SessionUser) : null
+  if (!user) return null
+  if (isSingleAdminModeEnabled() && !user.is_admin) {
+    return null
+  }
+  return user
 }
 
 async function getUserProfile(db: AppDatabase, userId: string) {
@@ -764,17 +769,25 @@ export async function executeRpc(request: NextRequest, functionName: string, par
   }
 }
 
-export async function signUpUser(emailInput: string, password: string) {
+export async function adminCreateUser(
+  requestingUserId: string,
+  emailInput: string,
+  password: string,
+  isAdmin: boolean
+) {
+  const db = await getDb()
+  const requesterIsAdmin = await isAdminUser(db, requestingUserId)
+  if (!requesterIsAdmin) {
+    throw new Error('Forbidden')
+  }
+
   const email = normalizeEmail(emailInput)
   if (!validateEmail(email)) throw new Error('Неверный формат email')
   if (password.length < 8) throw new Error('Пароль должен быть не короче 8 символов')
 
-  const db = await getDb()
   const existing = await db.prepare('SELECT id FROM users WHERE email = ? LIMIT 1').bind(email).first<{ id: string }>()
   if (existing?.id) throw new Error('Пользователь с таким email уже существует')
 
-  const countRow = await db.prepare('SELECT COUNT(*) AS total FROM users').first<{ total: number }>()
-  const isFirstUser = (countRow?.total || 0) === 0
   const userId = createId()
   const now = nowIso()
 
@@ -787,14 +800,14 @@ export async function signUpUser(emailInput: string, password: string) {
     .prepare(
       'INSERT INTO user_profiles (id, email, is_admin, is_blocked, blocked_reason, blocked_at, created_at, updated_at) VALUES (?, ?, ?, 0, NULL, NULL, ?, ?)'
     )
-    .bind(userId, email, isFirstUser ? 1 : 0, now, now)
+    .bind(userId, email, isAdmin ? 1 : 0, now, now)
     .run()
 
   return {
     user: {
       id: userId,
       email,
-      is_admin: isFirstUser,
+      is_admin: isAdmin,
       is_blocked: false,
       blocked_reason: null,
       blocked_at: null,
@@ -828,6 +841,10 @@ export async function signInUser(emailInput: string, password: string) {
 
   if (!userRow || !verifyPassword(password, String(userRow.password_hash || ''))) {
     throw new Error('Неверный email или пароль')
+  }
+
+  if (isSingleAdminModeEnabled() && !normalizeBoolean(userRow.is_admin)) {
+    throw new Error('Вход разрешен только администратору')
   }
 
   if (normalizeBoolean(userRow.is_blocked)) {
@@ -865,8 +882,25 @@ export async function signOutUser(sessionToken: string | undefined) {
 export async function requestPasswordReset(emailInput: string, redirectTo?: string) {
   const email = normalizeEmail(emailInput)
   const db = await getDb()
-  const user = await db.prepare('SELECT id, email FROM users WHERE email = ? LIMIT 1').bind(email).first<{ id: string; email: string }>()
+  const user = await db
+    .prepare(
+      `
+        SELECT
+          users.id,
+          users.email,
+          COALESCE(user_profiles.is_admin, 0) AS is_admin
+        FROM users
+        LEFT JOIN user_profiles ON user_profiles.id = users.id
+        WHERE users.email = ?
+        LIMIT 1
+      `
+    )
+    .bind(email)
+    .first<{ id: string; email: string; is_admin: number | string | boolean }>()
   if (!user?.id) return { resetUrl: null }
+  if (isSingleAdminModeEnabled() && !normalizeBoolean(user.is_admin)) {
+    return { resetUrl: null }
+  }
 
   const rawToken = crypto.randomBytes(32).toString('hex')
   const tokenHash = sha256Hex(rawToken)
@@ -877,7 +911,7 @@ export async function requestPasswordReset(emailInput: string, redirectTo?: stri
     .bind(createId(), user.id, tokenHash, addTime(RESET_TOKEN_TTL_MS), now)
     .run()
 
-  const env = await getCloudflareEnv()
+  const env = await getAppEnv()
   const appUrl = env.APP_URL || redirectTo || 'http://localhost:3000/reset-password'
   const resetUrl = appUrl.includes('?') ? `${appUrl}&token=${rawToken}` : `${appUrl}?token=${rawToken}`
 

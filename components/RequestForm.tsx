@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { DEMO_MODE, supabase } from '@/lib/supabase'
+import { DEMO_MODE, apiClient } from '@/lib/api-client'
 
 export default function RequestForm() {
   const [isOpen, setIsOpen] = useState(false)
@@ -16,12 +16,12 @@ export default function RequestForm() {
     try {
       if (DEMO_MODE) {
         // In demo mode, save via the demo client (no real HTTP needed)
-        await supabase.from('product_requests').insert({
+        await apiClient.from('product_requests').insert({
           product_name: form.product,
           article: form.article,
         })
       } else {
-        const response = await fetch('/api/request', {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/request`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(form),

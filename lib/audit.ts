@@ -1,4 +1,4 @@
-import { supabase } from './supabase'
+import { apiClient } from './api-client'
 
 interface AuditLog {
   user_id?: string
@@ -24,7 +24,7 @@ export async function logAudit(log: AuditLog) {
     })
 
     // Сохранение в базу данных (если таблица создана)
-    await supabase.from('audit_logs').insert({
+    await apiClient.from('audit_logs').insert({
       ...log,
       timestamp
     })

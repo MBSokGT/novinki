@@ -1,14 +1,12 @@
 # Новинки ассортимента
 
-Веб-приложение для каталога новинок и админ-управления. Текущий production-стек: `Next.js + Cloudflare Workers + D1`.
+Веб-приложение для каталога новинок и админ-управления. Стек: `Next.js + Node.js + SQLite`, разворачивается как обычное Node-приложение (PM2 или Docker) за nginx.
 
 ## Стек
-- Next.js 16
+- Next.js 16 (standalone-сборка)
 - React 19
 - Tailwind CSS
-- Cloudflare D1
-- Wrangler
-- OpenNext for Cloudflare
+- SQLite (`better-sqlite3`)
 
 ## Быстрый старт
 
@@ -17,78 +15,53 @@
 npm install
 ```
 
-### 2. Создайте D1 базу
+### 2. Настройте переменные
+Скопируйте [.env.example](.env.example) в `.env` и заполните значения. Ключевые:
+- `SQLITE_DB_PATH` — путь к файлу базы данных
+- `ENCRYPTION_KEY` — секрет для криптографических хелперов (`node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`)
+- `APP_URL` — полный URL страницы восстановления пароля
+- `NEXT_PUBLIC_BASE_PATH` — если приложение размещено на подпути (например `/novinki`)
+
+### 3. Создайте первый аккаунт
+В приложении нет публичной регистрации. Первый (и любой последующий) аккаунт создаётся вручную:
 ```bash
-npx wrangler d1 create my-db-name
+npm run seed:admin -- admin@example.com 'надёжный-пароль'
 ```
+Дальше через `/admin/users` уже залогиненный администратор может добавлять других сотрудников.
 
-В проекте уже создана база `my-db-name`, а ее `database_id` прописан в [wrangler.jsonc](/Users/admin/Desktop/Новинки/novinki-app/wrangler.jsonc).
+Вход на сайте доступен через незаметную иконку в правом верхнем углу шапки (`/login`), публичных ссылок на неё нет.
 
-### 3. Примените миграции
-```bash
-npx wrangler d1 migrations apply my-db-name --remote
-```
-
-Локально:
-```bash
-npx wrangler d1 migrations apply my-db-name
-```
-
-### 4. Настройте переменные
-См. [.env.example](/Users/admin/Desktop/Новинки/novinki-app/.env.example).
-
-Основные значения:
-- `APP_URL` - полный URL страницы восстановления, например `https://example.com/reset-password`
-- `REQUEST_WEBHOOK_URL` - webhook для заявок
-- `PASSWORD_RESET_WEBHOOK_URL` - webhook для отправки reset-ссылок
-- `NEXT_PUBLIC_DEMO_MODE=true` - только если нужен demo-режим без D1
-
-### 5. Локальная разработка
+### 4. Локальная разработка
 ```bash
 npm run dev
 ```
 
-Для preview в Cloudflare runtime:
+### 5. Прод-сборка
 ```bash
-npm run cf:preview
+npm run build
+npm run start
 ```
+Миграции из папки `migrations/` применяются автоматически при первом обращении к базе.
 
-## D1 схема
-Начальная схема лежит в [migrations/0001_initial.sql](/Users/admin/Desktop/Новинки/novinki-app/migrations/0001_initial.sql).
+## Деплой
 
-Основные таблицы:
-- `users`
-- `user_profiles`
-- `sessions`
-- `password_reset_tokens`
-- `products`
-- `bookmarks`
-- `product_ratings`
-- `view_history`
-- `product_views`
-- `categories`
-- `tags`
-- `site_settings`
-- `deleted_products`
-- `archived_products`
-- `requests`
-- `product_requests`
-- `audit_logs`
+### Node.js + PM2
+1. `npm install && npm run build`
+2. Запустить `.next/standalone/server.js` под PM2 (`pm2 start .next/standalone/server.js --name novinki-app`)
+3. Прокинуть домен через nginx (см. `PORT`, `NEXT_PUBLIC_BASE_PATH` в `.env`)
 
-И view:
-- `product_statistics`
-
-## Деплой в Cloudflare
+### Docker
 ```bash
-npm run cf:deploy
+docker compose up -d --build
 ```
+См. [Dockerfile](Dockerfile) и [docker-compose.yml](docker-compose.yml). Данные SQLite сохраняются в volume `novinki-data`.
 
-Проект больше не ориентирован на Vercel. Runtime и база теперь Cloudflare-first.
+## Схема базы данных
+Миграции лежат в [migrations/](migrations). Основные таблицы:
+- `users`, `user_profiles`, `sessions`, `password_reset_tokens`
+- `products`, `deleted_products`, `archived_products`
+- `bookmarks`, `product_ratings`, `view_history`, `product_views`
+- `categories`, `tags`, `site_settings`
+- `requests`, `product_requests`, `audit_logs`
 
-## GitHub Pages
-В репозитории настроен отдельный workflow для GitHub Pages через `npm run build:pages`.
-
-Важно:
-- GitHub Pages получает только статический demo-export
-- production-версия с `D1`, `app/api/*`, cookie-auth и `middleware` остается на Cloudflare
-- Pages URL для этого репозитория будет вида `https://mbsokgt.github.io/novinki/`
+И view `product_statistics`.

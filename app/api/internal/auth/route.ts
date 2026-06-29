@@ -1,15 +1,15 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import {
+  adminCreateUser,
   confirmPasswordReset,
   getCurrentUser,
   requestPasswordReset,
   SESSION_COOKIE_NAME,
   signInUser,
   signOutUser,
-  signUpUser,
   updateUserPassword,
-} from '@/lib/d1'
+} from '@/lib/db'
 
 function buildCookieOptions(request: NextRequest) {
   return {
@@ -38,11 +38,6 @@ export async function POST(request: NextRequest) {
       return response
     }
 
-    if (action === 'signUp') {
-      const result = await signUpUser(String(body.email || ''), String(body.password || ''))
-      return NextResponse.json({ data: { user: result.user }, error: null })
-    }
-
     if (action === 'resetPasswordForEmail') {
       const result = await requestPasswordReset(String(body.email || ''), body.options?.redirectTo)
       return NextResponse.json({ data: result, error: null })
@@ -63,6 +58,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ data: { user }, error: null })
     }
 
+    if (action === 'adminCreateUser') {
+      const requestingUser = await getCurrentUser(request)
+      if (!requestingUser) {
+        return NextResponse.json({ data: null, error: { message: 'Authentication required' } }, { status: 401 })
+      }
+
+      const result = await adminCreateUser(
+        requestingUser.id,
+        String(body.email || ''),
+        String(body.password || ''),
+        Boolean(body.isAdmin)
+      )
+      return NextResponse.json({ data: { user: result.user }, error: null })
+    }
+
     if (action === 'signOut') {
       await signOutUser(request.cookies.get(SESSION_COOKIE_NAME)?.value)
       const response = NextResponse.json({ error: null })
@@ -80,12 +90,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ data: null, error: { message: `Unsupported auth action: ${action}` } }, { status: 400 })
   } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown auth error'
     return NextResponse.json(
-      {
-        data: null,
-        error: { message: error instanceof Error ? error.message : 'Unknown auth error' },
-      },
-      { status: 400 }
+      { data: null, error: { message } },
+      { status: message === 'Forbidden' ? 403 : 400 }
     )
   }
 }

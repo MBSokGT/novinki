@@ -7,6 +7,8 @@ interface FilterBarProps {
   products: Product[]
   selectedCategory: string | null
   setSelectedCategory: (cat: string | null) => void
+  selectedYear: string | null
+  setSelectedYear: (year: string | null) => void
   sortBy: string
   setSortBy: (sort: 'date' | 'name' | 'rating') => void
   viewMode: 'table' | 'cards'
@@ -22,6 +24,8 @@ export default function FilterBar({
   products,
   selectedCategory,
   setSelectedCategory,
+  selectedYear,
+  setSelectedYear,
   sortBy,
   setSortBy,
   viewMode,
@@ -33,6 +37,7 @@ export default function FilterBar({
   onClearFilters,
 }: FilterBarProps) {
   const categories = Array.from(new Set(products.map(p => p.category).filter(Boolean)))
+  const years = Array.from(new Set(products.map(p => p.year).filter(Boolean))).sort().reverse()
 
   return (
     <div className="mb-5 bg-white px-4 py-3 rounded-xl shadow-sm border border-gray-200">
@@ -47,6 +52,19 @@ export default function FilterBar({
               <option value="">Все категории</option>
               {categories.map(cat => (
                 <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          )}
+
+          {years.length > 0 && (
+            <select
+              value={selectedYear || ''}
+              onChange={(e) => setSelectedYear(e.target.value || null)}
+              className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] focus:border-transparent bg-white text-gray-700"
+            >
+              <option value="">Все годы</option>
+              {years.map(year => (
+                <option key={year} value={year}>{year}</option>
               ))}
             </select>
           )}

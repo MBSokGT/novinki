@@ -1,5 +1,4 @@
 import {
-  DEMO_ADMIN_EMAIL,
   DEMO_ADMIN_PASSWORD,
   DEMO_PRODUCTS_INITIAL,
   DEMO_USERS,
@@ -51,8 +50,10 @@ async function safeJson<T>(response: Response): Promise<T> {
   }
 }
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || ''
+
 async function callInternalApi<T>(path: string, body?: Record<string, unknown>, method = 'POST'): Promise<T> {
-  const response = await fetch(path, {
+  const response = await fetch(`${BASE_PATH}${path}`, {
     method,
     credentials: 'include',
     headers: method === 'GET' ? undefined : { 'Content-Type': 'application/json' },
@@ -270,14 +271,6 @@ const remoteClient = {
       })
     },
 
-    async signUp({ email, password }: { email: string; password: string }) {
-      return callInternalApi<{ data: { user: unknown | null }; error: { message: string } | null }>('/api/internal/auth', {
-        action: 'signUp',
-        email,
-        password,
-      })
-    },
-
     async resetPasswordForEmail(email: string, options?: { redirectTo?: string }) {
       return callInternalApi<{ data: { resetUrl?: string | null } | null; error: { message: string } | null }>('/api/internal/auth', {
         action: 'resetPasswordForEmail',
@@ -304,6 +297,15 @@ const remoteClient = {
 
     async getUser() {
       return callInternalApi<{ data: { user: unknown | null }; error: { message: string } | null }>('/api/internal/auth', undefined, 'GET')
+    },
+
+    async adminCreateUser({ email, password, isAdmin }: { email: string; password: string; isAdmin: boolean }) {
+      return callInternalApi<{ data: { user: unknown | null }; error: { message: string } | null }>('/api/internal/auth', {
+        action: 'adminCreateUser',
+        email,
+        password,
+        isAdmin,
+      })
     },
 
     async signOut() {
@@ -791,7 +793,7 @@ const demoClient = {
   auth: {
     async signInWithPassword({ email, password }: { email: string; password: string }) {
       const user = DEMO_USERS.find(
-        (item) => item.email === email && password === (item.is_admin ? DEMO_ADMIN_PASSWORD : 'user1234')
+        (item) => item.is_admin && item.email === email && password === DEMO_ADMIN_PASSWORD
       )
 
       if (!user) {
@@ -800,15 +802,6 @@ const demoClient = {
 
       setDemoSession(user)
       return { data: { user }, error: null }
-    },
-
-    async signUp() {
-      return {
-        data: { user: null },
-        error: {
-          message: `Регистрация недоступна в демо-режиме. Используйте ${DEMO_ADMIN_EMAIL} / ${DEMO_ADMIN_PASSWORD}`,
-        },
-      }
     },
 
     async resetPasswordForEmail() {
@@ -825,6 +818,10 @@ const demoClient = {
 
     async getUser() {
       return { data: { user: getDemoSession()?.user || null }, error: null }
+    },
+
+    async adminCreateUser() {
+      return { data: { user: null }, error: { message: 'Недоступно в демо-режиме' } }
     },
 
     async signOut() {
@@ -858,4 +855,4 @@ const demoClient = {
   storage: remoteClient.storage,
 }
 
-export const supabase = DEMO_MODE ? (demoClient as any) : (remoteClient as any)
+export const apiClient = DEMO_MODE ? (demoClient as any) : (remoteClient as any)

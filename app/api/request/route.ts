@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getCloudflareEnv, insertRequest } from '@/lib/d1'
+import { getAppEnv, insertRequest } from '@/lib/db'
 
 export async function POST(request: Request) {
   try {
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
 Артикул: ${article || 'Не указан'}
     `
 
-    const env = await getCloudflareEnv()
+    const env = await getAppEnv()
     const webhookUrl = env.REQUEST_WEBHOOK_URL || process.env.REQUEST_WEBHOOK_URL
     let delivered = false
 

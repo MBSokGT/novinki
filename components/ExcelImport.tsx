@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Papa from 'papaparse'
 import * as XLSX from 'xlsx'
-import { supabase } from '@/lib/supabase'
+import { apiClient } from '@/lib/api-client'
 import { showToast } from './Toast'
 
 interface ExcelImportProps {
@@ -84,7 +84,7 @@ export default function ExcelImport({ onSuccess }: ExcelImportProps) {
       }
 
       const withImages = valid.map(p => ({ ...p, image_url: p.image_url || '' }))
-      const { error } = await supabase.from('products').insert(withImages)
+      const { error } = await apiClient.from('products').insert(withImages)
       if (error) throw error
 
       showToast(`Успешно импортировано ${valid.length} товаров`, 'success')
