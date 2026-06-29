@@ -12,6 +12,7 @@ export interface Product {
   website_link?: string
   onec_link?: string
   is_archived?: boolean
+  is_supplier_novelty?: boolean
   category?: string
   year?: string
   rating?: number

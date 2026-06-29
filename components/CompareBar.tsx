@@ -38,8 +38,8 @@ export default function CompareBar({ compareProducts, onRemove, onClear }: Compa
       </div>
 
       {showModal && (
-        <div onClick={() => setShowModal(false)} className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-auto">
+        <div onClick={() => setShowModal(false)} className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 cursor-pointer">
+          <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-auto cursor-default">
             <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex justify-between items-center">
               <h2 className="text-2xl font-bold">Сравнение товаров</h2>
               <button onClick={() => setShowModal(false)} className="p-2 hover:bg-gray-100 rounded-lg">

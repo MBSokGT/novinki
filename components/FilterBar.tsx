@@ -9,6 +9,8 @@ interface FilterBarProps {
   setSelectedCategory: (cat: string | null) => void
   selectedYear: string | null
   setSelectedYear: (year: string | null) => void
+  supplierNoveltiesOnly: boolean
+  setSupplierNoveltiesOnly: (value: boolean) => void
   sortBy: string
   setSortBy: (sort: 'date' | 'name' | 'rating') => void
   viewMode: 'table' | 'cards'
@@ -26,6 +28,8 @@ export default function FilterBar({
   setSelectedCategory,
   selectedYear,
   setSelectedYear,
+  supplierNoveltiesOnly,
+  setSupplierNoveltiesOnly,
   sortBy,
   setSortBy,
   viewMode,
@@ -78,6 +82,13 @@ export default function FilterBar({
             <option value="name">По названию</option>
             <option value="rating">По рейтингу</option>
           </select>
+
+          <button
+            onClick={() => setSupplierNoveltiesOnly(!supplierNoveltiesOnly)}
+            className={`px-3 py-1.5 text-sm rounded-lg transition-all font-medium ${supplierNoveltiesOnly ? 'bg-[#9B1B1B] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+          >
+            📦 Новинки поставщиков
+          </button>
 
           <div className="flex gap-1">
             <button onClick={() => setViewMode('cards')} className={`p-2 rounded-lg transition-all ${viewMode === 'cards' ? 'bg-[#9B1B1B] text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`} title="Карточки">

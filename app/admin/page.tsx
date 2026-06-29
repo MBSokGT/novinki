@@ -21,6 +21,7 @@ const EMPTY_FORM = {
   price: '',
   category: '',
   year: '',
+  is_supplier_novelty: false,
 }
 
 const ADMIN_DRAFT_KEY = 'novinki:adminFormDraft'
@@ -101,7 +102,7 @@ export default function AdminPage() {
   useEffect(() => {
     if (typeof window === 'undefined' || editId) return
 
-    const hasData = Object.values(form).some((value) => value.trim() !== '')
+    const hasData = Object.values(form).some((value) => typeof value === 'string' && value.trim() !== '')
     if (hasData) {
       window.localStorage.setItem(ADMIN_DRAFT_KEY, JSON.stringify(form))
     } else {
@@ -205,6 +206,7 @@ export default function AdminPage() {
         onec_link: normalizeLink(form.onec_link),
         category: form.category,
         year: form.year,
+        is_supplier_novelty: form.is_supplier_novelty,
         price: form.price ? parseFloat(form.price) : null,
         image_url: imageUrl || (editId ? products.find(p => p.id === editId)?.image_url : ''),
         flyer_url: flyerUrl || (editId ? products.find(p => p.id === editId)?.flyer_url : ''),
@@ -243,6 +245,7 @@ export default function AdminPage() {
       price: product.price != null ? String(product.price) : '',
       category: (product as any).category || '',
       year: product.year || '',
+      is_supplier_novelty: Boolean(product.is_supplier_novelty),
     })
     setImage(null)
     setFlyer(null)
@@ -269,6 +272,7 @@ export default function AdminPage() {
         year: product.year || '',
         price: product.price ?? null,
         is_archived: false,
+        is_supplier_novelty: Boolean(product.is_supplier_novelty),
       }
 
       const { error } = await apiClient.from('products').insert([payload])
@@ -458,6 +462,15 @@ export default function AdminPage() {
                 ))}
               </select>
             </div>
+            <label className="flex items-center gap-2 px-4 py-3 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition w-fit">
+              <input
+                type="checkbox"
+                checked={form.is_supplier_novelty}
+                onChange={(e) => setForm({ ...form, is_supplier_novelty: e.target.checked })}
+                className="w-4 h-4 accent-[#9B1B1B]"
+              />
+              <span className="text-sm font-medium text-slate-700">📦 Это новинка поставщика</span>
+            </label>
             <textarea placeholder="Описание" value={form.description} onChange={(e) => setForm({...form, description: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" rows={2} required />
             <textarea placeholder="Преимущества" value={form.advantages} onChange={(e) => setForm({...form, advantages: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" rows={2} required />
             <textarea placeholder="На что обратить внимание" value={form.attention_points} onChange={(e) => setForm({...form, attention_points: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" rows={2} required />

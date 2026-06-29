@@ -82,6 +82,7 @@ const PRODUCT_COLUMNS = [
   'website_link',
   'onec_link',
   'is_archived',
+  'is_supplier_novelty',
   'category',
   'year',
   'rating',
@@ -94,7 +95,7 @@ const COLLECTIONS: Record<string, CollectionConfig> = {
   products: {
     table: 'products',
     columns: [...PRODUCT_COLUMNS],
-    booleanFields: ['is_archived'],
+    booleanFields: ['is_archived', 'is_supplier_novelty'],
     publicRead: true,
     requiresAdmin: true,
   },

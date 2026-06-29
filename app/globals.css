@@ -70,6 +70,18 @@ textarea {
   font: inherit;
 }
 
+button:not(:disabled),
+a[href],
+select,
+[role="button"],
+label[for] {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
 :focus-visible {
   outline: 2px solid #9b1b1b;
   outline-offset: 2px;

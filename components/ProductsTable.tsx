@@ -22,6 +22,7 @@ const VIEW_MODE_KEY = 'novinki:viewMode'
 const SORT_BY_KEY = 'novinki:sortBy'
 const CATEGORY_KEY = 'novinki:selectedCategory'
 const YEAR_KEY = 'novinki:selectedYear'
+const SUPPLIER_NOVELTIES_KEY = 'novinki:supplierNoveltiesOnly'
 const VIEW_HISTORY_KEY = 'novinki:viewHistory'
 const BOOKMARKS_SYNC_KEY = 'novinki:bookmarks_sync'
 
@@ -43,6 +44,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('cards')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [selectedYear, setSelectedYear] = useState<string | null>(null)
+  const [supplierNoveltiesOnly, setSupplierNoveltiesOnly] = useState(false)
   const [sortBy, setSortBy] = useState<'date' | 'name' | 'rating'>('date')
   const [userRatings, setUserRatings] = useState<Map<string, number>>(new Map())
   const [compareProducts, setCompareProducts] = useState<Product[]>([])
@@ -76,6 +78,11 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
       setSelectedYear(savedYear)
     }
 
+    const savedSupplierNovelties = window.localStorage.getItem(SUPPLIER_NOVELTIES_KEY)
+    if (savedSupplierNovelties === '1') {
+      setSupplierNoveltiesOnly(true)
+    }
+
     const savedHistory = window.localStorage.getItem(VIEW_HISTORY_KEY)
     if (savedHistory) {
       try {
@@ -95,6 +102,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
       searchParams.has('brand') ||
       searchParams.has('category') ||
       searchParams.has('year') ||
+      searchParams.has('supplier') ||
       searchParams.has('sort') ||
       searchParams.has('view') ||
       searchParams.has('page')
@@ -108,6 +116,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
     const brand = searchParams.get('brand')
     const category = searchParams.get('category')
     const year = searchParams.get('year')
+    const supplier = searchParams.get('supplier')
     const sort = searchParams.get('sort')
     const view = searchParams.get('view')
     const pageFromQuery = Number.parseInt(searchParams.get('page') || '1', 10)
@@ -118,6 +127,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
     setSelectedBrand(brand || null)
     setSelectedCategory(category || null)
     setSelectedYear(year || null)
+    setSupplierNoveltiesOnly(supplier === '1')
     setSortBy(sort === 'name' || sort === 'rating' ? sort : 'date')
     setViewMode(view === 'table' ? 'table' : 'cards')
     setCurrentPage(page)
@@ -146,6 +156,9 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
     if (selectedYear) params.set('year', selectedYear)
     else params.delete('year')
 
+    if (supplierNoveltiesOnly) params.set('supplier', '1')
+    else params.delete('supplier')
+
     if (sortBy !== 'date') params.set('sort', sortBy)
     else params.delete('sort')
 
@@ -170,6 +183,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
     selectedBrand,
     selectedCategory,
     selectedYear,
+    supplierNoveltiesOnly,
     sortBy,
     viewMode,
   ])
@@ -201,6 +215,15 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
       window.localStorage.removeItem(YEAR_KEY)
     }
   }, [selectedYear])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (supplierNoveltiesOnly) {
+      window.localStorage.setItem(SUPPLIER_NOVELTIES_KEY, '1')
+    } else {
+      window.localStorage.removeItem(SUPPLIER_NOVELTIES_KEY)
+    }
+  }, [supplierNoveltiesOnly])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -245,7 +268,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
   useEffect(() => {
     if (currentPage !== 1) setCurrentPage(1)
     else fetchProducts()
-  }, [debouncedSearch, selectedBrand, selectedCategory, selectedYear, sortBy])
+  }, [debouncedSearch, selectedBrand, selectedCategory, selectedYear, supplierNoveltiesOnly, sortBy])
 
   // Загрузка страницы при изменении currentPage
   useEffect(() => {
@@ -277,6 +300,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
     if (selectedBrand) query = query.eq('brand', selectedBrand)
     if (selectedCategory) query = query.eq('category', selectedCategory)
     if (selectedYear) query = query.eq('year', selectedYear)
+    if (supplierNoveltiesOnly) query = query.eq('is_supplier_novelty', true)
 
     if (sortBy === 'name') {
       query = query.order('name', { ascending: true })
@@ -479,6 +503,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
     setSelectedBrand(null)
     setSelectedCategory(null)
     setSelectedYear(null)
+    setSupplierNoveltiesOnly(false)
     setSortBy('date')
     setCurrentPage(1)
   }
@@ -488,6 +513,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
     (selectedBrand ? 1 : 0) +
     (selectedCategory ? 1 : 0) +
     (selectedYear ? 1 : 0) +
+    (supplierNoveltiesOnly ? 1 : 0) +
     (sortBy !== 'date' ? 1 : 0)
 
   const productsById = useMemo(() => {
@@ -536,6 +562,8 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
         setSelectedCategory={setSelectedCategory}
         selectedYear={selectedYear}
         setSelectedYear={setSelectedYear}
+        supplierNoveltiesOnly={supplierNoveltiesOnly}
+        setSupplierNoveltiesOnly={setSupplierNoveltiesOnly}
         sortBy={sortBy}
         setSortBy={setSortBy}
         viewMode={viewMode}
@@ -794,9 +822,9 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
       )}
 
       {selectedImage && (
-        <div 
-          onClick={() => setSelectedImage(null)} 
-          className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200"
+        <div
+          onClick={() => setSelectedImage(null)}
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[60] animate-in fade-in duration-200 cursor-pointer"
         >
           <div className="relative max-w-4xl max-h-[90vh] w-full h-full">
             <Image 
@@ -818,8 +846,8 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
       )}
 
       {selectedProduct && (
-        <div onClick={() => setSelectedProduct(null)} className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
+        <div onClick={() => setSelectedProduct(null)} className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200 cursor-pointer">
+          <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 cursor-default">
             <div className="relative h-80 bg-gradient-to-br from-slate-100 to-slate-200">
               <Image 
                 src={selectedProduct.image_url} 
