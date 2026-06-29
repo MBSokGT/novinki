@@ -148,7 +148,7 @@ export default function UsersPage() {
           </div>
           <div className="flex gap-3">
             <Link href="/admin" className="px-4 py-2 bg-white/10 text-gray-200 rounded-lg hover:bg-white/20 transition">
-              Админ панель
+              Панель администратора
             </Link>
             <Link href="/" className="px-4 py-2 bg-white/10 text-gray-200 rounded-lg hover:bg-white/20 transition">
               На главную

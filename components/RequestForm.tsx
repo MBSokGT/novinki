@@ -5,7 +5,7 @@ import { DEMO_MODE, apiClient } from '@/lib/api-client'
 
 export default function RequestForm() {
   const [isOpen, setIsOpen] = useState(false)
-  const [form, setForm] = useState({ name: '', contact: '', product: '', article: '' })
+  const [form, setForm] = useState({ name: '', product: '', article: '' })
   const [sending, setSending] = useState(false)
   const [success, setSuccess] = useState(false)
 
@@ -18,7 +18,7 @@ export default function RequestForm() {
         // In demo mode, save via the demo client (no real HTTP needed)
         await apiClient.from('requests').insert({
           name: form.name,
-          contact: form.contact,
+          contact: '',
           product: form.product,
           article: form.article,
           delivered: false,
@@ -36,7 +36,7 @@ export default function RequestForm() {
       }
 
       setSuccess(true)
-      setForm({ name: '', contact: '', product: '', article: '' })
+      setForm({ name: '', product: '', article: '' })
       setTimeout(() => {
         setIsOpen(false)
         setSuccess(false)
@@ -86,14 +86,6 @@ export default function RequestForm() {
                   placeholder="Ваше имя"
                   value={form.name}
                   onChange={(e) => setForm({...form, name: e.target.value})}
-                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition"
-                  required
-                />
-                <input
-                  type="text"
-                  placeholder="Контакт (email или телефон)"
-                  value={form.contact}
-                  onChange={(e) => setForm({...form, contact: e.target.value})}
                   className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition"
                   required
                 />

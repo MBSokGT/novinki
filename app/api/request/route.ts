@@ -10,11 +10,10 @@ export async function POST(request: Request) {
       article?: string
     }
     const name = String(body.name || '').trim()
-    const contact = String(body.contact || '').trim()
     const product = String(body.product || '').trim()
     const article = String(body.article || '').trim()
 
-    if (!name || !contact || !product) {
+    if (!name || !product) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
@@ -22,7 +21,6 @@ export async function POST(request: Request) {
 Новый запрос на добавление товара:
 
 Имя: ${name}
-Контакт: ${contact}
 Название товара: ${product}
 Артикул: ${article || 'Не указан'}
     `
@@ -39,7 +37,7 @@ export async function POST(request: Request) {
           to: 'M.B.Sokolova@kbmik.ru',
           subject: 'Запрос на добавление новинки',
           text: emailContent,
-          payload: { name, contact, product, article },
+          payload: { name, product, article },
         }),
       })
       delivered = response.ok
@@ -47,7 +45,7 @@ export async function POST(request: Request) {
 
     await insertRequest({
       name,
-      contact,
+      contact: '',
       product,
       article,
       delivered,

@@ -24,11 +24,11 @@ const EMPTY_FORM = {
 }
 
 const ADMIN_DRAFT_KEY = 'novinki:adminFormDraft'
-const YEAR_OPTIONS = ['2025', '2026', '2027']
 
 export default function AdminPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([])
+  const [years, setYears] = useState<{ id: string; name: string }[]>([])
   const [form, setForm] = useState(EMPTY_FORM)
   const [image, setImage] = useState<File | null>(null)
   const [flyer, setFlyer] = useState<File | null>(null)
@@ -64,6 +64,7 @@ export default function AdminPage() {
           setIsAdmin(true)
           fetchProducts()
           fetchCategories()
+          fetchYears()
         } else {
           setIsAdmin(false)
           router.push('/')
@@ -119,6 +120,11 @@ export default function AdminPage() {
   const fetchCategories = async () => {
     const { data } = await apiClient.from('categories').select('*').order('name', { ascending: true })
     if (data) setCategories(data)
+  }
+
+  const fetchYears = async () => {
+    const { data } = await apiClient.from('years').select('*').order('name', { ascending: false })
+    if (data) setYears(data)
   }
 
   const normalizeLink = (link?: string) => {
@@ -377,7 +383,7 @@ export default function AdminPage() {
             <Link href="/" aria-label="На главную" className="inline-flex items-center">
               <Image src={(process.env.NEXT_PUBLIC_BASE_PATH||"")+ "/logo.png"} alt="Logo" width={120} height={40} className="object-contain" />
             </Link>
-            <h1 className="truncate text-xl font-bold text-white sm:text-2xl">Админ панель</h1>
+            <h1 className="truncate text-xl font-bold text-white sm:text-2xl">Панель администратора</h1>
           </div>
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <ExcelImport onSuccess={fetchProducts} />
@@ -396,7 +402,7 @@ export default function AdminPage() {
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         {/* Меню функций */}
-        <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
+        <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
           <Link href="/admin/analytics" className="group p-3 bg-white rounded-xl shadow-lg border border-slate-200 hover:shadow-xl hover:border-slate-200 transition-all duration-300 text-center transform hover:-translate-y-1">
             <div className="text-2xl mb-1 group-hover:scale-110 transition-transform duration-300">📊</div>
             <div className="font-bold text-slate-800 group-hover:text-slate-800 transition-colors">Аналитика</div>
@@ -412,11 +418,6 @@ export default function AdminPage() {
             <div className="font-bold text-slate-800 group-hover:text-slate-800 transition-colors">Пользователи</div>
             <div className="text-sm text-slate-500 mt-1">Сотрудники и админы</div>
           </Link>
-          <Link href="/admin/settings" className="group p-3 bg-white rounded-xl shadow-lg border border-slate-200 hover:shadow-xl hover:border-slate-200 transition-all duration-300 text-center transform hover:-translate-y-1">
-            <div className="text-2xl mb-1 group-hover:scale-110 transition-transform duration-300">⚙️</div>
-            <div className="font-bold text-slate-800 group-hover:text-slate-800 transition-colors">Настройки</div>
-            <div className="text-sm text-slate-500 mt-1">Конфигурация системы</div>
-          </Link>
           <Link href="/admin/archive" className="group p-3 bg-white rounded-xl shadow-lg border border-slate-200 hover:shadow-xl hover:border-slate-200 transition-all duration-300 text-center transform hover:-translate-y-1">
             <div className="text-2xl mb-1 group-hover:scale-110 transition-transform duration-300">🗄️</div>
             <div className="font-bold text-slate-800 group-hover:text-slate-800 transition-colors">Архив</div>
@@ -425,7 +426,7 @@ export default function AdminPage() {
           <Link href="/admin/requests" className="group p-3 bg-white rounded-xl shadow-lg border border-slate-200 hover:shadow-xl hover:border-slate-200 transition-all duration-300 text-center transform hover:-translate-y-1">
             <div className="text-2xl mb-1 group-hover:scale-110 transition-transform duration-300">📨</div>
             <div className="font-bold text-slate-800 group-hover:text-slate-800 transition-colors">Запросы новинок</div>
-            <div className="text-sm text-slate-500 mt-1">Заявки от клиентов</div>
+            <div className="text-sm text-slate-500 mt-1">Заявки от сотрудников</div>
           </Link>
         </div>
 
@@ -452,8 +453,8 @@ export default function AdminPage() {
               </select>
               <select value={form.year} onChange={(e) => setForm({...form, year: e.target.value})} className="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition bg-white">
                 <option value="">Год...</option>
-                {YEAR_OPTIONS.map((year) => (
-                  <option key={year} value={year}>{year}</option>
+                {years.map((year) => (
+                  <option key={year.id} value={year.name}>{year.name}</option>
                 ))}
               </select>
             </div>

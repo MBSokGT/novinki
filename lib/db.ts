@@ -157,6 +157,12 @@ const COLLECTIONS: Record<string, CollectionConfig> = {
     publicRead: true,
     requiresAdmin: true,
   },
+  years: {
+    table: 'years',
+    columns: ['id', 'name', 'created_at'],
+    publicRead: true,
+    requiresAdmin: true,
+  },
   site_settings: {
     table: 'site_settings',
     columns: ['id', 'key', 'value', 'updated_by', 'updated_at'],

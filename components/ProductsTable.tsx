@@ -748,9 +748,6 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                 ))}
               </tbody>
             </table>
-            <div className="px-6 py-2 text-xs text-slate-400 border-t border-slate-100">
-              ← Прокрутите таблицу горизонтально, чтобы увидеть все колонки →
-            </div>
           </div>
         </div>
       )}

@@ -8,13 +8,13 @@ export default function Breadcrumbs() {
   const paths = pathname.split('/').filter(Boolean)
 
   const breadcrumbMap: Record<string, string> = {
-    'admin': 'Админ панель',
+    'admin': 'Панель администратора',
     'bookmarks': 'Закладки',
     'trash': 'Корзина',
     'archive': 'Архив',
     'analytics': 'Аналитика',
     'categories': 'Категории',
-    'settings': 'Настройки'
+    'requests': 'Запросы новинок'
   }
 
   if (paths.length === 0) return null

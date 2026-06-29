@@ -8,9 +8,9 @@ import { useRouter } from 'next/navigation'
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<any[]>([])
-  const [tags, setTags] = useState<any[]>([])
+  const [years, setYears] = useState<any[]>([])
   const [newCategory, setNewCategory] = useState('')
-  const [newTag, setNewTag] = useState('')
+  const [newYear, setNewYear] = useState('')
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
   const router = useRouter()
@@ -44,9 +44,9 @@ export default function CategoriesPage() {
 
   const fetchData = async () => {
     const { data: cats } = await apiClient.from('categories').select('*')
-    const { data: tgs } = await apiClient.from('tags').select('*')
+    const { data: yrs } = await apiClient.from('years').select('*')
     setCategories(cats || [])
-    setTags(tgs || [])
+    setYears((yrs || []).slice().sort((a: any, b: any) => a.name.localeCompare(b.name)))
   }
 
   const addCategory = async () => {
@@ -56,10 +56,10 @@ export default function CategoriesPage() {
     fetchData()
   }
 
-  const addTag = async () => {
-    if (!newTag.trim()) return
-    await apiClient.from('tags').insert({ name: newTag })
-    setNewTag('')
+  const addYear = async () => {
+    if (!newYear.trim()) return
+    await apiClient.from('years').insert({ name: newYear.trim() })
+    setNewYear('')
     fetchData()
   }
 
@@ -70,9 +70,9 @@ export default function CategoriesPage() {
     }
   }
 
-  const deleteTag = async (id: string) => {
-    if (confirm('Удалить тег?')) {
-      await apiClient.from('tags').delete().eq('id', id)
+  const deleteYear = async (id: string) => {
+    if (confirm('Удалить год?')) {
+      await apiClient.from('years').delete().eq('id', id)
       fetchData()
     }
   }
@@ -95,7 +95,7 @@ export default function CategoriesPage() {
             <Link href="/" aria-label="На главную" className="inline-flex items-center">
               <Image src={(process.env.NEXT_PUBLIC_BASE_PATH||"")+ "/logo.png"} alt="Logo" width={120} height={40} className="object-contain" />
             </Link>
-            <h1 className="truncate text-xl font-bold text-white sm:text-2xl">🏷️ Категории и теги</h1>
+            <h1 className="truncate text-xl font-bold text-white sm:text-2xl">🏷️ Категории и годы</h1>
           </div>
           <Link href="/admin" className="px-4 py-2 bg-white/10 text-gray-200 rounded-lg hover:bg-white/20 transition">
             Назад
@@ -132,26 +132,26 @@ export default function CategoriesPage() {
             </div>
           </div>
 
-          {/* Теги */}
+          {/* Годы */}
           <div className="bg-white p-6 rounded-xl shadow-sm">
-            <h2 className="text-xl font-bold mb-4">🏷️ Теги</h2>
+            <h2 className="text-xl font-bold mb-4">📅 Годы</h2>
             <div className="mb-4 flex flex-col gap-2 sm:flex-row">
               <input
                 type="text"
-                placeholder="Новый тег"
-                value={newTag}
-                onChange={(e) => setNewTag(e.target.value)}
+                placeholder="Новый год, например 2028"
+                value={newYear}
+                onChange={(e) => setNewYear(e.target.value)}
                 className="flex-1 px-4 py-2 border rounded-lg"
               />
-              <button onClick={addTag} className="px-4 py-2 bg-[#9B1B1B] text-white rounded-lg hover:bg-[#7A1515] sm:w-auto">
+              <button onClick={addYear} className="px-4 py-2 bg-[#9B1B1B] text-white rounded-lg hover:bg-[#7A1515] sm:w-auto">
                 Добавить
               </button>
             </div>
             <div className="flex flex-wrap gap-2">
-              {tags.map((tag) => (
-                <div key={tag.id} className="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-900 rounded-full">
-                  <span>{tag.name}</span>
-                  <button onClick={() => deleteTag(tag.id)} className="text-blue-600 hover:text-blue-800">
+              {years.map((year) => (
+                <div key={year.id} className="inline-flex items-center gap-2 px-3 py-1 bg-amber-100 text-amber-900 rounded-full">
+                  <span>{year.name}</span>
+                  <button onClick={() => deleteYear(year.id)} className="text-amber-700 hover:text-amber-900">
                     ×
                   </button>
                 </div>

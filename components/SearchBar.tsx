@@ -13,7 +13,6 @@ interface SearchBarProps {
 export default function SearchBar({ products, search, setSearch, onSelectProduct }: SearchBarProps) {
   const [suggestions, setSuggestions] = useState<Product[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
-  const [isListening, setIsListening] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
   const searchRef = useRef<HTMLDivElement>(null)
 
@@ -51,29 +50,6 @@ export default function SearchBar({ products, search, setSearch, onSelectProduct
     onSelectProduct?.(product)
     setShowSuggestions(false)
     setActiveIndex(-1)
-  }
-
-  const isSpeechSupported = typeof window !== 'undefined' &&
-    ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)
-
-  const startVoiceSearch = () => {
-    if (!isSpeechSupported) return
-
-    const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-    const recognition = new SpeechRecognition()
-    recognition.lang = 'ru-RU'
-    recognition.continuous = false
-
-    recognition.onstart = () => setIsListening(true)
-    recognition.onend = () => setIsListening(false)
-    recognition.onerror = () => setIsListening(false)
-    recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript
-      setSearch(transcript)
-    }
-
-    recognition.start()
   }
 
   return (
@@ -124,17 +100,6 @@ export default function SearchBar({ products, search, setSearch, onSelectProduct
           className="w-full pl-12 pr-24 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] focus:border-transparent transition shadow-sm"
         />
         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
-          {isSpeechSupported && (
-            <button
-              onClick={startVoiceSearch}
-              className={`p-2 rounded-lg transition ${isListening ? 'bg-slate-700 text-white animate-pulse' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-              title="Голосовой поиск"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-              </svg>
-            </button>
-          )}
           {search && (
             <button onClick={() => setSearch('')} className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

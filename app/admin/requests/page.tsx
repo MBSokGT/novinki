@@ -10,7 +10,6 @@ import { showToast } from '@/components/Toast'
 interface ProductRequest {
   id: string
   name: string
-  contact: string
   product: string
   article?: string
   delivered: boolean
@@ -97,7 +96,7 @@ export default function RequestsPage() {
                   </span>
                 </div>
                 {request.article && <div className="text-sm text-slate-500">Артикул: {request.article}</div>}
-                <div className="text-sm text-slate-600">{request.name} · {request.contact}</div>
+                <div className="text-sm text-slate-600">{request.name}</div>
                 <div className="text-xs text-slate-400">{new Date(request.created_at).toLocaleString('ru-RU')}</div>
                 <button onClick={() => removeRequest(request.id)} className="rounded-lg bg-slate-100 px-4 py-2 font-medium text-slate-700">
                   Удалить
@@ -108,19 +107,17 @@ export default function RequestsPage() {
           <table className="hidden w-full table-fixed lg:table">
             <thead className="bg-slate-50">
               <tr>
-                <th className="w-[20%] px-4 py-4 text-left text-sm font-semibold">Имя</th>
-                <th className="w-[18%] px-4 py-4 text-left text-sm font-semibold">Контакт</th>
-                <th className="w-[22%] px-4 py-4 text-left text-sm font-semibold">Товар</th>
-                <th className="w-[12%] px-4 py-4 text-left text-sm font-semibold">Артикул</th>
-                <th className="w-[14%] px-4 py-4 text-left text-sm font-semibold">Дата</th>
-                <th className="w-[14%] px-4 py-4 text-right text-sm font-semibold">Действия</th>
+                <th className="w-[24%] px-4 py-4 text-left text-sm font-semibold">Имя</th>
+                <th className="w-[30%] px-4 py-4 text-left text-sm font-semibold">Товар</th>
+                <th className="w-[14%] px-4 py-4 text-left text-sm font-semibold">Артикул</th>
+                <th className="w-[16%] px-4 py-4 text-left text-sm font-semibold">Дата</th>
+                <th className="w-[16%] px-4 py-4 text-right text-sm font-semibold">Действия</th>
               </tr>
             </thead>
             <tbody className="divide-y">
               {requests.map((request) => (
                 <tr key={request.id} className="hover:bg-slate-50">
                   <td className="break-words px-4 py-4 font-medium">{request.name}</td>
-                  <td className="break-words px-4 py-4 text-sm text-slate-600">{request.contact}</td>
                   <td className="break-words px-4 py-4">{request.product}</td>
                   <td className="break-words px-4 py-4 text-sm text-slate-500">{request.article || '—'}</td>
                   <td className="px-4 py-4 text-sm text-slate-600">

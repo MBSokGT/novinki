@@ -120,7 +120,7 @@ export default function TrashPage() {
           </div>
           <div className="flex flex-wrap gap-3">
             <Link href="/admin" className="px-4 py-2 bg-[#9B1B1B] text-white rounded-lg hover:bg-[#7A1515] transition">
-              ← Админ панель
+              ← Панель администратора
             </Link>
           </div>
         </div>
