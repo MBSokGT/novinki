@@ -5,7 +5,7 @@ import { DEMO_MODE, apiClient } from '@/lib/api-client'
 
 export default function RequestForm() {
   const [isOpen, setIsOpen] = useState(false)
-  const [form, setForm] = useState({ product: '', article: '' })
+  const [form, setForm] = useState({ name: '', contact: '', product: '', article: '' })
   const [sending, setSending] = useState(false)
   const [success, setSuccess] = useState(false)
 
@@ -16,9 +16,12 @@ export default function RequestForm() {
     try {
       if (DEMO_MODE) {
         // In demo mode, save via the demo client (no real HTTP needed)
-        await apiClient.from('product_requests').insert({
-          product_name: form.product,
+        await apiClient.from('requests').insert({
+          name: form.name,
+          contact: form.contact,
+          product: form.product,
           article: form.article,
+          delivered: false,
         })
       } else {
         const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/request`, {
@@ -33,7 +36,7 @@ export default function RequestForm() {
       }
 
       setSuccess(true)
-      setForm({ product: '', article: '' })
+      setForm({ name: '', contact: '', product: '', article: '' })
       setTimeout(() => {
         setIsOpen(false)
         setSuccess(false)
@@ -78,6 +81,22 @@ export default function RequestForm() {
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                <input
+                  type="text"
+                  placeholder="Ваше имя"
+                  value={form.name}
+                  onChange={(e) => setForm({...form, name: e.target.value})}
+                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition"
+                  required
+                />
+                <input
+                  type="text"
+                  placeholder="Контакт (email или телефон)"
+                  value={form.contact}
+                  onChange={(e) => setForm({...form, contact: e.target.value})}
+                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition"
+                  required
+                />
                 <input
                   type="text"
                   placeholder="Название товара (Бренд и серия)"

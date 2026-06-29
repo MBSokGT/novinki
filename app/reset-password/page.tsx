@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { apiClient } from '@/lib/api-client'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import Link from 'next/link'
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState('')
@@ -72,9 +73,9 @@ export default function ResetPasswordPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4">
       <div className="bg-white p-8 rounded-2xl shadow-lg max-w-md w-full">
         <div className="text-center mb-8">
-          <a href="https://complexbar.ru" aria-label="complexbar.ru" className="inline-block">
+          <Link href="/" aria-label="На главную" className="inline-block">
             <Image src={(process.env.NEXT_PUBLIC_BASE_PATH||"")+ "/logo.png"} alt="Logo" width={150} height={50} className="mx-auto mb-4" />
-          </a>
+          </Link>
           <h2 className="text-2xl font-bold text-white">Новый пароль</h2>
           <p className="text-slate-600 mt-2">Введите новый пароль для вашего аккаунта</p>
         </div>

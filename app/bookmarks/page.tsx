@@ -61,9 +61,9 @@ export default function BookmarksPage() {
       <nav className="bg-[#1A1A1A] shadow-lg border-b border-[#333]">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
-            <a href="https://complexbar.ru" aria-label="complexbar.ru" className="inline-flex items-center">
+            <Link href="/" aria-label="На главную" className="inline-flex items-center">
               <Image src={(process.env.NEXT_PUBLIC_BASE_PATH||"")+ "/logo.png"} alt="Logo" width={120} height={40} className="object-contain" />
-            </a>
+            </Link>
             <h1 className="text-2xl font-bold text-white">Мои закладки</h1>
           </div>
           <Link href="/" className="px-4 py-2 bg-white/10 text-gray-200 rounded-lg hover:bg-white/20 transition">

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { apiClient } from '@/lib/api-client'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import Link from 'next/link'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -62,9 +63,9 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="surface-card p-8 rounded-2xl max-w-md w-full">
         <div className="text-center mb-8">
-          <a href="https://complexbar.ru" aria-label="complexbar.ru" className="inline-block">
+          <Link href="/" aria-label="На главную" className="inline-block">
             <Image src={(process.env.NEXT_PUBLIC_BASE_PATH||"")+ "/logo.png"} alt="Logo" width={150} height={50} className="mx-auto mb-4" />
-          </a>
+          </Link>
           <h2 className="text-2xl font-semibold text-slate-900">
             {showResetForm ? 'Восстановление пароля' : 'Вход'}
           </h2>

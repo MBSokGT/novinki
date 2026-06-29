@@ -9,7 +9,10 @@ export function middleware(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith('/admin')) {
     const session = request.cookies.get('novinki_session')?.value
     if (!hasSession(session)) {
-      return NextResponse.redirect(new URL('/login', request.url))
+      const loginUrl = request.nextUrl.clone()
+      loginUrl.pathname = '/login'
+      loginUrl.search = ''
+      return NextResponse.redirect(loginUrl)
     }
   }
 

@@ -374,9 +374,9 @@ export default function AdminPage() {
       <nav className="bg-[#1A1A1A] shadow-lg border-b border-[#333]">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-            <a href="https://complexbar.ru" aria-label="complexbar.ru" className="inline-flex items-center">
+            <Link href="/" aria-label="На главную" className="inline-flex items-center">
               <Image src={(process.env.NEXT_PUBLIC_BASE_PATH||"")+ "/logo.png"} alt="Logo" width={120} height={40} className="object-contain" />
-            </a>
+            </Link>
             <h1 className="truncate text-xl font-bold text-white sm:text-2xl">Админ панель</h1>
           </div>
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
@@ -396,7 +396,7 @@ export default function AdminPage() {
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         {/* Меню функций */}
-        <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
           <Link href="/admin/analytics" className="group p-3 bg-white rounded-xl shadow-lg border border-slate-200 hover:shadow-xl hover:border-slate-200 transition-all duration-300 text-center transform hover:-translate-y-1">
             <div className="text-2xl mb-1 group-hover:scale-110 transition-transform duration-300">📊</div>
             <div className="font-bold text-slate-800 group-hover:text-slate-800 transition-colors">Аналитика</div>
@@ -421,6 +421,11 @@ export default function AdminPage() {
             <div className="text-2xl mb-1 group-hover:scale-110 transition-transform duration-300">🗄️</div>
             <div className="font-bold text-slate-800 group-hover:text-slate-800 transition-colors">Архив</div>
             <div className="text-sm text-slate-500 mt-1">Архивные записи</div>
+          </Link>
+          <Link href="/admin/requests" className="group p-3 bg-white rounded-xl shadow-lg border border-slate-200 hover:shadow-xl hover:border-slate-200 transition-all duration-300 text-center transform hover:-translate-y-1">
+            <div className="text-2xl mb-1 group-hover:scale-110 transition-transform duration-300">📨</div>
+            <div className="font-bold text-slate-800 group-hover:text-slate-800 transition-colors">Запросы новинок</div>
+            <div className="text-sm text-slate-500 mt-1">Заявки от клиентов</div>
           </Link>
         </div>
 

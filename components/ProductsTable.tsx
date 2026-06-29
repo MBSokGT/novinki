@@ -517,7 +517,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE)
   // products уже является текущей страницей, пагинация сделана на сервере
 
-  if (loading) return <ProductSkeleton />
+  if (loading) return <ProductSkeleton viewMode={viewMode} />
 
   return (
     <div>
@@ -658,12 +658,43 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
         </div>
       ) : (
         <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-100">
-          <div className="overflow-x-auto">
+          {/* Мобильный режим: компактные карточки вместо широкой таблицы */}
+          <div className="lg:hidden divide-y divide-slate-100">
+            {products.map((product) => (
+              <div key={product.id} className="flex gap-3 p-4">
+                <div
+                  className="relative w-16 h-16 shrink-0 rounded-lg overflow-hidden bg-slate-100 cursor-pointer"
+                  onClick={() => product.image_url && setSelectedImage(product.image_url)}
+                >
+                  <Image src={product.image_url || (process.env.NEXT_PUBLIC_BASE_PATH||'')+'/placeholder.svg'} alt={product.name} fill className="object-cover" loading="lazy" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="font-semibold text-slate-900 text-sm leading-snug line-clamp-2">{product.name}</div>
+                    {!isAdmin && hasUserSession && (
+                      <button
+                        onClick={() => toggleBookmark(product.id)}
+                        className={`shrink-0 p-1.5 rounded-lg transition ${bookmarks.has(product.id) ? 'bg-yellow-100 text-yellow-600' : 'bg-slate-100 text-slate-400'}`}
+                      >
+                        <svg className="w-4 h-4" fill={bookmarks.has(product.id) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
+                      </button>
+                    )}
+                  </div>
+                  <button onClick={() => setSelectedBrand(product.brand)} className="mt-1 inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700">{product.brand}</button>
+                  <p className="mt-1 text-xs text-slate-500 line-clamp-2">{product.description}</p>
+                  <button onClick={() => viewProduct(product)} className="mt-2 w-full px-3 py-1.5 bg-[#9B1B1B] text-white text-xs font-medium rounded-lg">Подробнее</button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Десктопный режим: полная таблица с прокруткой и закреплёнными ключевыми колонками */}
+          <div className="hidden lg:block overflow-x-auto">
             <table className="min-w-full">
               <thead>
                 <tr className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Фото</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Название</th>
+                  <th className="sticky left-0 z-10 bg-slate-50 px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Фото</th>
+                  <th className="sticky left-[128px] z-10 bg-slate-50 px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Название</th>
                   <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Бренд</th>
                   <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Описание</th>
                   <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Преимущества</th>
@@ -674,15 +705,15 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
               <tbody className="divide-y divide-slate-100">
                 {products.map((product) => (
                   <tr key={product.id} className="hover:bg-slate-100 transition-colors group">
-                    <td className="px-6 py-4">
-                      <div 
+                    <td className="sticky left-0 z-10 bg-white group-hover:bg-slate-100 px-6 py-4">
+                      <div
                         className="relative w-20 h-20 rounded-lg overflow-hidden shadow-sm group-hover:shadow-md transition cursor-pointer"
                         onClick={() => product.image_url && setSelectedImage(product.image_url)}
                       >
                         <Image src={product.image_url || (process.env.NEXT_PUBLIC_BASE_PATH||'')+'/placeholder.svg'} alt={product.name} fill className="object-cover" loading="lazy" />
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="sticky left-[128px] z-10 bg-white group-hover:bg-slate-100 px-6 py-4">
                       <div className="font-semibold text-slate-900">{product.name}</div>
                     </td>
                     <td className="px-6 py-4">
@@ -717,6 +748,9 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                 ))}
               </tbody>
             </table>
+            <div className="px-6 py-2 text-xs text-slate-400 border-t border-slate-100">
+              ← Прокрутите таблицу горизонтально, чтобы увидеть все колонки →
+            </div>
           </div>
         </div>
       )}
