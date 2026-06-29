@@ -633,6 +633,17 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                   )}
                 </div>
                 {product.article_number && <p className="text-[10px] text-slate-400 mb-1 font-mono">{product.article_number}</p>}
+                {product.flyer_url && (
+                  <a
+                    href={product.flyer_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-flex items-center gap-1 text-[11px] font-medium text-[#9B1B1B] hover:text-[#7A1515] mb-2"
+                  >
+                    📄 Листовка (PDF)
+                  </a>
+                )}
                 <div className="flex flex-wrap items-center justify-start gap-1 mb-2">
                   <button onClick={() => setSelectedBrand(product.brand)} className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 transition">{product.brand}</button>
                   {product.category && <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700">{product.category}</span>}
@@ -817,13 +828,18 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                   </div>
                   <p className="text-slate-700 leading-relaxed">{selectedProduct.attention_points}</p>
                 </div>
-                {(selectedProduct.website_link || selectedProduct.onec_link) && (
+                {(selectedProduct.website_link || selectedProduct.onec_link || selectedProduct.flyer_url) && (
                   <div className="bg-blue-50 rounded-xl p-5 border border-blue-100">
                     <div className="flex items-center gap-2 mb-3">
                       <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
                       <h3 className="font-bold text-blue-900">Полезные ссылки</h3>
                     </div>
                     <div className="space-y-2">
+                      {selectedProduct.flyer_url && (
+                        <a href={selectedProduct.flyer_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[#9B1B1B] hover:text-[#7A1515] font-medium">
+                          📄 Открыть листовку (PDF)
+                        </a>
+                      )}
                       {selectedProduct.website_link && (
                         <a href={selectedProduct.website_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-blue-700 hover:text-blue-900 font-medium">
                           🌐 Посмотреть на сайте

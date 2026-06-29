@@ -76,6 +76,7 @@ const PRODUCT_COLUMNS = [
   'article_number',
   'description',
   'image_url',
+  'flyer_url',
   'advantages',
   'attention_points',
   'website_link',

@@ -31,6 +31,7 @@ export default function AdminPage() {
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([])
   const [form, setForm] = useState(EMPTY_FORM)
   const [image, setImage] = useState<File | null>(null)
+  const [flyer, setFlyer] = useState<File | null>(null)
   const [editId, setEditId] = useState<string | null>(null)
   const [user, setUser] = useState<any>(null)
   const [tableSearch, setTableSearch] = useState('')
@@ -130,6 +131,7 @@ export default function AdminPage() {
   const resetForm = () => {
     setForm(EMPTY_FORM)
     setImage(null)
+    setFlyer(null)
     setEditId(null)
     if (typeof window !== 'undefined') {
       window.localStorage.removeItem(ADMIN_DRAFT_KEY)
@@ -166,6 +168,7 @@ export default function AdminPage() {
 
     try {
       let imageUrl = ''
+      let flyerUrl = ''
 
       if (image) {
         const fileName = `${Date.now()}_${image.name}`
@@ -174,6 +177,16 @@ export default function AdminPage() {
         if (data) {
           const { data: { publicUrl } } = apiClient.storage.from('products').getPublicUrl(fileName)
           imageUrl = publicUrl
+        }
+      }
+
+      if (flyer) {
+        const fileName = `${Date.now()}_${flyer.name}`
+        const { data, error: uploadError } = await apiClient.storage.from('flyers').upload(fileName, flyer)
+        if (uploadError) throw uploadError
+        if (data) {
+          const { data: { publicUrl } } = apiClient.storage.from('flyers').getPublicUrl(fileName)
+          flyerUrl = publicUrl
         }
       }
 
@@ -190,6 +203,7 @@ export default function AdminPage() {
         year: form.year,
         price: form.price ? parseFloat(form.price) : null,
         image_url: imageUrl || (editId ? products.find(p => p.id === editId)?.image_url : ''),
+        flyer_url: flyerUrl || (editId ? products.find(p => p.id === editId)?.flyer_url : ''),
       }
 
       if (editId) {
@@ -227,6 +241,7 @@ export default function AdminPage() {
       year: product.year || '',
     })
     setImage(null)
+    setFlyer(null)
     setEditId(product.id)
     if (typeof window !== 'undefined') {
       window.localStorage.removeItem(ADMIN_DRAFT_KEY)
@@ -241,6 +256,7 @@ export default function AdminPage() {
         article_number: '',
         description: product.description,
         image_url: product.image_url,
+        flyer_url: product.flyer_url || '',
         advantages: product.advantages,
         attention_points: product.attention_points,
         website_link: product.website_link || '',
@@ -277,6 +293,7 @@ export default function AdminPage() {
             article_number: product.article_number,
             description: product.description,
             image_url: product.image_url,
+            flyer_url: product.flyer_url,
             advantages: product.advantages,
             attention_points: product.attention_points,
             website_link: product.website_link,
@@ -452,14 +469,34 @@ export default function AdminPage() {
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
                 id="file-upload"
               />
-              <label 
-                htmlFor="file-upload" 
+              <label
+                htmlFor="file-upload"
                 className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-slate-300 rounded-xl hover:border-slate-400 hover:bg-slate-50 transition-colors cursor-pointer"
               >
                 <div className="text-center">
                   <div className="text-2xl mb-1">📁</div>
                   <div className="text-sm text-slate-600">
                     {image ? image.name : 'Добавить фото'}
+                  </div>
+                </div>
+              </label>
+            </div>
+            <div className="relative">
+              <input
+                type="file"
+                accept="application/pdf"
+                onChange={(e) => setFlyer(e.target.files?.[0] || null)}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                id="flyer-upload"
+              />
+              <label
+                htmlFor="flyer-upload"
+                className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-slate-300 rounded-xl hover:border-slate-400 hover:bg-slate-50 transition-colors cursor-pointer"
+              >
+                <div className="text-center">
+                  <div className="text-2xl mb-1">📄</div>
+                  <div className="text-sm text-slate-600">
+                    {flyer ? flyer.name : 'Добавить листовку (PDF)'}
                   </div>
                 </div>
               </label>
@@ -611,6 +648,11 @@ export default function AdminPage() {
                     <td className="break-words px-4 py-4 align-top text-sm text-slate-500">{product.article_number || '—'}</td>
                     <td className="px-4 py-4 align-top">
                       <div className="flex flex-col gap-1 break-words">
+                        {product.flyer_url && (
+                          <a href={product.flyer_url} target="_blank" rel="noopener noreferrer" className="text-[#9B1B1B] hover:text-[#7A1515] text-sm flex items-center gap-1 break-all">
+                            📄 Листовка
+                          </a>
+                        )}
                         {product.website_link && (
                           <a href={product.website_link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1 break-all">
                             🌐 Сайт
@@ -621,7 +663,7 @@ export default function AdminPage() {
                             📊 1С
                           </a>
                         )}
-                        {!product.website_link && !product.onec_link && (
+                        {!product.website_link && !product.onec_link && !product.flyer_url && (
                           <span className="text-slate-400 text-sm">—</span>
                         )}
                       </div>

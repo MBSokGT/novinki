@@ -93,6 +93,15 @@ function parseOrExpression(expression: string): DataFilter[] {
     .filter(Boolean) as DataFilter[]
 }
 
+async function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onerror = () => reject(new Error('Failed to read file'))
+    reader.onload = (event) => resolve(String(event.target?.result || ''))
+    reader.readAsDataURL(file)
+  })
+}
+
 async function compressImage(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -327,16 +336,16 @@ const remoteClient = {
   },
 
   storage: {
-    from(_bucket: string) {
+    from(bucket: string) {
       return {
         async upload(_fileName: string, file: File) {
           try {
-            const dataUrl = await compressImage(file)
+            const dataUrl = bucket === 'flyers' ? await readFileAsDataUrl(file) : await compressImage(file)
             return { data: { path: dataUrl }, error: null }
           } catch (error) {
             return {
               data: null,
-              error: { message: error instanceof Error ? error.message : 'Failed to process image' },
+              error: { message: error instanceof Error ? error.message : 'Failed to process file' },
             }
           }
         },
