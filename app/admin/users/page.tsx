@@ -96,6 +96,23 @@ export default function UsersPage() {
     fetchUsers()
   }
 
+  const resetPassword = async (userId: string, email: string) => {
+    const password = prompt(`Новый пароль для ${email} (мин. 8 символов):`)
+    if (!password) return
+    if (password.length < 8) {
+      showToast('Пароль должен быть не короче 8 символов', 'error')
+      return
+    }
+
+    try {
+      const { error } = await apiClient.auth.adminSetUserPassword({ userId, password })
+      if (error) throw new Error(error.message)
+      showToast('Пароль обновлён', 'success')
+    } catch (error: any) {
+      showToast(error?.message || 'Ошибка при смене пароля', 'error')
+    }
+  }
+
   const toggleBlock = async (userId: string, currentStatus: boolean) => {
     const reason = currentStatus ? null : prompt('Причина блокировки:')
     if (!currentStatus && !reason) return
@@ -265,6 +282,12 @@ export default function UsersPage() {
                         }`}
                       >
                         {user.is_blocked ? 'Разблокировать' : 'Заблокировать'}
+                      </button>
+                      <button
+                        onClick={() => resetPassword(user.id, user.email)}
+                        className="px-3 py-1 rounded-lg text-sm font-medium bg-amber-100 text-amber-800 hover:bg-amber-200 transition"
+                      >
+                        Сменить пароль
                       </button>
                     </td>
                   </tr>

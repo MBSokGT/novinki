@@ -1000,6 +1000,18 @@ export async function updateUserPassword(userId: string, password: string) {
   await db.prepare('UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?').bind(hashPassword(password), nowIso(), userId).run()
 }
 
+export async function adminSetUserPassword(requestingUserId: string, targetUserId: string, password: string) {
+  const db = await getDb()
+  const requesterIsAdmin = await isAdminUser(db, requestingUserId)
+  if (!requesterIsAdmin) {
+    throw new Error('Forbidden')
+  }
+
+  await updateUserPassword(targetUserId, password)
+  // Force the target user to log in again with the new password.
+  await db.prepare('DELETE FROM sessions WHERE user_id = ?').bind(targetUserId).run()
+}
+
 export async function insertRequest(payload: {
   name: string
   contact: string

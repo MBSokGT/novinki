@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import {
   adminCreateUser,
+  adminSetUserPassword,
   confirmPasswordReset,
   getCurrentUser,
   requestPasswordReset,
@@ -71,6 +72,16 @@ export async function POST(request: NextRequest) {
         Boolean(body.isAdmin)
       )
       return NextResponse.json({ data: { user: result.user }, error: null })
+    }
+
+    if (action === 'adminSetUserPassword') {
+      const requestingUser = await getCurrentUser(request)
+      if (!requestingUser) {
+        return NextResponse.json({ data: null, error: { message: 'Authentication required' } }, { status: 401 })
+      }
+
+      await adminSetUserPassword(requestingUser.id, String(body.userId || ''), String(body.password || ''))
+      return NextResponse.json({ data: true, error: null })
     }
 
     if (action === 'signOut') {

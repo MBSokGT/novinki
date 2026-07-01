@@ -338,6 +338,14 @@ const remoteClient = {
       })
     },
 
+    async adminSetUserPassword({ userId, password }: { userId: string; password: string }) {
+      return callInternalApi<{ data: boolean | null; error: { message: string } | null }>('/api/internal/auth', {
+        action: 'adminSetUserPassword',
+        userId,
+        password,
+      })
+    },
+
     async signOut() {
       return callInternalApi<{ error: { message: string } | null }>('/api/internal/auth', {
         action: 'signOut',
@@ -848,6 +856,10 @@ const demoClient = {
 
     async adminCreateUser() {
       return { data: { user: null }, error: { message: 'Недоступно в демо-режиме' } }
+    },
+
+    async adminSetUserPassword() {
+      return { data: null, error: { message: 'Недоступно в демо-режиме' } }
     },
 
     async signOut() {
