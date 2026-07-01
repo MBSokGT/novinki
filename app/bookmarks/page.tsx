@@ -148,16 +148,24 @@ export default function BookmarksPage() {
                   </div>
                   <p className="text-slate-700 leading-relaxed">{selectedProduct.attention_points}</p>
                 </div>
-                {(selectedProduct.website_link || selectedProduct.onec_link) && (
+                {(selectedProduct.website_link || selectedProduct.onec_link || selectedProduct.flyer_url) && (
                   <div className="space-y-2">
+                    {selectedProduct.flyer_url && (
+                      <a href={selectedProduct.flyer_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[#9B1B1B] hover:text-[#7A1515] font-medium">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                        Открыть листовку (PDF)
+                      </a>
+                    )}
                     {selectedProduct.website_link && (
                       <a href={selectedProduct.website_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-blue-700 hover:text-blue-900 font-medium">
-                        🌐 Посмотреть на сайте
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 21a9 9 0 100-18 9 9 0 000 18zM3.6 9h16.8M3.6 15h16.8M12 3a15 15 0 010 18 15 15 0 010-18z" /></svg>
+                        Посмотреть на сайте
                       </a>
                     )}
                     {selectedProduct.onec_link && (
                       <a href={selectedProduct.onec_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-green-700 hover:text-green-900 font-medium">
-                        📊 Открыть в 1С
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                        Открыть в 1С
                       </a>
                     )}
                   </div>

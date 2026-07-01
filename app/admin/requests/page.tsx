@@ -76,7 +76,7 @@ export default function RequestsPage() {
             <Link href="/" aria-label="На главную" className="inline-flex items-center">
               <Image src={(process.env.NEXT_PUBLIC_BASE_PATH||"")+ "/logo.png"} alt="Logo" width={120} height={40} className="object-contain" />
             </Link>
-            <h1 className="truncate text-xl font-bold text-white sm:text-2xl">📨 Запросы новинок</h1>
+            <h1 className="truncate text-xl font-bold text-white sm:text-2xl">Запросы новинок</h1>
           </div>
           <Link href="/admin" className="px-4 py-2 bg-white/10 text-gray-200 rounded-lg hover:bg-white/20 transition">
             Назад

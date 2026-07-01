@@ -97,7 +97,7 @@ export default function AnalyticsPage() {
             <Link href="/" aria-label="На главную" className="inline-flex items-center">
               <Image src={(process.env.NEXT_PUBLIC_BASE_PATH||"")+ "/logo.png"} alt="Logo" width={120} height={40} className="object-contain" />
             </Link>
-            <h1 className="truncate text-xl font-bold text-white sm:text-2xl">📊 Аналитика</h1>
+            <h1 className="truncate text-xl font-bold text-white sm:text-2xl">Аналитика</h1>
           </div>
           <Link href="/admin" className="px-4 py-2 bg-white/10 text-gray-200 rounded-lg hover:bg-white/20 transition">
             Назад
@@ -129,7 +129,7 @@ export default function AnalyticsPage() {
         <div className="grid gap-6 xl:grid-cols-2">
           {/* Топ-10 новинок */}
           <div className="bg-white p-6 rounded-xl shadow-sm">
-            <h2 className="text-xl font-bold mb-4">🏆 Топ-10 новинок</h2>
+            <h2 className="text-xl font-bold mb-4">Топ-10 новинок</h2>
             <div className="space-y-3">
               {topProducts.map((product, idx) => (
                 <div key={product.id} className="flex flex-col gap-3 rounded-lg bg-slate-50 p-3 sm:flex-row sm:items-center sm:justify-between">
@@ -141,8 +141,8 @@ export default function AnalyticsPage() {
                     </div>
                   </div>
                   <div className="text-left sm:text-right">
-                    <div className="font-bold text-green-600">{product.view_count} 👁️</div>
-                    <div className="text-sm text-purple-600">{product.bookmark_count} 🔖</div>
+                    <div className="font-bold text-green-600">{product.view_count} просмотров</div>
+                    <div className="text-sm text-purple-600">{product.bookmark_count} в закладках</div>
                   </div>
                 </div>
               ))}
@@ -151,7 +151,7 @@ export default function AnalyticsPage() {
 
           {/* Популярные бренды */}
           <div className="bg-white p-6 rounded-xl shadow-sm">
-            <h2 className="text-xl font-bold mb-4">🏷️ Популярные бренды</h2>
+            <h2 className="text-xl font-bold mb-4">Популярные бренды</h2>
             <div className="space-y-3">
               {topBrands.map((brand: any, idx) => (
                 <div key={idx} className="flex flex-col gap-3 rounded-lg bg-slate-50 p-3 sm:flex-row sm:items-center sm:justify-between">

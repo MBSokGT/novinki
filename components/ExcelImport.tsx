@@ -114,7 +114,8 @@ export default function ExcelImport({ onSuccess }: ExcelImportProps) {
         onClick={() => setShowModal(true)}
         className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-md"
       >
-        📥 Импорт из Excel
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 16V4m0 12l-4-4m4 4l4-4M4 20h16" /></svg>
+        Импорт из Excel
       </button>
 
       {showModal && (
@@ -129,7 +130,7 @@ export default function ExcelImport({ onSuccess }: ExcelImportProps) {
 
             <div className="space-y-4">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-sm text-blue-800 mb-2">📋 Поддерживаемые форматы: <strong>CSV</strong>, <strong>XLSX</strong>, <strong>XLS</strong></p>
+                <p className="text-sm text-blue-800 mb-2">Поддерживаемые форматы: <strong>CSV</strong>, <strong>XLSX</strong>, <strong>XLS</strong></p>
                 <p className="text-xs text-blue-700 mb-1">Обязательные колонки:</p>
                 <ul className="text-xs text-blue-700 space-y-0.5 ml-4">
                   <li>• Название, Бренд, Описание, Преимущества, Внимание</li>
@@ -139,9 +140,10 @@ export default function ExcelImport({ onSuccess }: ExcelImportProps) {
 
               <button
                 onClick={downloadTemplate}
-                className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm"
               >
-                📄 Скачать шаблон CSV
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                Скачать шаблон CSV
               </button>
 
               <div className="relative">
@@ -157,7 +159,7 @@ export default function ExcelImport({ onSuccess }: ExcelImportProps) {
                   className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition cursor-pointer"
                 >
                   <div className="text-center">
-                    <div className="text-2xl mb-1">📁</div>
+                    <svg className="w-6 h-6 mx-auto mb-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                     <div className="text-sm text-gray-600">{file ? file.name : 'Выберите CSV или Excel файл'}</div>
                   </div>
                 </label>

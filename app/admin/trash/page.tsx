@@ -116,11 +116,12 @@ export default function TrashPage() {
             <Link href="/" aria-label="На главную" className="inline-flex items-center">
               <Image src={(process.env.NEXT_PUBLIC_BASE_PATH||"")+ "/logo.png"} alt="Logo" width={120} height={40} className="object-contain" />
             </Link>
-            <h1 className="truncate text-xl font-bold text-slate-700 sm:text-2xl">🗑️ Корзина</h1>
+            <h1 className="truncate text-xl font-bold text-slate-700 sm:text-2xl">Корзина</h1>
           </div>
           <div className="flex flex-wrap gap-3">
-            <Link href="/admin" className="px-4 py-2 bg-[#9B1B1B] text-white rounded-lg hover:bg-[#7A1515] transition">
-              ← Панель администратора
+            <Link href="/admin" className="inline-flex items-center gap-2 px-4 py-2 bg-[#9B1B1B] text-white rounded-lg hover:bg-[#7A1515] transition">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+              Панель администратора
             </Link>
           </div>
         </div>
@@ -130,20 +131,21 @@ export default function TrashPage() {
         <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
           <div className="flex flex-col gap-3 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
             <h3 className="text-lg font-semibold text-slate-700 flex items-center gap-2">
-              <span className="text-xl">🗑️</span>
+              <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
               Удаленные товары ({deletedProducts.length})
             </h3>
-            <button 
+            <button
               onClick={handleCleanup}
-              className="w-full rounded-lg bg-[#9B1B1B] px-4 py-2 text-sm text-white transition hover:bg-[#7A1515] sm:w-auto"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#9B1B1B] px-4 py-2 text-sm text-white transition hover:bg-[#7A1515] sm:w-auto"
             >
-              🧹 Очистить старые (14+ дней)
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+              Очистить старые (14+ дней)
             </button>
           </div>
-          
+
           {deletedProducts.length === 0 ? (
             <div className="p-12 text-center text-slate-500">
-              <div className="text-6xl mb-4">🗑️</div>
+              <svg className="w-14 h-14 mx-auto mb-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
               <p className="text-lg">Корзина пуста</p>
             </div>
           ) : (
@@ -159,17 +161,19 @@ export default function TrashPage() {
                       </div>
                     </div>
                     <div className="flex flex-col gap-2 sm:flex-row">
-                      <button 
+                      <button
                         onClick={() => handleRestore(product)}
-                        className="inline-flex items-center justify-center rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm font-medium text-green-700"
+                        className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm font-medium text-green-700"
                       >
-                        ↩️ Восстановить
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a4 4 0 010 8h-4M3 10l4-4M3 10l4 4" /></svg>
+                        Восстановить
                       </button>
-                      <button 
+                      <button
                         onClick={() => handlePermanentDelete(product.id)}
-                        className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm font-medium text-slate-700"
+                        className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm font-medium text-slate-700"
                       >
-                        💀 Удалить навсегда
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        Удалить навсегда
                       </button>
                     </div>
                   </div>
@@ -195,18 +199,18 @@ export default function TrashPage() {
                       </td>
                       <td className="px-4 py-4 text-right">
                         <div className="flex flex-wrap justify-end gap-2">
-                          <button 
+                          <button
                             onClick={() => handleRestore(product)}
-                            className="inline-flex items-center px-3 py-2 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 hover:border-green-300 transition-all"
+                            className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 hover:border-green-300 transition-all"
                           >
-                            <span className="mr-1.5">↩️</span>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a4 4 0 010 8h-4M3 10l4-4M3 10l4 4" /></svg>
                             Восстановить
                           </button>
-                          <button 
+                          <button
                             onClick={() => handlePermanentDelete(product.id)}
-                            className="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-700 bg-slate-100 border border-slate-200 rounded-lg hover:bg-slate-100 hover:border-slate-300 transition-all"
+                            className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-700 bg-slate-100 border border-slate-200 rounded-lg hover:bg-slate-100 hover:border-slate-300 transition-all"
                           >
-                            <span className="mr-1.5">💀</span>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                             Удалить навсегда
                           </button>
                         </div>

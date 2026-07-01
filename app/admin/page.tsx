@@ -391,8 +391,9 @@ export default function AdminPage() {
           </div>
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <ExcelImport onSuccess={fetchProducts} />
-            <Link href="/admin/trash" className="px-4 py-2 bg-[#9B1B1B] text-white rounded-lg hover:bg-[#7A1515] transition">
-              🗑️ Корзина
+            <Link href="/admin/trash" className="inline-flex items-center gap-2 px-4 py-2 bg-[#9B1B1B] text-white rounded-lg hover:bg-[#7A1515] transition">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+              Корзина
             </Link>
             <Link href="/" className="px-4 py-2 bg-white/10 text-gray-200 rounded-lg hover:bg-white/20 transition">
               На главную
@@ -408,27 +409,37 @@ export default function AdminPage() {
         {/* Меню функций */}
         <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
           <Link href="/admin/analytics" className="group p-3 bg-white rounded-xl shadow-lg border border-slate-200 hover:shadow-xl hover:border-slate-200 transition-all duration-300 text-center transform hover:-translate-y-1">
-            <div className="text-2xl mb-1 group-hover:scale-110 transition-transform duration-300">📊</div>
+            <div className="mb-1 flex justify-center text-[#9B1B1B] group-hover:scale-110 transition-transform duration-300">
+              <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+            </div>
             <div className="font-bold text-slate-800 group-hover:text-slate-800 transition-colors">Аналитика</div>
             <div className="text-sm text-slate-500 mt-1">Отчеты и статистика</div>
           </Link>
           <Link href="/admin/categories" className="group p-3 bg-white rounded-xl shadow-lg border border-slate-200 hover:shadow-xl hover:border-slate-200 transition-all duration-300 text-center transform hover:-translate-y-1">
-            <div className="text-2xl mb-1 group-hover:scale-110 transition-transform duration-300">🏷️</div>
+            <div className="mb-1 flex justify-center text-[#9B1B1B] group-hover:scale-110 transition-transform duration-300">
+              <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5.586a1 1 0 01.707.293l7.414 7.414a1 1 0 010 1.414l-7.586 7.586a1 1 0 01-1.414 0L4.293 12.293A1 1 0 014 11.586V6a3 3 0 013-3z" /></svg>
+            </div>
             <div className="font-bold text-slate-800 group-hover:text-slate-800 transition-colors">Категории</div>
             <div className="text-sm text-slate-500 mt-1">Управление категориями</div>
           </Link>
           <Link href="/admin/users" className="group p-3 bg-white rounded-xl shadow-lg border border-slate-200 hover:shadow-xl hover:border-slate-200 transition-all duration-300 text-center transform hover:-translate-y-1">
-            <div className="text-2xl mb-1 group-hover:scale-110 transition-transform duration-300">👥</div>
+            <div className="mb-1 flex justify-center text-[#9B1B1B] group-hover:scale-110 transition-transform duration-300">
+              <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m5-3.13a4 4 0 100-8 4 4 0 000 8zm6 3.13a4 4 0 00-2.5-3.71M7 9.13a4 4 0 00-2.5 3.71" /></svg>
+            </div>
             <div className="font-bold text-slate-800 group-hover:text-slate-800 transition-colors">Пользователи</div>
             <div className="text-sm text-slate-500 mt-1">Сотрудники и админы</div>
           </Link>
           <Link href="/admin/archive" className="group p-3 bg-white rounded-xl shadow-lg border border-slate-200 hover:shadow-xl hover:border-slate-200 transition-all duration-300 text-center transform hover:-translate-y-1">
-            <div className="text-2xl mb-1 group-hover:scale-110 transition-transform duration-300">🗄️</div>
+            <div className="mb-1 flex justify-center text-[#9B1B1B] group-hover:scale-110 transition-transform duration-300">
+              <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 01-2-2V4a2 2 0 012-2h14a2 2 0 012 2v2a2 2 0 01-2 2M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
+            </div>
             <div className="font-bold text-slate-800 group-hover:text-slate-800 transition-colors">Архив</div>
             <div className="text-sm text-slate-500 mt-1">Архивные записи</div>
           </Link>
           <Link href="/admin/requests" className="group p-3 bg-white rounded-xl shadow-lg border border-slate-200 hover:shadow-xl hover:border-slate-200 transition-all duration-300 text-center transform hover:-translate-y-1">
-            <div className="text-2xl mb-1 group-hover:scale-110 transition-transform duration-300">📨</div>
+            <div className="mb-1 flex justify-center text-[#9B1B1B] group-hover:scale-110 transition-transform duration-300">
+              <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+            </div>
             <div className="font-bold text-slate-800 group-hover:text-slate-800 transition-colors">Запросы новинок</div>
             <div className="text-sm text-slate-500 mt-1">Заявки от сотрудников</div>
           </Link>
@@ -436,8 +447,12 @@ export default function AdminPage() {
 
         <div className="mb-8 rounded-2xl border border-slate-200 bg-white p-4 shadow-lg sm:p-6 lg:p-8">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-gradient-to-r from-[#9B1B1B] to-[#7A1515] rounded-xl flex items-center justify-center text-white text-xl">
-              {editId ? '✏️' : '➕'}
+            <div className="w-10 h-10 bg-gradient-to-r from-[#9B1B1B] to-[#7A1515] rounded-xl flex items-center justify-center text-white">
+              {editId ? (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+              )}
             </div>
             <h2 className="text-xl font-bold text-slate-800 sm:text-2xl">{editId ? 'Редактировать новинку' : 'Добавить новинку'}</h2>
           </div>
@@ -469,7 +484,7 @@ export default function AdminPage() {
                 onChange={(e) => setForm({ ...form, is_supplier_novelty: e.target.checked })}
                 className="w-4 h-4 accent-[#9B1B1B]"
               />
-              <span className="text-sm font-medium text-slate-700">📦 Это новинка поставщика</span>
+              <span className="text-sm font-medium text-slate-700">Это новинка поставщика</span>
             </label>
             <textarea placeholder="Описание" value={form.description} onChange={(e) => setForm({...form, description: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" rows={2} required />
             <textarea placeholder="Преимущества" value={form.advantages} onChange={(e) => setForm({...form, advantages: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" rows={2} required />
@@ -491,7 +506,7 @@ export default function AdminPage() {
                 className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-slate-300 rounded-xl hover:border-slate-400 hover:bg-slate-50 transition-colors cursor-pointer"
               >
                 <div className="text-center">
-                  <div className="text-2xl mb-1">📁</div>
+                  <svg className="w-6 h-6 mx-auto mb-1 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M14 8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                   <div className="text-sm text-slate-600">
                     {image ? image.name : 'Добавить фото'}
                   </div>
@@ -511,7 +526,7 @@ export default function AdminPage() {
                 className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-slate-300 rounded-xl hover:border-slate-400 hover:bg-slate-50 transition-colors cursor-pointer"
               >
                 <div className="text-center">
-                  <div className="text-2xl mb-1">📄</div>
+                  <svg className="w-6 h-6 mx-auto mb-1 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                   <div className="text-sm text-slate-600">
                     {flyer ? flyer.name : 'Добавить листовку (PDF)'}
                   </div>
@@ -522,18 +537,24 @@ export default function AdminPage() {
               <button
                 type="submit"
                 disabled={submitLoading}
-                className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-[#9B1B1B] to-[#7A1515] text-white rounded-xl hover:from-[#7A1515] hover:to-[#9B1B1B] transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#9B1B1B] to-[#7A1515] text-white rounded-xl hover:from-[#7A1515] hover:to-[#9B1B1B] transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
               >
-                <span className="mr-2">{submitLoading ? '⏳' : editId ? '✨' : '➕'}</span>
+                {submitLoading ? (
+                  <span className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+                ) : editId ? (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                ) : (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                )}
                 {submitLoading ? 'Сохранение...' : editId ? 'Обновить' : 'Добавить'}
               </button>
               {editId && (
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={resetForm}
-                  className="inline-flex items-center px-6 py-3 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition-all duration-200 border border-slate-300 hover:border-slate-400"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition-all duration-200 border border-slate-300 hover:border-slate-400"
                 >
-                  <span className="mr-2">❌</span>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                   Отмена
                 </button>
               )}
@@ -544,7 +565,7 @@ export default function AdminPage() {
         <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
           <div className="bg-gradient-to-r from-slate-50 to-slate-100 px-6 py-4 border-b border-slate-200">
             <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-              <span className="text-xl">📋</span>
+              <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
               Управление новинками
             </h3>
           </div>
@@ -604,35 +625,51 @@ export default function AdminPage() {
                   <span className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                     product.is_archived ? 'bg-gray-100 text-gray-800' : 'bg-green-100 text-green-800'
                   }`}>
-                    {product.is_archived ? '🗄️ Архив' : '✅ Активный'}
+                    {product.is_archived ? 'Архив' : 'Активный'}
                   </span>
                 </div>
-                {(product.website_link || product.onec_link) && (
-                  <div className="flex gap-3 mb-3">
+                {(product.website_link || product.onec_link || product.flyer_url) && (
+                  <div className="flex flex-wrap gap-3 mb-3">
+                    {product.flyer_url && (
+                      <a href={product.flyer_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[#9B1B1B] text-sm">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                        Листовка
+                      </a>
+                    )}
                     {product.website_link && (
-                      <a href={product.website_link} target="_blank" rel="noopener noreferrer" className="text-blue-600 text-sm">🌐 Сайт</a>
+                      <a href={product.website_link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-blue-600 text-sm">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 21a9 9 0 100-18 9 9 0 000 18zM3.6 9h16.8M3.6 15h16.8M12 3a15 15 0 010 18 15 15 0 010-18z" /></svg>
+                        Сайт
+                      </a>
                     )}
                     {product.onec_link && (
-                      <a href={product.onec_link} target="_blank" rel="noopener noreferrer" className="text-green-600 text-sm">📊 1С</a>
+                      <a href={product.onec_link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-green-600 text-sm">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                        1С
+                      </a>
                     )}
                   </div>
                 )}
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  <button onClick={() => handleEdit(product)} className="flex min-h-[44px] w-full items-center justify-center gap-1 px-3 py-2 text-center text-sm font-medium leading-tight whitespace-normal break-words text-blue-700 bg-blue-50 border border-blue-200 rounded-lg">
-                    ✏️ Редактировать
+                  <button onClick={() => handleEdit(product)} className="flex min-h-[44px] w-full items-center justify-center gap-1.5 px-3 py-2 text-center text-sm font-medium leading-tight whitespace-normal break-words text-blue-700 bg-blue-50 border border-blue-200 rounded-lg">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                    Редактировать
                   </button>
-                  <button onClick={() => handleDuplicate(product)} className="flex min-h-[44px] w-full items-center justify-center gap-1 px-3 py-2 text-center text-sm font-medium leading-tight whitespace-normal break-words text-violet-700 bg-violet-50 border border-violet-200 rounded-lg">
-                    📄 Копия
+                  <button onClick={() => handleDuplicate(product)} className="flex min-h-[44px] w-full items-center justify-center gap-1.5 px-3 py-2 text-center text-sm font-medium leading-tight whitespace-normal break-words text-violet-700 bg-violet-50 border border-violet-200 rounded-lg">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                    Копия
                   </button>
-                  <button onClick={() => handleArchive(product.id, product.is_archived || false)} className={`flex min-h-[44px] w-full items-center justify-center gap-1 px-3 py-2 text-center text-sm leading-tight whitespace-normal break-words rounded-lg border ${
+                  <button onClick={() => handleArchive(product.id, product.is_archived || false)} className={`flex min-h-[44px] w-full items-center justify-center gap-1.5 px-3 py-2 text-center text-sm leading-tight whitespace-normal break-words rounded-lg border ${
                     product.is_archived
                       ? 'text-green-700 bg-green-50 border-green-200'
                       : 'text-slate-700 bg-slate-100 border-slate-200'
                   }`}>
-                    {product.is_archived ? '📄 Разархивировать' : '🗄️ Архивировать'}
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 01-2-2V4a2 2 0 012-2h14a2 2 0 012 2v2a2 2 0 01-2 2M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
+                    {product.is_archived ? 'Разархивировать' : 'Архивировать'}
                   </button>
-                  <button onClick={() => handleDelete(product.id)} className="flex min-h-[44px] w-full items-center justify-center gap-1 px-3 py-2 text-center text-sm font-medium leading-tight whitespace-normal break-words text-red-700 bg-red-50 border border-red-200 rounded-lg">
-                    🗑️ Удалить
+                  <button onClick={() => handleDelete(product.id)} className="flex min-h-[44px] w-full items-center justify-center gap-1.5 px-3 py-2 text-center text-sm font-medium leading-tight whitespace-normal break-words text-red-700 bg-red-50 border border-red-200 rounded-lg">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    Удалить
                   </button>
                 </div>
               </div>
@@ -667,17 +704,20 @@ export default function AdminPage() {
                       <div className="flex flex-col gap-1 break-words">
                         {product.flyer_url && (
                           <a href={product.flyer_url} target="_blank" rel="noopener noreferrer" className="text-[#9B1B1B] hover:text-[#7A1515] text-sm flex items-center gap-1 break-all">
-                            📄 Листовка
+                            <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                            Листовка
                           </a>
                         )}
                         {product.website_link && (
                           <a href={product.website_link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1 break-all">
-                            🌐 Сайт
+                            <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 21a9 9 0 100-18 9 9 0 000 18zM3.6 9h16.8M3.6 15h16.8M12 3a15 15 0 010 18 15 15 0 010-18z" /></svg>
+                            Сайт
                           </a>
                         )}
                         {product.onec_link && (
                           <a href={product.onec_link} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-800 text-sm flex items-center gap-1 break-all">
-                            📊 1С
+                            <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                            1С
                           </a>
                         )}
                         {!product.website_link && !product.onec_link && !product.flyer_url && (
@@ -691,41 +731,41 @@ export default function AdminPage() {
                           ? 'bg-gray-100 text-gray-800'
                           : 'bg-green-100 text-green-800'
                       }`}>
-                        {product.is_archived ? '🗄️ Архив' : '✅ Активный'}
+                        {product.is_archived ? 'Архив' : 'Активный'}
                       </span>
                     </td>
                     <td className="px-4 py-4 text-right align-top">
                       <div className="ml-auto grid max-w-[13rem] grid-cols-1 gap-2">
                         <button
                           onClick={() => handleEdit(product)}
-                          className="inline-flex min-h-[44px] items-center justify-center px-3 py-2 text-center text-sm leading-tight whitespace-normal break-words font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300 hover:shadow-md transition-all duration-200 transform hover:-translate-y-0.5"
+                          className="inline-flex min-h-[44px] items-center justify-center gap-1.5 px-3 py-2 text-center text-sm leading-tight whitespace-normal break-words font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300 hover:shadow-md transition-all duration-200 transform hover:-translate-y-0.5"
                         >
-                          <span className="mr-1.5">✏️</span>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                           Редактировать
                         </button>
                         <button
                           onClick={() => handleDuplicate(product)}
-                          className="inline-flex min-h-[44px] items-center justify-center px-3 py-2 text-center text-sm leading-tight whitespace-normal break-words font-medium text-violet-700 bg-violet-50 border border-violet-200 rounded-lg hover:bg-violet-100 hover:border-violet-300 hover:shadow-md transition-all duration-200 transform hover:-translate-y-0.5"
+                          className="inline-flex min-h-[44px] items-center justify-center gap-1.5 px-3 py-2 text-center text-sm leading-tight whitespace-normal break-words font-medium text-violet-700 bg-violet-50 border border-violet-200 rounded-lg hover:bg-violet-100 hover:border-violet-300 hover:shadow-md transition-all duration-200 transform hover:-translate-y-0.5"
                         >
-                          <span className="mr-1.5">📄</span>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
                           Копия
                         </button>
                         <button
                           onClick={() => handleArchive(product.id, product.is_archived || false)}
-                          className={`inline-flex min-h-[52px] items-center justify-center px-3 py-2 text-center text-sm leading-tight whitespace-normal break-words font-medium rounded-lg transition-all duration-200 transform hover:-translate-y-0.5 hover:shadow-md ${
+                          className={`inline-flex min-h-[52px] items-center justify-center gap-1.5 px-3 py-2 text-center text-sm leading-tight whitespace-normal break-words font-medium rounded-lg transition-all duration-200 transform hover:-translate-y-0.5 hover:shadow-md ${
                             product.is_archived
                               ? 'text-green-700 bg-green-50 border border-green-200 hover:bg-green-100 hover:border-green-300'
                               : 'text-slate-700 bg-slate-100 border border-slate-200 hover:bg-slate-200 hover:border-slate-300'
                           }`}
                         >
-                          <span className="mr-1.5">{product.is_archived ? '📄' : '🗄️'}</span>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 01-2-2V4a2 2 0 012-2h14a2 2 0 012 2v2a2 2 0 01-2 2M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
                           {product.is_archived ? 'Разархивировать' : 'Архивировать'}
                         </button>
                         <button
                           onClick={() => handleDelete(product.id)}
-                          className="inline-flex min-h-[44px] items-center justify-center px-3 py-2 text-center text-sm leading-tight whitespace-normal break-words font-medium text-slate-700 bg-slate-100 border border-slate-200 rounded-lg hover:bg-slate-100 hover:border-slate-300 hover:shadow-md transition-all duration-200 transform hover:-translate-y-0.5"
+                          className="inline-flex min-h-[44px] items-center justify-center gap-1.5 px-3 py-2 text-center text-sm leading-tight whitespace-normal break-words font-medium text-slate-700 bg-slate-100 border border-slate-200 rounded-lg hover:bg-slate-100 hover:border-slate-300 hover:shadow-md transition-all duration-200 transform hover:-translate-y-0.5"
                         >
-                          <span className="mr-1.5">🗑️</span>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                           Удалить
                         </button>
                       </div>

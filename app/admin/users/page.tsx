@@ -196,8 +196,9 @@ export default function UsersPage() {
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
           <div className="px-6 py-4 bg-slate-50 border-b flex justify-between items-center">
             <h2 className="text-lg font-bold text-slate-900">Всего пользователей: {users.length}</h2>
-            <button onClick={exportToCSV} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
-              📄 Экспорт в CSV
+            <button onClick={exportToCSV} className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+              Экспорт в CSV
             </button>
           </div>
           <div className="overflow-x-auto">
@@ -225,22 +226,22 @@ export default function UsersPage() {
                     <td className="px-6 py-4">
                       {user.is_admin ? (
                         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-900">
-                          👑 Администратор
+                          Администратор
                         </span>
                       ) : (
                         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
-                          👤 Пользователь
+                          Пользователь
                         </span>
                       )}
                     </td>
                     <td className="px-6 py-4">
                       {user.is_blocked ? (
                         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-900">
-                          🚫 Заблокирован
+                          Заблокирован
                         </span>
                       ) : (
                         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-900">
-                          ✅ Активен
+                          Активен
                         </span>
                       )}
                     </td>

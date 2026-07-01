@@ -74,7 +74,7 @@ export default function CompareBar({ compareProducts, onRemove, onClear }: Compa
                   </tr>
                   <tr className="border-t bg-gray-50">
                     <td className="p-4 font-medium">Рейтинг</td>
-                    {compareProducts.map(p => <td key={p.id} className="p-4">⭐ {p.rating || 0}</td>)}
+                    {compareProducts.map(p => <td key={p.id} className="p-4">{(p.rating || 0).toFixed(1)}</td>)}
                   </tr>
                   <tr className="border-t">
                     <td className="p-4 font-medium">Описание</td>

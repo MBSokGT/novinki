@@ -637,10 +637,11 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
           {products.map((product, idx) => (
             <div
               key={product.id}
-              className="relative flex flex-col bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-shadow group animate-in fade-in slide-in-from-bottom-4"
+              onClick={() => viewProduct(product)}
+              className="relative flex flex-col bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-shadow group animate-in fade-in slide-in-from-bottom-4 cursor-pointer"
               style={{ animationDelay: `${idx * 40}ms` }}
             >
-              <div className="relative h-36 bg-slate-100 cursor-pointer" onClick={() => product.image_url && setSelectedImage(product.image_url)}>
+              <div className="relative h-36 bg-slate-100" onClick={(e) => { e.stopPropagation(); product.image_url && setSelectedImage(product.image_url) }}>
                 <Image src={product.image_url || (process.env.NEXT_PUBLIC_BASE_PATH||'')+'/placeholder.svg'} alt={product.name} fill className="object-cover" loading="lazy" />
                 {!isAdmin && (
                   <button
@@ -655,7 +656,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                 <div className="flex items-start justify-between mb-1.5">
                   <h3 className="font-semibold text-slate-900 text-sm leading-snug line-clamp-2 flex-1 mr-1">{product.name}</h3>
                   {!isAdmin && hasUserSession && (
-                    <button onClick={() => toggleBookmark(product.id)} className={`p-1.5 rounded-lg transition flex-shrink-0 ${bookmarks.has(product.id) ? 'text-yellow-500' : 'text-slate-300 hover:text-slate-500'}`}>
+                    <button onClick={(e) => { e.stopPropagation(); toggleBookmark(product.id) }} className={`p-1.5 rounded-lg transition flex-shrink-0 ${bookmarks.has(product.id) ? 'text-yellow-500' : 'text-slate-300 hover:text-slate-500'}`}>
                       <svg className="w-4 h-4" fill={bookmarks.has(product.id) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
                     </button>
                   )}
@@ -669,17 +670,22 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                     onClick={(e) => e.stopPropagation()}
                     className="inline-flex items-center gap-1 text-[11px] font-medium text-[#9B1B1B] hover:text-[#7A1515] mb-2"
                   >
-                    📄 Листовка (PDF)
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                    Листовка (PDF)
                   </a>
                 )}
                 <div className="flex flex-wrap items-center justify-start gap-1 mb-2">
-                  <button onClick={() => setSelectedBrand(product.brand)} className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 transition">{product.brand}</button>
+                  <button onClick={(e) => { e.stopPropagation(); setSelectedBrand(product.brand) }} className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 transition">{product.brand}</button>
                   {product.category && <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700">{product.category}</span>}
                   {product.year && <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-50 text-amber-700">{product.year}</span>}
                 </div>
                 <p className="text-xs text-slate-500 line-clamp-2 mb-2">{product.description}</p>
-                {!isAdmin && hasUserSession && <StarRating rating={product.rating || 0} userRating={userRatings.get(product.id)} onRate={(r) => rateProduct(product.id, r)} />}
-                <button onClick={() => viewProduct(product)} className="w-full px-3 py-1.5 bg-[#9B1B1B] text-white text-xs font-medium rounded-lg hover:bg-[#7A1515] transition mt-auto">Подробнее</button>
+                {!isAdmin && hasUserSession && (
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <StarRating rating={product.rating || 0} userRating={userRatings.get(product.id)} onRate={(r) => rateProduct(product.id, r)} />
+                  </div>
+                )}
+                <button onClick={(e) => { e.stopPropagation(); viewProduct(product) }} className="w-full px-3 py-1.5 bg-[#9B1B1B] text-white text-xs font-medium rounded-lg hover:bg-[#7A1515] transition mt-auto">Подробнее</button>
               </div>
             </div>
           ))}
@@ -689,10 +695,10 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
           {/* Мобильный режим: компактные карточки вместо широкой таблицы */}
           <div className="lg:hidden divide-y divide-slate-100">
             {products.map((product) => (
-              <div key={product.id} className="flex gap-3 p-4">
+              <div key={product.id} onClick={() => viewProduct(product)} className="flex gap-3 p-4 cursor-pointer hover:bg-slate-50 transition">
                 <div
-                  className="relative w-16 h-16 shrink-0 rounded-lg overflow-hidden bg-slate-100 cursor-pointer"
-                  onClick={() => product.image_url && setSelectedImage(product.image_url)}
+                  className="relative w-16 h-16 shrink-0 rounded-lg overflow-hidden bg-slate-100"
+                  onClick={(e) => { e.stopPropagation(); product.image_url && setSelectedImage(product.image_url) }}
                 >
                   <Image src={product.image_url || (process.env.NEXT_PUBLIC_BASE_PATH||'')+'/placeholder.svg'} alt={product.name} fill className="object-cover" loading="lazy" />
                 </div>
@@ -701,16 +707,16 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                     <div className="font-semibold text-slate-900 text-sm leading-snug line-clamp-2">{product.name}</div>
                     {!isAdmin && hasUserSession && (
                       <button
-                        onClick={() => toggleBookmark(product.id)}
+                        onClick={(e) => { e.stopPropagation(); toggleBookmark(product.id) }}
                         className={`shrink-0 p-1.5 rounded-lg transition ${bookmarks.has(product.id) ? 'bg-yellow-100 text-yellow-600' : 'bg-slate-100 text-slate-400'}`}
                       >
                         <svg className="w-4 h-4" fill={bookmarks.has(product.id) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
                       </button>
                     )}
                   </div>
-                  <button onClick={() => setSelectedBrand(product.brand)} className="mt-1 inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700">{product.brand}</button>
+                  <button onClick={(e) => { e.stopPropagation(); setSelectedBrand(product.brand) }} className="mt-1 inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700">{product.brand}</button>
                   <p className="mt-1 text-xs text-slate-500 line-clamp-2">{product.description}</p>
-                  <button onClick={() => viewProduct(product)} className="mt-2 w-full px-3 py-1.5 bg-[#9B1B1B] text-white text-xs font-medium rounded-lg">Подробнее</button>
+                  <button onClick={(e) => { e.stopPropagation(); viewProduct(product) }} className="mt-2 w-full px-3 py-1.5 bg-[#9B1B1B] text-white text-xs font-medium rounded-lg">Подробнее</button>
                 </div>
               </div>
             ))}
@@ -732,11 +738,11 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {products.map((product) => (
-                  <tr key={product.id} className="hover:bg-slate-100 transition-colors group">
+                  <tr key={product.id} onClick={() => viewProduct(product)} className="hover:bg-slate-100 transition-colors group cursor-pointer">
                     <td className="sticky left-0 z-10 bg-white group-hover:bg-slate-100 px-6 py-4">
                       <div
-                        className="relative w-20 h-20 rounded-lg overflow-hidden shadow-sm group-hover:shadow-md transition cursor-pointer"
-                        onClick={() => product.image_url && setSelectedImage(product.image_url)}
+                        className="relative w-20 h-20 rounded-lg overflow-hidden shadow-sm group-hover:shadow-md transition"
+                        onClick={(e) => { e.stopPropagation(); product.image_url && setSelectedImage(product.image_url) }}
                       >
                         <Image src={product.image_url || (process.env.NEXT_PUBLIC_BASE_PATH||'')+'/placeholder.svg'} alt={product.name} fill className="object-cover" loading="lazy" />
                       </div>
@@ -745,7 +751,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                       <div className="font-semibold text-slate-900">{product.name}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <button onClick={() => setSelectedBrand(product.brand)} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-900 hover:bg-slate-200 transition cursor-pointer">{product.brand}</button>
+                      <button onClick={(e) => { e.stopPropagation(); setSelectedBrand(product.brand) }} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-900 hover:bg-slate-200 transition">{product.brand}</button>
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-600 max-w-xs">
                       <div className="line-clamp-2">{product.description}</div>
@@ -760,14 +766,14 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                       <div className="flex items-center justify-center gap-2">
                         {!isAdmin && hasUserSession && (
                           <button
-                            onClick={() => toggleBookmark(product.id)}
+                            onClick={(e) => { e.stopPropagation(); toggleBookmark(product.id) }}
                             className={`p-2 rounded-lg transition ${bookmarks.has(product.id) ? 'bg-yellow-100 text-yellow-600 hover:bg-yellow-200' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}
                             title={bookmarks.has(product.id) ? 'Удалить из закладок' : 'Добавить в закладки'}
                           >
                             <svg className="w-5 h-5" fill={bookmarks.has(product.id) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
                           </button>
                         )}
-                        <button onClick={() => viewProduct(product)} className="inline-flex items-center px-3 py-1.5 bg-[#9B1B1B] text-white text-sm font-medium rounded-lg hover:bg-[#7A1515] transition">
+                        <button onClick={(e) => { e.stopPropagation(); viewProduct(product) }} className="inline-flex items-center px-3 py-1.5 bg-[#9B1B1B] text-white text-sm font-medium rounded-lg hover:bg-[#7A1515] transition">
                           Подробнее
                         </button>
                       </div>
@@ -783,7 +789,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
       {totalPages > 1 && (
         <div className="mt-6 flex justify-center items-center gap-2 flex-wrap">
           <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-4 py-2 rounded-lg bg-white border border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 transition">
-            ←
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
           </button>
           <div className="flex gap-1 flex-wrap justify-center">
             {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
@@ -797,7 +803,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
             ))}
           </div>
           <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="px-4 py-2 rounded-lg bg-white border border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 transition">
-            →
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
           </button>
         </div>
       )}
@@ -896,17 +902,20 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                     <div className="space-y-2">
                       {selectedProduct.flyer_url && (
                         <a href={selectedProduct.flyer_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[#9B1B1B] hover:text-[#7A1515] font-medium">
-                          📄 Открыть листовку (PDF)
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                          Открыть листовку (PDF)
                         </a>
                       )}
                       {selectedProduct.website_link && (
                         <a href={selectedProduct.website_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-blue-700 hover:text-blue-900 font-medium">
-                          🌐 Посмотреть на сайте
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 21a9 9 0 100-18 9 9 0 000 18zM3.6 9h16.8M3.6 15h16.8M12 3a15 15 0 010 18 15 15 0 010-18z" /></svg>
+                          Посмотреть на сайте
                         </a>
                       )}
                       {selectedProduct.onec_link && (
                         <a href={selectedProduct.onec_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-green-700 hover:text-green-900 font-medium">
-                          📊 Открыть в 1С
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                          Открыть в 1С
                         </a>
                       )}
                     </div>
@@ -915,7 +924,10 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                 
                 {selectedProductSimilar.length > 0 && (
                   <div className="bg-purple-50 rounded-xl p-5 border border-purple-100">
-                    <h3 className="font-bold text-purple-900 mb-3">🔍 Похожие товары</h3>
+                    <h3 className="font-bold text-purple-900 mb-3 flex items-center gap-2">
+                      <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                      Похожие товары
+                    </h3>
                     <div className="grid grid-cols-2 gap-3">
                       {selectedProductSimilar.map(similar => (
                         <button

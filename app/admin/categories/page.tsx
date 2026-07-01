@@ -95,7 +95,7 @@ export default function CategoriesPage() {
             <Link href="/" aria-label="На главную" className="inline-flex items-center">
               <Image src={(process.env.NEXT_PUBLIC_BASE_PATH||"")+ "/logo.png"} alt="Logo" width={120} height={40} className="object-contain" />
             </Link>
-            <h1 className="truncate text-xl font-bold text-white sm:text-2xl">🏷️ Категории и годы</h1>
+            <h1 className="truncate text-xl font-bold text-white sm:text-2xl">Категории и годы</h1>
           </div>
           <Link href="/admin" className="px-4 py-2 bg-white/10 text-gray-200 rounded-lg hover:bg-white/20 transition">
             Назад
@@ -107,7 +107,7 @@ export default function CategoriesPage() {
         <div className="grid gap-6 xl:grid-cols-2">
           {/* Категории */}
           <div className="bg-white p-6 rounded-xl shadow-sm">
-            <h2 className="text-xl font-bold mb-4">📁 Категории</h2>
+            <h2 className="text-xl font-bold mb-4">Категории</h2>
             <div className="mb-4 flex flex-col gap-2 sm:flex-row">
               <input
                 type="text"
@@ -134,7 +134,7 @@ export default function CategoriesPage() {
 
           {/* Годы */}
           <div className="bg-white p-6 rounded-xl shadow-sm">
-            <h2 className="text-xl font-bold mb-4">📅 Годы</h2>
+            <h2 className="text-xl font-bold mb-4">Годы</h2>
             <div className="mb-4 flex flex-col gap-2 sm:flex-row">
               <input
                 type="text"
