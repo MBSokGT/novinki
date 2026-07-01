@@ -186,11 +186,6 @@ const COLLECTIONS: Record<string, CollectionConfig> = {
     columns: ['id', 'name', 'contact', 'product_name', 'article', 'created_at'],
     requiresAdmin: true,
   },
-  audit_logs: {
-    table: 'audit_logs',
-    columns: ['id', 'user_id', 'action', 'resource', 'ip_address', 'user_agent', 'status', 'details', 'timestamp'],
-    requiresAdmin: true,
-  },
   product_statistics: {
     table: 'product_statistics',
     columns: ['id', 'name', 'brand', 'view_count', 'bookmark_count'],
@@ -239,13 +234,6 @@ function normalizeRow(collection: string, row: Record<string, unknown> | null) {
       next[field] = normalizeBoolean(next[field])
     }
   }
-  if (typeof next.details === 'string') {
-    try {
-      next.details = JSON.parse(next.details)
-    } catch {
-      // Keep the raw string if it is not valid JSON.
-    }
-  }
   for (const field of JSON_FIELDS) {
     if (typeof next[field] === 'string') {
       try {
@@ -261,9 +249,6 @@ function normalizeRow(collection: string, row: Record<string, unknown> | null) {
 function prepareFieldValue(collection: string, field: string, value: unknown) {
   if (COLLECTIONS[collection]?.booleanFields?.includes(field)) {
     return normalizeBoolean(value) ? 1 : 0
-  }
-  if (field === 'details' && value && typeof value !== 'string') {
-    return JSON.stringify(value)
   }
   if (JSON_FIELDS.has(field) && value && typeof value !== 'string') {
     return JSON.stringify(value)
@@ -568,7 +553,6 @@ function withDefaultFields(collection: string, item: Record<string, unknown>) {
   if (config.columns.includes('updated_at')) next.updated_at = now
   if (collection === 'deleted_products' && !next.deleted_at) next.deleted_at = now
   if (collection === 'archived_products' && !next.deleted_at) next.deleted_at = now
-  if (collection === 'audit_logs' && !next.timestamp) next.timestamp = now
   if (collection === 'products' && next.is_archived === undefined) next.is_archived = false
   if (collection === 'requests' && next.delivered === undefined) next.delivered = false
 

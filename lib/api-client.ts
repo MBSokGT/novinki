@@ -560,7 +560,6 @@ class DemoQueryBuilder implements PromiseLike<QueryResult<unknown>> {
       case 'view_history':
       case 'product_views':
       case 'product_statistics':
-      case 'audit_logs':
       default:
         return []
     }

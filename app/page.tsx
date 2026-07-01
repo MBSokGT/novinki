@@ -2,7 +2,6 @@
 
 import ProductsTable from '@/components/ProductsTable'
 import RequestForm from '@/components/RequestForm'
-import SecurityMonitor from '@/components/SecurityMonitor'
 import ToastContainer from '@/components/Toast'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -148,7 +147,6 @@ export default function Home() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
         <ProductsTable isAdmin={isAdmin} />
       </main>
-      {isAdmin && <SecurityMonitor />}
       <ToastContainer />
     </div>
   )
