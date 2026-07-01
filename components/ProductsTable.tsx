@@ -738,7 +738,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {products.map((product) => (
-                  <tr key={product.id} onClick={() => viewProduct(product)} className="hover:bg-slate-100 transition-colors group cursor-pointer">
+                  <tr key={product.id} onClick={() => viewProduct(product)} className="hover:bg-slate-100 group cursor-pointer">
                     <td className="sticky left-0 z-10 bg-white group-hover:bg-slate-100 px-6 py-4">
                       <div
                         className="relative w-20 h-20 rounded-lg overflow-hidden shadow-sm group-hover:shadow-md transition"
