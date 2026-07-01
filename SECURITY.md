@@ -7,7 +7,7 @@
 - публичной регистрации нет: аккаунты создаются вручную (`npm run seed:admin`) или администратором через `/admin/users`
 - вход доступен только через незаметную иконку в шапке (`/login`), без публичных ссылок
 - cookie `novinki_session` выставляется как `httpOnly`
-- сброс пароля идет через `password_reset_tokens`
+- самостоятельный сброс пароля по email отключён; пароль сотруднику меняет администратор через `/admin/users` (это сразу завершает все его активные сессии)
 
 ### Доступ
 - `/admin*` защищен в [middleware.ts](/Users/admin/Desktop/Новинки/novinki-app/middleware.ts)
@@ -24,4 +24,4 @@
 - задать `APP_URL` как полный URL вида `https://example.com/reset-password`
 - вынести email/webhook интеграции в `REQUEST_WEBHOOK_URL` и `PASSWORD_RESET_WEBHOOK_URL`
 - периодически чистить/ротировать сессии
-- при росте проекта вынести изображения из SQLite в отдельное файловое хранилище
+- при росте проекта переключить `NEXT_PUBLIC_STORAGE_DRIVER` на `filesystem`, чтобы фото/PDF хранились на диске, а не в SQLite (см. [DEPLOYMENT.md](DEPLOYMENT.md))

@@ -21,6 +21,9 @@ npm install
 - `ENCRYPTION_KEY` — секрет для криптографических хелперов (`node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`)
 - `APP_URL` — полный URL страницы восстановления пароля
 - `NEXT_PUBLIC_BASE_PATH` — если приложение размещено на подпути (например `/novinki`)
+- `NEXT_PUBLIC_STORAGE_DRIVER` / `UPLOAD_DIR` — хранить фото/PDF в базе (`base64`, по умолчанию) или на диске (`filesystem`)
+
+Полная инструкция по развёртыванию на новом сервере (для ИТ) — в [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ### 3. Создайте первый аккаунт
 В приложении нет публичной регистрации. Первый (и любой последующий) аккаунт создаётся вручную:
