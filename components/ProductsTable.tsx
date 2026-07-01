@@ -517,18 +517,6 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
     (supplierNoveltiesOnly ? 1 : 0) +
     (sortBy !== 'date' ? 1 : 0)
 
-  const productsById = useMemo(() => {
-    const map = new Map<string, Product>()
-    productsMeta.forEach((product) => map.set(product.id, product))
-    products.forEach((product) => map.set(product.id, product))
-    return map
-  }, [productsMeta, products])
-
-  const recentViewedProducts = useMemo(
-    () => viewHistory.map((id) => productsById.get(id)).filter(Boolean) as Product[],
-    [viewHistory, productsById]
-  )
-
   const popularBrands = useMemo(() => {
     const counts = new Map<string, number>()
     productsMeta.forEach((product) => {
@@ -576,31 +564,6 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
         onClearFilters={clearAllFilters}
       />
       
-      {recentViewedProducts.length > 0 && (
-        <div className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="mb-2 flex items-center justify-between">
-            <p className="text-sm font-medium text-slate-700">Недавно просмотренные</p>
-            <button
-              onClick={() => setViewHistory([])}
-              className="text-xs text-slate-500 hover:text-slate-700"
-            >
-              Очистить
-            </button>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {recentViewedProducts.map((product) => (
-              <button
-                key={product.id}
-                onClick={() => viewProduct(product)}
-                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100"
-              >
-                <span className="truncate max-w-[220px]">{product.name}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
       {popularBrands.length > 0 && (
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <span className="text-sm text-slate-500">Популярные бренды:</span>
@@ -855,7 +818,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
       {selectedProduct && (
         <div onClick={() => setSelectedProduct(null)} className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200 cursor-pointer">
           <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 cursor-default">
-            <div className="relative h-80 bg-gradient-to-br from-slate-100 to-slate-200">
+            <div className="relative h-36 sm:h-44 bg-gradient-to-br from-slate-100 to-slate-200 shrink-0">
               <ImageCarousel
                 images={selectedProduct.images?.length ? selectedProduct.images : [selectedProduct.image_url]}
                 alt={selectedProduct.name}
@@ -865,12 +828,10 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
               <button onClick={() => setSelectedProduct(null)} className="absolute top-4 right-4 z-10 bg-white/90 backdrop-blur rounded-full p-2.5 hover:bg-white transition shadow-lg">
                 <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
-              <div className="absolute bottom-4 left-6">
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-white/90 backdrop-blur text-slate-900 shadow-lg">{selectedProduct.brand}</span>
-              </div>
             </div>
-              <div className="p-8 overflow-y-auto max-h-[calc(90vh-20rem)]">
-                <h2 className="text-3xl font-bold mb-6 text-slate-900">{selectedProduct.name}</h2>
+              <div className="p-6 sm:p-8 overflow-y-auto max-h-[calc(90vh-9rem)] sm:max-h-[calc(90vh-11rem)]">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-900 mb-3">{selectedProduct.brand}</span>
+                <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-slate-900">{selectedProduct.name}</h2>
                 <div className="space-y-6">
                 <div className="bg-slate-50 rounded-xl p-5">
                   <div className="flex items-center gap-2 mb-2">

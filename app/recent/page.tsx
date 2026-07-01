@@ -6,49 +6,51 @@ import { Product } from '@/types/product'
 import Image from 'next/image'
 import ImageCarousel from '@/components/ImageCarousel'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 
-export default function BookmarksPage() {
+const VIEW_HISTORY_KEY = 'novinki:viewHistory'
+
+export default function RecentPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
-  const router = useRouter()
 
   useEffect(() => {
-    fetchBookmarks()
+    fetchRecent()
   }, [])
 
-  const fetchBookmarks = async () => {
-    const { data: { user } } = await apiClient.auth.getUser()
-    if (!user) {
-      router.push('/login')
+  const readHistory = (): string[] => {
+    if (typeof window === 'undefined') return []
+    try {
+      const raw = window.localStorage.getItem(VIEW_HISTORY_KEY)
+      const parsed = raw ? JSON.parse(raw) : []
+      return Array.isArray(parsed) ? parsed.filter((id) => typeof id === 'string') : []
+    } catch {
+      return []
+    }
+  }
+
+  const fetchRecent = async () => {
+    const ids = readHistory()
+    if (ids.length === 0) {
+      setLoading(false)
       return
     }
 
     const { data } = await apiClient
-      .from('bookmarks')
-      .select('product_id, products(*)')
-      .eq('user_id', user.id)
+      .from('products')
+      .select('*')
       .order('created_at', { ascending: false })
-    
+
     if (data) {
-      setProducts(data.map((b: any) => b.products as Product).filter(Boolean))
+      const byId = new Map((data as Product[]).map((p) => [p.id, p]))
+      setProducts(ids.map((id) => byId.get(id)).filter(Boolean) as Product[])
     }
     setLoading(false)
   }
 
-  const removeBookmark = async (productId: string) => {
-    const { data: { user } } = await apiClient.auth.getUser()
-    if (!user) return
-
-    await apiClient
-      .from('bookmarks')
-      .delete()
-      .eq('user_id', user.id)
-      .eq('product_id', productId)
-
-    setProducts(prev => prev.filter(p => p.id !== productId))
-    window.localStorage.setItem('novinki:bookmarks_sync', Date.now().toString())
+  const clearHistory = () => {
+    window.localStorage.removeItem(VIEW_HISTORY_KEY)
+    setProducts([])
   }
 
   if (loading) return (
@@ -65,19 +67,26 @@ export default function BookmarksPage() {
             <Link href="/" aria-label="На главную" className="inline-flex items-center">
               <Image src={(process.env.NEXT_PUBLIC_BASE_PATH||"")+ "/logo.png"} alt="Logo" width={120} height={40} className="object-contain" />
             </Link>
-            <h1 className="text-2xl font-bold text-white">Мои закладки</h1>
+            <h1 className="text-2xl font-bold text-white">Недавно просмотренные</h1>
           </div>
-          <Link href="/" className="px-4 py-2 bg-white/10 text-gray-200 rounded-lg hover:bg-white/20 transition">
-            На главную
-          </Link>
+          <div className="flex gap-3">
+            {products.length > 0 && (
+              <button onClick={clearHistory} className="px-4 py-2 bg-white/10 text-gray-200 rounded-lg hover:bg-white/20 transition">
+                Очистить
+              </button>
+            )}
+            <Link href="/" className="px-4 py-2 bg-white/10 text-gray-200 rounded-lg hover:bg-white/20 transition">
+              На главную
+            </Link>
+          </div>
         </div>
       </nav>
 
       <main className="max-w-7xl mx-auto px-6 py-8">
         {products.length === 0 ? (
           <div className="text-center py-20">
-            <svg className="mx-auto h-16 w-16 text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
-            <p className="text-slate-400 text-lg">У вас пока нет закладок</p>
+            <svg className="mx-auto h-16 w-16 text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            <p className="text-slate-400 text-lg">Вы ещё не открывали ни одного товара</p>
             <Link href="/" className="mt-4 inline-block px-6 py-3 bg-[#9B1B1B] text-white rounded-lg hover:bg-[#7A1515] transition">
               Перейти к новинкам
             </Link>
@@ -88,13 +97,6 @@ export default function BookmarksPage() {
               <div key={product.id} className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition group">
                 <div className="relative h-48 bg-slate-100">
                   <Image src={product.image_url || (process.env.NEXT_PUBLIC_BASE_PATH||'')+'/placeholder.svg'} alt={product.name} fill className="object-cover" />
-                  <button
-                    onClick={() => removeBookmark(product.id)}
-                    className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur rounded-lg hover:bg-white transition shadow"
-                    title="Удалить из закладок"
-                  >
-                    <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                  </button>
                 </div>
                 <div className="p-5">
                   <span className="inline-block px-3 py-1 bg-slate-100 text-slate-900 text-xs font-medium rounded-full mb-3">{product.brand}</span>
