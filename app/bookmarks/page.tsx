@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { apiClient } from '@/lib/api-client'
 import { Product } from '@/types/product'
 import Image from 'next/image'
+import ImageCarousel from '@/components/ImageCarousel'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
@@ -116,8 +117,12 @@ export default function BookmarksPage() {
         <div onClick={() => setSelectedProduct(null)} className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
           <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="relative h-80 bg-gradient-to-br from-slate-100 to-slate-200">
-              <Image src={selectedProduct.image_url || (process.env.NEXT_PUBLIC_BASE_PATH||'')+'/placeholder.svg'} alt={selectedProduct.name} fill className="object-cover" />
-              <button onClick={() => setSelectedProduct(null)} className="absolute top-4 right-4 bg-white/90 backdrop-blur rounded-full p-2.5 hover:bg-white transition shadow-lg">
+              <ImageCarousel
+                images={selectedProduct.images?.length ? selectedProduct.images : [selectedProduct.image_url]}
+                alt={selectedProduct.name}
+                className="w-full h-full"
+              />
+              <button onClick={() => setSelectedProduct(null)} className="absolute top-4 right-4 z-10 bg-white/90 backdrop-blur rounded-full p-2.5 hover:bg-white transition shadow-lg">
                 <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
               <div className="absolute bottom-4 left-6">
@@ -148,7 +153,7 @@ export default function BookmarksPage() {
                   </div>
                   <p className="text-slate-700 leading-relaxed">{selectedProduct.attention_points}</p>
                 </div>
-                {(selectedProduct.website_link || selectedProduct.onec_link || selectedProduct.flyer_url) && (
+                {(selectedProduct.website_link || selectedProduct.flyer_url) && (
                   <div className="space-y-2">
                     {selectedProduct.flyer_url && (
                       <a href={selectedProduct.flyer_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[#9B1B1B] hover:text-[#7A1515] font-medium">
@@ -160,12 +165,6 @@ export default function BookmarksPage() {
                       <a href={selectedProduct.website_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-blue-700 hover:text-blue-900 font-medium">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 21a9 9 0 100-18 9 9 0 000 18zM3.6 9h16.8M3.6 15h16.8M12 3a15 15 0 010 18 15 15 0 010-18z" /></svg>
                         Посмотреть на сайте
-                      </a>
-                    )}
-                    {selectedProduct.onec_link && (
-                      <a href={selectedProduct.onec_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-green-700 hover:text-green-900 font-medium">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-                        Открыть в 1С
                       </a>
                     )}
                   </div>

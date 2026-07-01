@@ -14,10 +14,10 @@ interface DeletedProduct {
   article_number?: string
   description: string
   image_url: string
+  images?: string[]
   advantages: string
   attention_points: string
   website_link?: string
-  onec_link?: string
   deleted_at: string
 }
 
@@ -70,10 +70,10 @@ export default function TrashPage() {
         article_number: deletedProduct.article_number,
         description: deletedProduct.description,
         image_url: deletedProduct.image_url,
+        images: deletedProduct.images || [],
         advantages: deletedProduct.advantages,
         attention_points: deletedProduct.attention_points,
         website_link: deletedProduct.website_link,
-        onec_link: deletedProduct.onec_link,
         is_archived: false
       })
       

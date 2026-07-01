@@ -24,7 +24,6 @@ function mapRow(row: Record<string, any>): Record<string, any> {
     else if (key.includes('внимание') || key === 'attention') product.attention_points = val
     else if (key.includes('цена') || key === 'price') product.price = parseFloat(val) || null
     else if (key.includes('ссылка') && key.includes('сайт')) product.website_link = val
-    else if (key.includes('1с') || key.includes('1c')) product.onec_link = val
   }
   return product
 }
@@ -100,7 +99,7 @@ export default function ExcelImport({ onSuccess }: ExcelImportProps) {
   }
 
   const downloadTemplate = () => {
-    const template = `Название,Бренд,Артикул,Категория,Описание,Преимущества,Внимание,Цена,Ссылка на сайт,Ссылка 1С\nПример товара,Бренд А,ART-001,Электроника,Описание товара,Преимущества товара,На что обратить внимание,1500,https://example.com,https://1c.example.com`
+    const template = `Название,Бренд,Артикул,Категория,Описание,Преимущества,Внимание,Цена,Ссылка на сайт\nПример товара,Бренд А,ART-001,Электроника,Описание товара,Преимущества товара,На что обратить внимание,1500,https://example.com`
     const blob = new Blob(['\ufeff' + template], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
     link.href = URL.createObjectURL(blob)
@@ -135,7 +134,7 @@ export default function ExcelImport({ onSuccess }: ExcelImportProps) {
                 <ul className="text-xs text-blue-700 space-y-0.5 ml-4">
                   <li>• Название, Бренд, Описание, Преимущества, Внимание</li>
                 </ul>
-                <p className="text-xs text-blue-700 mt-1">Опционально: Артикул, Категория, Цена, Ссылка на сайт, Ссылка 1С</p>
+                <p className="text-xs text-blue-700 mt-1">Опционально: Артикул, Категория, Цена, Ссылка на сайт</p>
               </div>
 
               <button

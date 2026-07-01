@@ -17,7 +17,6 @@ const EMPTY_FORM = {
   advantages: '',
   attention_points: '',
   website_link: '',
-  onec_link: '',
   price: '',
   category: '',
   year: '',
@@ -31,7 +30,8 @@ export default function AdminPage() {
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([])
   const [years, setYears] = useState<{ id: string; name: string }[]>([])
   const [form, setForm] = useState(EMPTY_FORM)
-  const [image, setImage] = useState<File | null>(null)
+  const [existingImages, setExistingImages] = useState<string[]>([])
+  const [newImages, setNewImages] = useState<File[]>([])
   const [flyer, setFlyer] = useState<File | null>(null)
   const [editId, setEditId] = useState<string | null>(null)
   const [user, setUser] = useState<any>(null)
@@ -39,6 +39,7 @@ export default function AdminPage() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'archived'>('all')
   const [submitLoading, setSubmitLoading] = useState(false)
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null) // null = загрузка, false = не админ, true = админ
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const router = useRouter()
 
   useEffect(() => {
@@ -137,7 +138,8 @@ export default function AdminPage() {
 
   const resetForm = () => {
     setForm(EMPTY_FORM)
-    setImage(null)
+    setExistingImages([])
+    setNewImages([])
     setFlyer(null)
     setEditId(null)
     if (typeof window !== 'undefined') {
@@ -168,49 +170,51 @@ export default function AdminPage() {
   const activeCount = products.filter((product) => !product.is_archived).length
   const archivedCount = products.filter((product) => Boolean(product.is_archived)).length
 
+  const uploadProductImages = async (files: File[]): Promise<string[]> => {
+    const uploaded: string[] = []
+    for (const file of files) {
+      const fileName = `${Date.now()}_${file.name}`
+      const { data, error } = await apiClient.storage.from('products').upload(fileName, file)
+      if (error) throw error
+      if (data) uploaded.push(data.path)
+    }
+    return uploaded
+  }
+
+  const uploadFlyerFile = async (file: File): Promise<string> => {
+    const fileName = `${Date.now()}_${file.name}`
+    const { data, error } = await apiClient.storage.from('flyers').upload(fileName, file)
+    if (error) throw error
+    return data?.path || ''
+  }
+
+  const buildProductPayload = (images: string[], flyerUrl: string) => ({
+    name: form.name,
+    brand: form.brand,
+    article_number: form.article_number,
+    description: form.description,
+    advantages: form.advantages,
+    attention_points: form.attention_points,
+    website_link: normalizeLink(form.website_link),
+    category: form.category,
+    year: form.year,
+    is_supplier_novelty: form.is_supplier_novelty,
+    price: form.price ? parseFloat(form.price) : null,
+    images,
+    image_url: images[0] || '',
+    flyer_url: flyerUrl || (editId ? products.find(p => p.id === editId)?.flyer_url : ''),
+  })
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (submitLoading) return
     setSubmitLoading(true)
 
     try {
-      let imageUrl = ''
-      let flyerUrl = ''
-
-      if (image) {
-        const fileName = `${Date.now()}_${image.name}`
-        const { data, error: uploadError } = await apiClient.storage.from('products').upload(fileName, image)
-        if (uploadError) throw uploadError
-        if (data) {
-          imageUrl = data.path
-        }
-      }
-
-      if (flyer) {
-        const fileName = `${Date.now()}_${flyer.name}`
-        const { data, error: uploadError } = await apiClient.storage.from('flyers').upload(fileName, flyer)
-        if (uploadError) throw uploadError
-        if (data) {
-          flyerUrl = data.path
-        }
-      }
-
-      const productData = {
-        name: form.name,
-        brand: form.brand,
-        article_number: form.article_number,
-        description: form.description,
-        advantages: form.advantages,
-        attention_points: form.attention_points,
-        website_link: normalizeLink(form.website_link),
-        onec_link: normalizeLink(form.onec_link),
-        category: form.category,
-        year: form.year,
-        is_supplier_novelty: form.is_supplier_novelty,
-        price: form.price ? parseFloat(form.price) : null,
-        image_url: imageUrl || (editId ? products.find(p => p.id === editId)?.image_url : ''),
-        flyer_url: flyerUrl || (editId ? products.find(p => p.id === editId)?.flyer_url : ''),
-      }
+      const uploadedImages = await uploadProductImages(newImages)
+      const images = [...existingImages, ...uploadedImages]
+      const flyerUrl = flyer ? await uploadFlyerFile(flyer) : ''
+      const productData = buildProductPayload(images, flyerUrl)
 
       if (editId) {
         const { error } = await apiClient.from('products').update(productData).eq('id', editId)
@@ -241,13 +245,13 @@ export default function AdminPage() {
       advantages: product.advantages,
       attention_points: product.attention_points,
       website_link: product.website_link || '',
-      onec_link: product.onec_link || '',
       price: product.price != null ? String(product.price) : '',
       category: (product as any).category || '',
       year: product.year || '',
       is_supplier_novelty: Boolean(product.is_supplier_novelty),
     })
-    setImage(null)
+    setExistingImages(product.images?.length ? product.images : (product.image_url ? [product.image_url] : []))
+    setNewImages([])
     setFlyer(null)
     setEditId(product.id)
     if (typeof window !== 'undefined') {
@@ -257,17 +261,18 @@ export default function AdminPage() {
 
   const handleDuplicate = async (product: Product) => {
     try {
+      const images = product.images?.length ? product.images : (product.image_url ? [product.image_url] : [])
       const payload = {
         name: `${product.name} (копия)`,
         brand: product.brand,
         article_number: '',
         description: product.description,
-        image_url: product.image_url,
+        images,
+        image_url: images[0] || '',
         flyer_url: product.flyer_url || '',
         advantages: product.advantages,
         attention_points: product.attention_points,
         website_link: product.website_link || '',
-        onec_link: product.onec_link || '',
         category: (product as any).category || '',
         year: product.year || '',
         price: product.price ?? null,
@@ -292,7 +297,7 @@ export default function AdminPage() {
         const product = products.find(p => p.id === id)
         if (product) {
           console.log('Deleting product:', product)
-          
+
           // Перемещаем в корзину
           const { error: insertError } = await apiClient.from('deleted_products').insert({
             original_product_id: product.id,
@@ -301,11 +306,11 @@ export default function AdminPage() {
             article_number: product.article_number,
             description: product.description,
             image_url: product.image_url,
+            images: product.images || [],
             flyer_url: product.flyer_url,
             advantages: product.advantages,
             attention_points: product.attention_points,
             website_link: product.website_link,
-            onec_link: product.onec_link,
             deleted_at: new Date().toISOString(),
           })
           
@@ -359,6 +364,38 @@ export default function AdminPage() {
         console.error('Archive operation failed:', error)
         showToast('Ошибка операции архивирования', 'error')
       }
+    }
+  }
+
+  const toggleSelected = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    setSelectedIds((prev) =>
+      prev.size === filteredProducts.length ? new Set() : new Set(filteredProducts.map((p) => p.id))
+    )
+  }
+
+  const handleBulkArchive = async () => {
+    if (selectedIds.size === 0) return
+    if (!confirm(`Архивировать выбранные товары (${selectedIds.size})?`)) return
+
+    try {
+      await Promise.all(
+        Array.from(selectedIds).map((id) => apiClient.from('products').update({ is_archived: true }).eq('id', id))
+      )
+      setSelectedIds(new Set())
+      await fetchProducts()
+      showToast('Товары архивированы', 'success')
+    } catch (error) {
+      console.error('Bulk archive failed:', error)
+      showToast('Ошибка массового архивирования', 'error')
     }
   }
 
@@ -489,29 +526,55 @@ export default function AdminPage() {
             <textarea placeholder="Описание" value={form.description} onChange={(e) => setForm({...form, description: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" rows={2} required />
             <textarea placeholder="Преимущества" value={form.advantages} onChange={(e) => setForm({...form, advantages: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" rows={2} required />
             <textarea placeholder="На что обратить внимание" value={form.attention_points} onChange={(e) => setForm({...form, attention_points: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" rows={2} required />
-            <div className="grid gap-4 lg:grid-cols-2">
-              <input type="text" placeholder="Ссылка на товар на сайте" value={form.website_link} onChange={(e) => setForm({...form, website_link: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" />
-              <input type="text" placeholder="Ссылка на товар в 1С" value={form.onec_link} onChange={(e) => setForm({...form, onec_link: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" />
-            </div>
-            <div className="relative">
-              <input 
-                type="file" 
-                accept="image/*" 
-                onChange={(e) => setImage(e.target.files?.[0] || null)} 
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
-                id="file-upload"
-              />
-              <label
-                htmlFor="file-upload"
-                className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-slate-300 rounded-xl hover:border-slate-400 hover:bg-slate-50 transition-colors cursor-pointer"
-              >
-                <div className="text-center">
-                  <svg className="w-6 h-6 mx-auto mb-1 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M14 8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                  <div className="text-sm text-slate-600">
-                    {image ? image.name : 'Добавить фото'}
-                  </div>
+            <input type="text" placeholder="Ссылка на товар на сайте" value={form.website_link} onChange={(e) => setForm({...form, website_link: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" />
+            <div className="space-y-2">
+              {(existingImages.length > 0 || newImages.length > 0) && (
+                <div className="flex flex-wrap gap-2">
+                  {existingImages.map((url, idx) => (
+                    <div key={`existing-${idx}`} className="relative w-16 h-16 rounded-lg overflow-hidden border border-slate-200 bg-slate-100">
+                      <Image src={url} alt={`Фото ${idx + 1}`} fill className="object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setExistingImages((prev) => prev.filter((_, i) => i !== idx))}
+                        className="absolute top-0.5 right-0.5 bg-white/90 rounded-full p-0.5 shadow hover:bg-white"
+                      >
+                        <svg className="w-3 h-3 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                      </button>
+                    </div>
+                  ))}
+                  {newImages.map((file, idx) => (
+                    <div key={`new-${idx}`} className="relative w-16 h-16 rounded-lg overflow-hidden border border-slate-200 bg-slate-100">
+                      <Image src={URL.createObjectURL(file)} alt={file.name} fill className="object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setNewImages((prev) => prev.filter((_, i) => i !== idx))}
+                        className="absolute top-0.5 right-0.5 bg-white/90 rounded-full p-0.5 shadow hover:bg-white"
+                      >
+                        <svg className="w-3 h-3 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                      </button>
+                    </div>
+                  ))}
                 </div>
-              </label>
+              )}
+              <div className="relative">
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => setNewImages((prev) => [...prev, ...Array.from(e.target.files || [])])}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  id="file-upload"
+                />
+                <label
+                  htmlFor="file-upload"
+                  className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-slate-300 rounded-xl hover:border-slate-400 hover:bg-slate-50 transition-colors cursor-pointer"
+                >
+                  <div className="text-center">
+                    <svg className="w-6 h-6 mx-auto mb-1 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M14 8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                    <div className="text-sm text-slate-600">Добавить фото (можно несколько)</div>
+                  </div>
+                </label>
+              </div>
             </div>
             <div className="relative">
               <input
@@ -613,16 +676,52 @@ export default function AdminPage() {
                 Архив: {archivedCount}
               </span>
             </div>
+            {filteredProducts.length > 0 && (
+              <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-slate-100 pt-3">
+                <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.size > 0 && selectedIds.size === filteredProducts.length}
+                    onChange={toggleSelectAll}
+                    className="w-4 h-4 accent-[#9B1B1B]"
+                  />
+                  Выбрать все
+                </label>
+                {selectedIds.size > 0 && (
+                  <button
+                    onClick={handleBulkArchive}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 border border-slate-200 rounded-lg hover:bg-slate-200 transition"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 01-2-2V4a2 2 0 012-2h14a2 2 0 012 2v2a2 2 0 01-2 2M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
+                    Архивировать выбранное ({selectedIds.size})
+                  </button>
+                )}
+              </div>
+            )}
           </div>
           {/* Mobile card list — visible below md */}
           <div className="xl:hidden divide-y divide-slate-100">
             {filteredProducts.map((product) => (
               <div key={product.id} className={`p-4 ${product.is_archived ? 'opacity-60 bg-slate-50' : ''}`}>
                 <div className="flex justify-between items-start mb-2">
-                  <div className="flex-1 min-w-0 pr-3">
-                    <div className="font-medium text-slate-900 truncate">{product.name}</div>
-                    <div className="text-sm text-slate-500 mt-0.5">
-                      {product.brand}{product.article_number ? ` · ${product.article_number}` : ''}
+                  <div className="flex min-w-0 flex-1 items-start gap-2 pr-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(product.id)}
+                      onChange={() => toggleSelected(product.id)}
+                      className="mt-1 w-4 h-4 shrink-0 accent-[#9B1B1B]"
+                    />
+                    <div className="min-w-0">
+                      <div className="font-medium text-slate-900 truncate">{product.name}</div>
+                      <div className="text-sm text-slate-500 mt-0.5">
+                        {product.brand}{product.article_number ? ` · ${product.article_number}` : ''}
+                      </div>
+                      {(product.created_by || product.updated_by) && (
+                        <div className="text-xs text-slate-400 mt-0.5">
+                          {product.created_by && <>Добавил: {product.created_by}</>}
+                          {product.updated_by && product.updated_by !== product.created_by && <> · Изменил: {product.updated_by}</>}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <span className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
@@ -631,7 +730,7 @@ export default function AdminPage() {
                     {product.is_archived ? 'Архив' : 'Активный'}
                   </span>
                 </div>
-                {(product.website_link || product.onec_link || product.flyer_url) && (
+                {(product.website_link || product.flyer_url) && (
                   <div className="flex flex-wrap gap-3 mb-3">
                     {product.flyer_url && (
                       <a href={product.flyer_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[#9B1B1B] text-sm">
@@ -643,12 +742,6 @@ export default function AdminPage() {
                       <a href={product.website_link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-blue-600 text-sm">
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 21a9 9 0 100-18 9 9 0 000 18zM3.6 9h16.8M3.6 15h16.8M12 3a15 15 0 010 18 15 15 0 010-18z" /></svg>
                         Сайт
-                      </a>
-                    )}
-                    {product.onec_link && (
-                      <a href={product.onec_link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-green-600 text-sm">
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-                        1С
                       </a>
                     )}
                   </div>
@@ -689,18 +782,42 @@ export default function AdminPage() {
             <table className="w-full table-fixed">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="w-[24%] px-4 py-4 text-left text-sm font-semibold text-slate-700">Название</th>
-                  <th className="w-[14%] px-4 py-4 text-left text-sm font-semibold text-slate-700">Бренд</th>
-                  <th className="w-[14%] px-4 py-4 text-left text-sm font-semibold text-slate-700">Артикул</th>
-                  <th className="w-[14%] px-4 py-4 text-left text-sm font-semibold text-slate-700">Ссылки</th>
+                  <th className="w-[3%] px-4 py-4 text-left">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.size > 0 && selectedIds.size === filteredProducts.length}
+                      onChange={toggleSelectAll}
+                      className="w-4 h-4 accent-[#9B1B1B]"
+                    />
+                  </th>
+                  <th className="w-[22%] px-4 py-4 text-left text-sm font-semibold text-slate-700">Название</th>
+                  <th className="w-[13%] px-4 py-4 text-left text-sm font-semibold text-slate-700">Бренд</th>
+                  <th className="w-[13%] px-4 py-4 text-left text-sm font-semibold text-slate-700">Артикул</th>
+                  <th className="w-[13%] px-4 py-4 text-left text-sm font-semibold text-slate-700">Ссылки</th>
                   <th className="w-[12%] px-4 py-4 text-left text-sm font-semibold text-slate-700">Статус</th>
-                  <th className="w-[22%] px-4 py-4 text-right text-sm font-semibold text-slate-700">Действия</th>
+                  <th className="w-[24%] px-4 py-4 text-right text-sm font-semibold text-slate-700">Действия</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filteredProducts.map((product) => (
                   <tr key={product.id} className={`hover:bg-slate-50 transition ${product.is_archived ? 'opacity-60 bg-slate-50' : ''}`}>
-                    <td className="break-words px-4 py-4 align-top font-medium text-slate-900">{product.name}</td>
+                    <td className="px-4 py-4 align-top">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(product.id)}
+                        onChange={() => toggleSelected(product.id)}
+                        className="w-4 h-4 accent-[#9B1B1B]"
+                      />
+                    </td>
+                    <td className="break-words px-4 py-4 align-top font-medium text-slate-900">
+                      {product.name}
+                      {(product.created_by || product.updated_by) && (
+                        <div className="text-xs font-normal text-slate-400 mt-0.5">
+                          {product.created_by && <>Добавил: {product.created_by}</>}
+                          {product.updated_by && product.updated_by !== product.created_by && <> · Изменил: {product.updated_by}</>}
+                        </div>
+                      )}
+                    </td>
                     <td className="break-words px-4 py-4 align-top text-slate-600">{product.brand}</td>
                     <td className="break-words px-4 py-4 align-top text-sm text-slate-500">{product.article_number || '—'}</td>
                     <td className="px-4 py-4 align-top">
@@ -717,13 +834,7 @@ export default function AdminPage() {
                             Сайт
                           </a>
                         )}
-                        {product.onec_link && (
-                          <a href={product.onec_link} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-800 text-sm flex items-center gap-1 break-all">
-                            <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-                            1С
-                          </a>
-                        )}
-                        {!product.website_link && !product.onec_link && !product.flyer_url && (
+                        {!product.website_link && !product.flyer_url && (
                           <span className="text-slate-400 text-sm">—</span>
                         )}
                       </div>
@@ -777,7 +888,7 @@ export default function AdminPage() {
                 ))}
                 {filteredProducts.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-6 py-10 text-center text-slate-500">
+                    <td colSpan={7} className="px-6 py-10 text-center text-slate-500">
                       По текущим фильтрам товары не найдены
                     </td>
                   </tr>

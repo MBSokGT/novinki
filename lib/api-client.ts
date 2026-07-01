@@ -51,6 +51,7 @@ async function safeJson<T>(response: Response): Promise<T> {
 }
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || ''
+const STORAGE_DRIVER = process.env.NEXT_PUBLIC_STORAGE_DRIVER || 'base64'
 
 async function callInternalApi<T>(path: string, body?: Record<string, unknown>, method = 'POST'): Promise<T> {
   const response = await fetch(`${BASE_PATH}${path}`, {
@@ -100,6 +101,26 @@ async function readFileAsDataUrl(file: File): Promise<string> {
     reader.onload = (event) => resolve(String(event.target?.result || ''))
     reader.readAsDataURL(file)
   })
+}
+
+async function uploadToFilesystem(bucket: string, file: File): Promise<{ data: { path: string } | null; error: { message: string } | null }> {
+  try {
+    const formData = new FormData()
+    formData.append('bucket', bucket)
+    formData.append('file', file)
+    const response = await fetch(`${BASE_PATH}/api/upload`, {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+      cache: 'no-store',
+    })
+    return await safeJson(response)
+  } catch (error) {
+    return {
+      data: null,
+      error: { message: error instanceof Error ? error.message : 'Failed to upload file' },
+    }
+  }
 }
 
 async function compressImage(file: File): Promise<string> {
@@ -339,6 +360,10 @@ const remoteClient = {
     from(bucket: string) {
       return {
         async upload(_fileName: string, file: File) {
+          if (STORAGE_DRIVER === 'filesystem') {
+            return uploadToFilesystem(bucket, file)
+          }
+
           try {
             const dataUrl = bucket === 'flyers' ? await readFileAsDataUrl(file) : await compressImage(file)
             return { data: { path: dataUrl }, error: null }
@@ -347,14 +372,6 @@ const remoteClient = {
               data: null,
               error: { message: error instanceof Error ? error.message : 'Failed to process file' },
             }
-          }
-        },
-
-        getPublicUrl(filePath: string) {
-          return {
-            data: {
-              publicUrl: filePath,
-            },
           }
         },
       }

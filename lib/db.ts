@@ -76,20 +76,24 @@ const PRODUCT_COLUMNS = [
   'article_number',
   'description',
   'image_url',
+  'images',
   'flyer_url',
   'advantages',
   'attention_points',
   'website_link',
-  'onec_link',
   'is_archived',
   'is_supplier_novelty',
   'category',
   'year',
   'rating',
   'price',
+  'created_by',
+  'updated_by',
   'created_at',
   'updated_at',
 ] as const
+
+const JSON_FIELDS = new Set(['images'])
 
 const COLLECTIONS: Record<string, CollectionConfig> = {
   products: {
@@ -242,6 +246,15 @@ function normalizeRow(collection: string, row: Record<string, unknown> | null) {
       // Keep the raw string if it is not valid JSON.
     }
   }
+  for (const field of JSON_FIELDS) {
+    if (typeof next[field] === 'string') {
+      try {
+        next[field] = JSON.parse(next[field] as string)
+      } catch {
+        next[field] = []
+      }
+    }
+  }
   return next
 }
 
@@ -250,6 +263,9 @@ function prepareFieldValue(collection: string, field: string, value: unknown) {
     return normalizeBoolean(value) ? 1 : 0
   }
   if (field === 'details' && value && typeof value !== 'string') {
+    return JSON.stringify(value)
+  }
+  if (JSON_FIELDS.has(field) && value && typeof value !== 'string') {
     return JSON.stringify(value)
   }
   return value
@@ -715,10 +731,29 @@ async function runUpsert(payload: DataRequestPayload): Promise<QueryResult<unkno
   return { data: results, error: null }
 }
 
+function withProductAttribution(operation: DataOperation, user: SessionUser | null, writePayload: DataRequestPayload['writePayload']) {
+  const actor = user?.email || null
+
+  if (operation === 'insert') {
+    const items = Array.isArray(writePayload) ? writePayload : [writePayload as Record<string, unknown>]
+    return items.map((item) => ({ ...item, created_by: actor, updated_by: actor }))
+  }
+
+  if (operation === 'update') {
+    return { ...(writePayload as Record<string, unknown>), updated_by: actor }
+  }
+
+  return writePayload
+}
+
 export async function executeDataRequest(request: NextRequest, payload: DataRequestPayload): Promise<QueryResult<unknown>> {
   const user = await getCurrentUser(request)
   try {
     assertAccess(payload.collection, payload.operation, user, payload)
+
+    if (payload.collection === 'products' && (payload.operation === 'insert' || payload.operation === 'update')) {
+      payload = { ...payload, writePayload: withProductAttribution(payload.operation, user, payload.writePayload) }
+    }
 
     switch (payload.operation) {
       case 'select':

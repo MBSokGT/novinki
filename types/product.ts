@@ -10,12 +10,13 @@ export interface Product {
   advantages: string
   attention_points: string
   website_link?: string
-  onec_link?: string
   is_archived?: boolean
   is_supplier_novelty?: boolean
   category?: string
   year?: string
   rating?: number
   price?: number
+  created_by?: string
+  updated_by?: string
   created_at: string
 }
