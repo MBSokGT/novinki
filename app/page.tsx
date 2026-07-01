@@ -81,7 +81,7 @@ export default function Home() {
             <div className="flex items-center gap-3">
               <Link href="/" aria-label="На главную" className="inline-flex items-center gap-3">
                 <Image src={(process.env.NEXT_PUBLIC_BASE_PATH||"")+ "/logo.png"} alt="Logo" width={100} height={33} className="object-contain sm:w-[120px]" priority />
-                <span className="hidden sm:block text-white font-semibold text-lg tracking-tight">Новинки Ассортимента</span>
+                <span className="hidden sm:block text-white font-bold text-2xl uppercase tracking-tight">Новинки Ассортимента</span>
               </Link>
             </div>
             <div className="hidden sm:flex items-center gap-2">
