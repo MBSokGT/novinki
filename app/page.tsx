@@ -79,13 +79,15 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
-              <Link href="/" aria-label="На главную" className="inline-flex items-center">
+              <Link href="/" aria-label="На главную" className="inline-flex items-center gap-3">
                 <Image src={(process.env.NEXT_PUBLIC_BASE_PATH||"")+ "/logo.png"} alt="Logo" width={100} height={33} className="object-contain sm:w-[120px]" priority />
+                <span className="hidden sm:block text-white font-semibold text-lg tracking-tight">Новинки Ассортимента</span>
               </Link>
             </div>
             <div className="hidden sm:flex items-center gap-2">
-              <Link href="/recent" className="p-2 text-gray-300 hover:bg-white/10 rounded-lg transition" title="Недавно просмотренные">
+              <Link href="/recent" className="inline-flex items-center gap-2 px-3 py-2 text-gray-300 hover:bg-white/10 rounded-lg transition text-sm font-medium" title="Недавно просмотренные">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <span className="hidden lg:inline">Недавно просмотренные</span>
               </Link>
               <RequestForm />
               {isAdmin && (
@@ -119,15 +121,16 @@ export default function Home() {
                 <div className="flex-1 [&>button]:w-full">
                   <RequestForm />
                 </div>
-                <Link href="/recent" aria-label="Недавно просмотренные" className="shrink-0 p-2 text-gray-300 hover:bg-white/10 rounded-lg transition">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                </Link>
                 {!user && (
                   <Link href="/login" aria-label="Вход" className="shrink-0 p-2 text-gray-500/40 hover:text-gray-300 transition">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                   </Link>
                 )}
               </div>
+              <Link href="/recent" className="flex items-center gap-2 w-full px-4 py-3 bg-white/10 text-gray-200 rounded-lg hover:bg-white/20 transition font-medium">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                Недавно просмотренные
+              </Link>
               {isAdmin && (
                 <Link href="/admin" className="flex items-center gap-2 w-full px-4 py-3 bg-[#9B1B1B] text-white rounded-lg hover:bg-[#7A1515] transition text-center font-medium">
                   Панель администратора

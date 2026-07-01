@@ -640,8 +640,8 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                 )}
                 <div className="flex flex-wrap items-center justify-start gap-1 mb-2">
                   <button onClick={(e) => { e.stopPropagation(); setSelectedBrand(product.brand) }} className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 transition">{product.brand}</button>
-                  {product.category && <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700">{product.category}</span>}
-                  {product.year && <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-50 text-amber-700">{product.year}</span>}
+                  {product.category && <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700">{product.category}</span>}
+                  {product.year && <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700">{product.year}</span>}
                 </div>
                 <p className="text-xs text-slate-500 line-clamp-2 mb-2">{product.description}</p>
                 {!isAdmin && hasUserSession && (
@@ -669,14 +669,25 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
                     <div className="font-semibold text-slate-900 text-sm leading-snug line-clamp-2">{product.name}</div>
-                    {!isAdmin && hasUserSession && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); toggleBookmark(product.id) }}
-                        className={`shrink-0 p-1.5 rounded-lg transition ${bookmarks.has(product.id) ? 'bg-yellow-100 text-yellow-600' : 'bg-slate-100 text-slate-400'}`}
-                      >
-                        <svg className="w-4 h-4" fill={bookmarks.has(product.id) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
-                      </button>
-                    )}
+                    <div className="flex items-center gap-1 shrink-0">
+                      {!isAdmin && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); toggleCompare(product); }}
+                          className={`p-1.5 rounded-lg transition ${compareProducts.find(p => p.id === product.id) ? 'bg-[#9B1B1B] text-white' : 'bg-slate-100 text-slate-400'}`}
+                          title="Сравнить"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                        </button>
+                      )}
+                      {!isAdmin && hasUserSession && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); toggleBookmark(product.id) }}
+                          className={`p-1.5 rounded-lg transition ${bookmarks.has(product.id) ? 'bg-yellow-100 text-yellow-600' : 'bg-slate-100 text-slate-400'}`}
+                        >
+                          <svg className="w-4 h-4" fill={bookmarks.has(product.id) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <button onClick={(e) => { e.stopPropagation(); setSelectedBrand(product.brand) }} className="mt-1 inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700">{product.brand}</button>
                   <p className="mt-1 text-xs text-slate-500 line-clamp-2">{product.description}</p>
@@ -728,6 +739,15 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                     </td>
                     <td className="px-6 py-4 text-center">
                       <div className="flex items-center justify-center gap-2">
+                        {!isAdmin && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); toggleCompare(product); }}
+                            className={`p-2 rounded-lg transition ${compareProducts.find(p => p.id === product.id) ? 'bg-[#9B1B1B] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}
+                            title="Сравнить"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                          </button>
+                        )}
                         {!isAdmin && hasUserSession && (
                           <button
                             onClick={(e) => { e.stopPropagation(); toggleBookmark(product.id) }}
