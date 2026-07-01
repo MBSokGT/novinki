@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { apiClient } from '@/lib/api-client'
+import { openFileInNewTab } from '@/lib/openFile'
 import { Product } from '@/types/product'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -733,7 +734,7 @@ export default function AdminPage() {
                 {(product.website_link || product.flyer_url) && (
                   <div className="flex flex-wrap gap-3 mb-3">
                     {product.flyer_url && (
-                      <a href={product.flyer_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[#9B1B1B] text-sm">
+                      <a href={product.flyer_url} target="_blank" rel="noopener noreferrer" onClick={(e) => { e.preventDefault(); openFileInNewTab(product.flyer_url!) }} className="inline-flex items-center gap-1 text-[#9B1B1B] text-sm">
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                         Листовка
                       </a>
@@ -823,7 +824,7 @@ export default function AdminPage() {
                     <td className="px-4 py-4 align-top">
                       <div className="flex flex-col gap-1 break-words">
                         {product.flyer_url && (
-                          <a href={product.flyer_url} target="_blank" rel="noopener noreferrer" className="text-[#9B1B1B] hover:text-[#7A1515] text-sm flex items-center gap-1 break-all">
+                          <a href={product.flyer_url} target="_blank" rel="noopener noreferrer" onClick={(e) => { e.preventDefault(); openFileInNewTab(product.flyer_url!) }} className="text-[#9B1B1B] hover:text-[#7A1515] text-sm flex items-center gap-1 break-all">
                             <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                             Листовка
                           </a>

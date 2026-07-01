@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { apiClient } from '@/lib/api-client'
+import { openFileInNewTab } from '@/lib/openFile'
 import { Product } from '@/types/product'
 import Image from 'next/image'
 import ImageCarousel from '@/components/ImageCarousel'
@@ -156,7 +157,7 @@ export default function RecentPage() {
                 {(selectedProduct.website_link || selectedProduct.flyer_url) && (
                   <div className="space-y-2">
                     {selectedProduct.flyer_url && (
-                      <a href={selectedProduct.flyer_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[#9B1B1B] hover:text-[#7A1515] font-medium">
+                      <a href={selectedProduct.flyer_url} target="_blank" rel="noopener noreferrer" onClick={(e) => { e.preventDefault(); openFileInNewTab(selectedProduct.flyer_url!) }} className="flex items-center gap-2 text-[#9B1B1B] hover:text-[#7A1515] font-medium">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                         Открыть листовку (PDF)
                       </a>
