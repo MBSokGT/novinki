@@ -882,6 +882,11 @@ export async function signInUser(emailInput: string, password: string) {
   const tokenHash = sha256Hex(sessionToken)
   const now = nowIso()
 
+  // Opportunistic housekeeping: expired sessions and stale reset tokens
+  // would otherwise accumulate forever (there is no scheduled job).
+  await db.prepare('DELETE FROM sessions WHERE expires_at <= ?').bind(now).run()
+  await db.prepare('DELETE FROM password_reset_tokens WHERE expires_at <= ? OR used_at IS NOT NULL').bind(now).run()
+
   await db
     .prepare('INSERT INTO sessions (id, user_id, token_hash, expires_at, created_at) VALUES (?, ?, ?, ?, ?)')
     .bind(createId(), String(userRow.id), tokenHash, addTime(SESSION_TTL_MS), now)

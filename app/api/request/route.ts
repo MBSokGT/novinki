@@ -1,17 +1,25 @@
 import { NextResponse } from 'next/server'
 import { getAppEnv, insertRequest } from '@/lib/db'
+import { checkRateLimit, getClientIp } from '@/lib/rateLimit'
 
 export async function POST(request: Request) {
   try {
+    if (!checkRateLimit(`request:${getClientIp(request)}`, 5, 60_000)) {
+      return NextResponse.json(
+        { error: 'Слишком много запросов. Подождите минуту.' },
+        { status: 429 }
+      )
+    }
+
     const body = (await request.json()) as {
       name?: string
       contact?: string
       product?: string
       article?: string
     }
-    const name = String(body.name || '').trim()
-    const product = String(body.product || '').trim()
-    const article = String(body.article || '').trim()
+    const name = String(body.name || '').trim().slice(0, 200)
+    const product = String(body.product || '').trim().slice(0, 500)
+    const article = String(body.article || '').trim().slice(0, 100)
 
     if (!name || !product) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -30,17 +38,24 @@ export async function POST(request: Request) {
     let delivered = false
 
     if (webhookUrl) {
-      const response = await fetch(webhookUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          to: 'M.B.Sokolova@kbmik.ru',
-          subject: 'Запрос на добавление новинки',
-          text: emailContent,
-          payload: { name, product, article },
-        }),
-      })
-      delivered = response.ok
+      try {
+        const response = await fetch(webhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: 'M.B.Sokolova@kbmik.ru',
+            subject: 'Запрос на добавление новинки',
+            text: emailContent,
+            payload: { name, product, article },
+          }),
+          signal: AbortSignal.timeout(10_000),
+        })
+        delivered = response.ok
+      } catch (webhookError) {
+        // The request is still saved below with delivered=false; the admin
+        // panel shows undelivered requests, so nothing is lost.
+        console.error('Request webhook failed:', webhookError)
+      }
     }
 
     await insertRequest({

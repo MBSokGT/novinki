@@ -11,6 +11,7 @@ import {
   signOutUser,
   updateUserPassword,
 } from '@/lib/db'
+import { checkRateLimit, getClientIp } from '@/lib/rateLimit'
 
 function buildCookieOptions(request: NextRequest) {
   return {
@@ -33,6 +34,13 @@ export async function POST(request: NextRequest) {
     const action = String(body?.action || '')
 
     if (action === 'signInWithPassword') {
+      if (!checkRateLimit(`signin:${getClientIp(request)}`, 10, 60_000)) {
+        return NextResponse.json(
+          { data: { user: null }, error: { message: 'Слишком много попыток входа. Подождите минуту.' } },
+          { status: 429 }
+        )
+      }
+
       const result = await signInUser(String(body.email || ''), String(body.password || ''))
       const response = NextResponse.json({ data: { user: result.user }, error: null })
       response.cookies.set(SESSION_COOKIE_NAME, result.sessionToken, buildCookieOptions(request))
@@ -40,11 +48,25 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === 'resetPasswordForEmail') {
+      if (!checkRateLimit(`reset:${getClientIp(request)}`, 5, 60_000)) {
+        return NextResponse.json(
+          { data: null, error: { message: 'Слишком много запросов. Подождите минуту.' } },
+          { status: 429 }
+        )
+      }
+
       const result = await requestPasswordReset(String(body.email || ''), body.options?.redirectTo)
       return NextResponse.json({ data: result, error: null })
     }
 
     if (action === 'confirmPasswordReset') {
+      if (!checkRateLimit(`reset-confirm:${getClientIp(request)}`, 10, 60_000)) {
+        return NextResponse.json(
+          { data: null, error: { message: 'Слишком много запросов. Подождите минуту.' } },
+          { status: 429 }
+        )
+      }
+
       await confirmPasswordReset(String(body.token || ''), String(body.password || ''), String(body.passwordConfirm || ''))
       return NextResponse.json({ data: null, error: null })
     }

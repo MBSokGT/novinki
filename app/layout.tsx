@@ -13,16 +13,20 @@ const ibmMono = IBM_Plex_Mono({
   weight: ["400", "500"],
 });
 
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
 export const metadata: Metadata = {
-  title: "Новинки ассортимента",
-  description: "Управление и отображение новинок ассортимента с админ панелью",
-  keywords: ["новинки", "ассортимент", "товары", "каталог"],
-  authors: [{ name: "Admin" }],
+  title: {
+    default: "Новинки ассортимента — Комплекс-Бар",
+    template: "%s — Новинки ассортимента",
+  },
+  description: "Каталог новинок ассортимента Комплекс-Бар: карточки товаров, листовки, фильтры по категориям и годам",
+  keywords: ["новинки", "ассортимент", "товары", "каталог", "Комплекс-Бар"],
   robots: "index, follow",
   icons: {
-    icon: "/logo.png",
-    shortcut: "/logo.png",
-    apple: "/logo.png",
+    icon: `${basePath}/logo.png`,
+    shortcut: `${basePath}/logo.png`,
+    apple: `${basePath}/logo.png`,
   },
 };
 

@@ -2,6 +2,7 @@
 
 import ProductsTable from '@/components/ProductsTable'
 import RequestForm from '@/components/RequestForm'
+import Footer from '@/components/Footer'
 import ToastContainer from '@/components/Toast'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -73,7 +74,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen flex flex-col">
       <nav className="bg-[#1A1A1A] shadow-lg border-b border-[#333] sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
           <div className="flex justify-between items-center">
@@ -144,9 +145,10 @@ export default function Home() {
           )}
         </div>
       </nav>
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 py-6">
         <ProductsTable isAdmin={isAdmin} />
       </main>
+      <Footer />
       <ToastContainer />
     </div>
   )

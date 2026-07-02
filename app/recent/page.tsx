@@ -6,6 +6,7 @@ import { openFileInNewTab } from '@/lib/openFile'
 import { Product } from '@/types/product'
 import Image from 'next/image'
 import ImageCarousel from '@/components/ImageCarousel'
+import Footer from '@/components/Footer'
 import Link from 'next/link'
 
 const VIEW_HISTORY_KEY = 'novinki:viewHistory'
@@ -61,7 +62,7 @@ export default function RecentPage() {
   )
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-slate-100">
       <nav className="bg-[#1A1A1A] shadow-lg border-b border-[#333]">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
@@ -83,7 +84,7 @@ export default function RecentPage() {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <main className="flex-1 w-full max-w-7xl mx-auto px-6 py-8">
         {products.length === 0 ? (
           <div className="text-center py-20">
             <svg className="mx-auto h-16 w-16 text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -175,6 +176,7 @@ export default function RecentPage() {
           </div>
         </div>
       )}
+      <Footer />
     </div>
   )
 }

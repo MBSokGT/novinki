@@ -6,6 +6,7 @@ import { openFileInNewTab } from '@/lib/openFile'
 import { Product } from '@/types/product'
 import Image from 'next/image'
 import ImageCarousel from '@/components/ImageCarousel'
+import Footer from '@/components/Footer'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
@@ -59,7 +60,7 @@ export default function BookmarksPage() {
   )
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-slate-100">
       <nav className="bg-[#1A1A1A] shadow-lg border-b border-[#333]">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
@@ -74,7 +75,7 @@ export default function BookmarksPage() {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <main className="flex-1 w-full max-w-7xl mx-auto px-6 py-8">
         {products.length === 0 ? (
           <div className="text-center py-20">
             <svg className="mx-auto h-16 w-16 text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
@@ -173,6 +174,7 @@ export default function BookmarksPage() {
           </div>
         </div>
       )}
+      <Footer />
     </div>
   )
 }
