@@ -82,11 +82,13 @@ export default function ExcelImport({ onSuccess }: ExcelImportProps) {
         return
       }
 
-      const withImages = valid.map(p => ({ ...p, image_url: p.image_url || '' }))
+      // Импортированные товары попадают как черновики (архив) — публично их
+      // не видно, пока админ не проверит карточки и не опубликует вручную.
+      const withImages = valid.map(p => ({ ...p, image_url: p.image_url || '', is_archived: true }))
       const { error } = await apiClient.from('products').insert(withImages)
       if (error) throw error
 
-      showToast(`Успешно импортировано ${valid.length} товаров`, 'success')
+      showToast(`Импортировано ${valid.length} товаров как черновики. Проверьте их в статусе «Архив» и опубликуйте`, 'success')
       setShowModal(false)
       setFile(null)
       onSuccess()
@@ -135,6 +137,13 @@ export default function ExcelImport({ onSuccess }: ExcelImportProps) {
                   <li>• Название, Бренд, Описание, Преимущества, Внимание</li>
                 </ul>
                 <p className="text-xs text-blue-700 mt-1">Опционально: Артикул, Категория, Цена, Ссылка на сайт</p>
+              </div>
+
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <p className="text-xs text-amber-800">
+                  Импортированные товары попадают в раздел со статусом «Архив» и <strong>не видны посетителям сайта</strong>,
+                  пока вы их не проверите и не опубликуете вручную (кнопка «Опубликовать» у карточки или «Опубликовать выбранное» для нескольких сразу).
+                </p>
               </div>
 
               <button

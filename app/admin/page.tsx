@@ -400,6 +400,29 @@ export default function AdminPage() {
     }
   }
 
+  const handleBulkPublish = async () => {
+    if (selectedIds.size === 0) return
+    if (!confirm(`Опубликовать выбранные товары (${selectedIds.size})? Они станут видны на сайте.`)) return
+
+    try {
+      await Promise.all(
+        Array.from(selectedIds).map((id) => apiClient.from('products').update({ is_archived: false }).eq('id', id))
+      )
+      setSelectedIds(new Set())
+      await fetchProducts()
+      showToast('Товары опубликованы', 'success')
+    } catch (error) {
+      console.error('Bulk publish failed:', error)
+      showToast('Ошибка массовой публикации', 'error')
+    }
+  }
+
+  const handleImportSuccess = async () => {
+    setSelectedIds(new Set())
+    setStatusFilter('archived')
+    await fetchProducts()
+  }
+
   const handleLogout = async () => {
     await apiClient.auth.signOut()
     router.push('/login')
@@ -428,7 +451,7 @@ export default function AdminPage() {
             <h1 className="truncate text-xl font-bold text-white sm:text-2xl">Панель администратора</h1>
           </div>
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <ExcelImport onSuccess={fetchProducts} />
+            <ExcelImport onSuccess={handleImportSuccess} />
             <Link href="/admin/trash" className="inline-flex items-center gap-2 px-4 py-2 bg-[#9B1B1B] text-white rounded-lg hover:bg-[#7A1515] transition">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
               Корзина
@@ -689,13 +712,22 @@ export default function AdminPage() {
                   Выбрать все
                 </label>
                 {selectedIds.size > 0 && (
-                  <button
-                    onClick={handleBulkArchive}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 border border-slate-200 rounded-lg hover:bg-slate-200 transition"
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 01-2-2V4a2 2 0 012-2h14a2 2 0 012 2v2a2 2 0 01-2 2M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
-                    Архивировать выбранное ({selectedIds.size})
-                  </button>
+                  <>
+                    <button
+                      onClick={handleBulkPublish}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-green-700 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                      Опубликовать выбранное ({selectedIds.size})
+                    </button>
+                    <button
+                      onClick={handleBulkArchive}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 border border-slate-200 rounded-lg hover:bg-slate-200 transition"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 01-2-2V4a2 2 0 012-2h14a2 2 0 012 2v2a2 2 0 01-2 2M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
+                      Архивировать выбранное ({selectedIds.size})
+                    </button>
+                  </>
                 )}
               </div>
             )}

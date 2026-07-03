@@ -279,10 +279,12 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
 
   // Полный список товаров с базовыми полями — для автодополнения и похожих товаров
   const fetchProductsMeta = async () => {
-    const { data } = await apiClient
+    let query = apiClient
       .from('products')
       .select('id, name, brand, category, year, article_number, price, rating, image_url, description, advantages')
-      .order('created_at', { ascending: false })
+    if (!isAdmin) query = query.eq('is_archived', false)
+    query = query.order('created_at', { ascending: false })
+    const { data } = await query
     if (data) setProductsMeta(data as Product[])
   }
 
@@ -293,6 +295,10 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
     let query = apiClient
       .from('products')
       .select('*', { count: 'exact' })
+
+    // Публичным посетителям неопубликованные (в том числе черновики после
+    // импорта из Excel) и архивные товары показывать нельзя.
+    if (!isAdmin) query = query.eq('is_archived', false)
 
     if (debouncedSearch) {
       query = query.or(
