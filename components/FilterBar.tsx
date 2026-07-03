@@ -20,7 +20,7 @@ interface FilterBarProps {
   setTempMax: (value: string) => void
   showTemperatureFilter: boolean
   sortBy: string
-  setSortBy: (sort: 'date' | 'name' | 'rating') => void
+  setSortBy: (sort: 'date' | 'name') => void
   viewMode: 'table' | 'cards'
   setViewMode: (mode: 'table' | 'cards') => void
   activeFiltersCount: number
@@ -106,7 +106,6 @@ export default function FilterBar({
             >
               <option value="date">По дате</option>
               <option value="name">По названию</option>
-              <option value="rating">По рейтингу</option>
             </select>
             <svg className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
           </div>

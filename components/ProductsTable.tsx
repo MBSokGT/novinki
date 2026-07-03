@@ -55,7 +55,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
   const [microwaveSafeOnly, setMicrowaveSafeOnly] = useState(false)
   const [tempMin, setTempMin] = useState('')
   const [tempMax, setTempMax] = useState('')
-  const [sortBy, setSortBy] = useState<'date' | 'name' | 'rating'>('date')
+  const [sortBy, setSortBy] = useState<'date' | 'name'>('date')
   const [userRatings, setUserRatings] = useState<Map<string, number>>(new Map())
   const [compareProducts, setCompareProducts] = useState<Product[]>([])
   const [viewHistory, setViewHistory] = useState<string[]>([])
@@ -74,7 +74,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
     }
 
     const savedSortBy = window.localStorage.getItem(SORT_BY_KEY)
-    if (savedSortBy === 'date' || savedSortBy === 'name' || savedSortBy === 'rating') {
+    if (savedSortBy === 'date' || savedSortBy === 'name') {
       setSortBy(savedSortBy)
     }
 
@@ -148,7 +148,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
     setSelectedCategory(category || null)
     setSelectedYear(year || null)
     setSupplierNoveltiesOnly(supplier === '1')
-    setSortBy(sort === 'name' || sort === 'rating' ? sort : 'date')
+    setSortBy(sort === 'name' ? sort : 'date')
     setViewMode(view === 'table' ? 'table' : 'cards')
     setCurrentPage(page)
     setIsUrlStateReady(true)
@@ -364,8 +364,6 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
 
     if (sortBy === 'name') {
       query = query.order('name', { ascending: true })
-    } else if (sortBy === 'rating') {
-      query = query.order('rating', { ascending: false, nullsFirst: false })
     } else {
       query = query.order('created_at', { ascending: false })
     }
@@ -741,6 +739,8 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                   <button onClick={(e) => { e.stopPropagation(); setSelectedBrand(product.brand) }} className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 transition">{product.brand}</button>
                   {product.category && <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700">{product.category}</span>}
                   {product.year && <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700">{product.year}</span>}
+                  {product.is_dishwasher_safe && <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700">ПММ</span>}
+                  {product.is_microwave_safe && <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700">СВЧ</span>}
                 </div>
                 <p className="text-xs text-slate-500 line-clamp-2 mb-2">{product.description}</p>
                 {!isAdmin && hasUserSession && (
@@ -788,7 +788,11 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                       )}
                     </div>
                   </div>
-                  <button onClick={(e) => { e.stopPropagation(); setSelectedBrand(product.brand) }} className="mt-1 inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700">{product.brand}</button>
+                  <div className="mt-1 flex flex-wrap items-center gap-1">
+                    <button onClick={(e) => { e.stopPropagation(); setSelectedBrand(product.brand) }} className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700">{product.brand}</button>
+                    {product.is_dishwasher_safe && <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700">ПММ</span>}
+                    {product.is_microwave_safe && <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700">СВЧ</span>}
+                  </div>
                   <p className="mt-1 text-xs text-slate-500 line-clamp-2">{product.description}</p>
                   <button onClick={(e) => { e.stopPropagation(); viewProduct(product) }} className="mt-2 w-full px-3 py-1.5 bg-[#9B1B1B] text-white text-xs font-medium rounded-lg">Подробнее</button>
                 </div>
@@ -804,6 +808,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                   <th className="sticky left-0 z-10 bg-slate-50 px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Фото</th>
                   <th className="sticky left-[128px] z-10 bg-slate-50 px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Название</th>
                   <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Бренд</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Отметки</th>
                   <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Описание</th>
                   <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Преимущества</th>
                   <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Внимание</th>
@@ -826,6 +831,12 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
                     </td>
                     <td className="px-6 py-4">
                       <button onClick={(e) => { e.stopPropagation(); setSelectedBrand(product.brand) }} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-900 hover:bg-slate-200 transition">{product.brand}</button>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-wrap gap-1">
+                        {product.is_dishwasher_safe && <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700">ПММ</span>}
+                        {product.is_microwave_safe && <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700">СВЧ</span>}
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-600 max-w-xs">
                       <div className="line-clamp-2">{product.description}</div>
@@ -949,7 +960,16 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
               </button>
             </div>
               <div className="p-6 sm:p-8 overflow-y-auto max-h-[calc(90vh-9rem)] sm:max-h-[calc(90vh-11rem)]">
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-900 mb-3">{selectedProduct.brand}</span>
+                <div className="flex flex-wrap items-center gap-2 mb-3">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-900">{selectedProduct.brand}</span>
+                  {selectedProduct.is_dishwasher_safe && <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">Можно мыть в посудомоечной машине</span>}
+                  {selectedProduct.is_microwave_safe && <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">Можно использовать в микроволновой печи</span>}
+                  {(selectedProduct.temp_min != null || selectedProduct.temp_max != null) && (
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">
+                      Температура: {selectedProduct.temp_min ?? '—'}…{selectedProduct.temp_max ?? '—'}°C
+                    </span>
+                  )}
+                </div>
                 <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-slate-900">{selectedProduct.name}</h2>
                 <div className="space-y-6">
                 <div className="bg-slate-50 rounded-xl p-5">
