@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { apiClient } from '@/lib/api-client'
 import { openFileInNewTab } from '@/lib/openFile'
+import { isTemperatureCategory } from '@/lib/constants'
 import { Product } from '@/types/product'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -22,6 +23,10 @@ const EMPTY_FORM = {
   category: '',
   year: '',
   is_supplier_novelty: false,
+  is_dishwasher_safe: false,
+  is_microwave_safe: false,
+  temp_min: '',
+  temp_max: '',
 }
 
 const ADMIN_DRAFT_KEY = 'novinki:adminFormDraft'
@@ -42,6 +47,7 @@ export default function AdminPage() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null) // null = загрузка, false = не админ, true = админ
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const router = useRouter()
+  const formRef = useRef<HTMLFormElement>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -200,6 +206,10 @@ export default function AdminPage() {
     category: form.category,
     year: form.year,
     is_supplier_novelty: form.is_supplier_novelty,
+    is_dishwasher_safe: form.is_dishwasher_safe,
+    is_microwave_safe: form.is_microwave_safe,
+    temp_min: isTemperatureCategory(form.category) && form.temp_min ? parseFloat(form.temp_min) : null,
+    temp_max: isTemperatureCategory(form.category) && form.temp_max ? parseFloat(form.temp_max) : null,
     price: form.price ? parseFloat(form.price) : null,
     images,
     image_url: images[0] || '',
@@ -250,6 +260,10 @@ export default function AdminPage() {
       category: (product as any).category || '',
       year: product.year || '',
       is_supplier_novelty: Boolean(product.is_supplier_novelty),
+      is_dishwasher_safe: Boolean(product.is_dishwasher_safe),
+      is_microwave_safe: Boolean(product.is_microwave_safe),
+      temp_min: product.temp_min != null ? String(product.temp_min) : '',
+      temp_max: product.temp_max != null ? String(product.temp_max) : '',
     })
     setExistingImages(product.images?.length ? product.images : (product.image_url ? [product.image_url] : []))
     setNewImages([])
@@ -258,6 +272,10 @@ export default function AdminPage() {
     if (typeof window !== 'undefined') {
       window.localStorage.removeItem(ADMIN_DRAFT_KEY)
     }
+    if (formRef.current) {
+      formRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+    showToast('Товар загружен для редактирования', 'success')
   }
 
   const handleDuplicate = async (product: Product) => {
@@ -279,6 +297,10 @@ export default function AdminPage() {
         price: product.price ?? null,
         is_archived: false,
         is_supplier_novelty: Boolean(product.is_supplier_novelty),
+        is_dishwasher_safe: Boolean(product.is_dishwasher_safe),
+        is_microwave_safe: Boolean(product.is_microwave_safe),
+        temp_min: product.temp_min ?? null,
+        temp_max: product.temp_max ?? null,
       }
 
       const { error } = await apiClient.from('products').insert([payload])
@@ -312,6 +334,14 @@ export default function AdminPage() {
             advantages: product.advantages,
             attention_points: product.attention_points,
             website_link: product.website_link,
+            category: (product as any).category || '',
+            year: product.year || '',
+            price: product.price ?? null,
+            is_supplier_novelty: Boolean(product.is_supplier_novelty),
+            is_dishwasher_safe: Boolean(product.is_dishwasher_safe),
+            is_microwave_safe: Boolean(product.is_microwave_safe),
+            temp_min: product.temp_min ?? null,
+            temp_max: product.temp_max ?? null,
             deleted_at: new Date().toISOString(),
           })
           
@@ -517,7 +547,7 @@ export default function AdminPage() {
             </div>
             <h2 className="text-xl font-bold text-slate-800 sm:text-2xl">{editId ? 'Редактировать новинку' : 'Добавить новинку'}</h2>
           </div>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
             <div className="grid gap-4 lg:grid-cols-3">
               <input type="text" placeholder="Название" value={form.name} onChange={(e) => setForm({...form, name: e.target.value})} className="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" required />
               <input type="text" placeholder="Бренд" value={form.brand} onChange={(e) => setForm({...form, brand: e.target.value})} className="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" required />
@@ -547,6 +577,46 @@ export default function AdminPage() {
               />
               <span className="text-sm font-medium text-slate-700">Это новинка поставщика</span>
             </label>
+            <div className="flex flex-wrap gap-3">
+              <label className="flex items-center gap-2 px-4 py-3 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition w-fit">
+                <input
+                  type="checkbox"
+                  checked={form.is_dishwasher_safe}
+                  onChange={(e) => setForm({ ...form, is_dishwasher_safe: e.target.checked })}
+                  className="w-4 h-4 accent-[#9B1B1B]"
+                />
+                <span className="text-sm font-medium text-slate-700">Можно мыть в посудомоечной машине</span>
+              </label>
+              <label className="flex items-center gap-2 px-4 py-3 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition w-fit">
+                <input
+                  type="checkbox"
+                  checked={form.is_microwave_safe}
+                  onChange={(e) => setForm({ ...form, is_microwave_safe: e.target.checked })}
+                  className="w-4 h-4 accent-[#9B1B1B]"
+                />
+                <span className="text-sm font-medium text-slate-700">Можно использовать в микроволновой печи</span>
+              </label>
+            </div>
+            {isTemperatureCategory(form.category) && (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <input
+                  type="number"
+                  step="0.1"
+                  placeholder="Температура от, °C"
+                  value={form.temp_min}
+                  onChange={(e) => setForm({ ...form, temp_min: e.target.value })}
+                  className="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition"
+                />
+                <input
+                  type="number"
+                  step="0.1"
+                  placeholder="Температура до, °C"
+                  value={form.temp_max}
+                  onChange={(e) => setForm({ ...form, temp_max: e.target.value })}
+                  className="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition"
+                />
+              </div>
+            )}
             <textarea placeholder="Описание" value={form.description} onChange={(e) => setForm({...form, description: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" rows={2} required />
             <textarea placeholder="Преимущества" value={form.advantages} onChange={(e) => setForm({...form, advantages: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" rows={2} required />
             <textarea placeholder="На что обратить внимание" value={form.attention_points} onChange={(e) => setForm({...form, attention_points: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" rows={2} required />

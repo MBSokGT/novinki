@@ -15,9 +15,18 @@ interface DeletedProduct {
   description: string
   image_url: string
   images?: string[]
+  flyer_url?: string
   advantages: string
   attention_points: string
   website_link?: string
+  category?: string
+  year?: string
+  price?: number
+  is_supplier_novelty?: boolean
+  is_dishwasher_safe?: boolean
+  is_microwave_safe?: boolean
+  temp_min?: number
+  temp_max?: number
   deleted_at: string
 }
 
@@ -71,9 +80,18 @@ export default function TrashPage() {
         description: deletedProduct.description,
         image_url: deletedProduct.image_url,
         images: deletedProduct.images || [],
+        flyer_url: deletedProduct.flyer_url || '',
         advantages: deletedProduct.advantages,
         attention_points: deletedProduct.attention_points,
         website_link: deletedProduct.website_link,
+        category: deletedProduct.category || '',
+        year: deletedProduct.year || '',
+        price: deletedProduct.price ?? null,
+        is_supplier_novelty: Boolean(deletedProduct.is_supplier_novelty),
+        is_dishwasher_safe: Boolean(deletedProduct.is_dishwasher_safe),
+        is_microwave_safe: Boolean(deletedProduct.is_microwave_safe),
+        temp_min: deletedProduct.temp_min ?? null,
+        temp_max: deletedProduct.temp_max ?? null,
         is_archived: false
       })
       

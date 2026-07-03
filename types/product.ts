@@ -12,6 +12,10 @@ export interface Product {
   website_link?: string
   is_archived?: boolean
   is_supplier_novelty?: boolean
+  is_dishwasher_safe?: boolean
+  is_microwave_safe?: boolean
+  temp_min?: number
+  temp_max?: number
   category?: string
   year?: string
   rating?: number

@@ -6,7 +6,7 @@ import {
 } from './demo-data'
 
 type QueryOperation = 'select' | 'insert' | 'update' | 'upsert' | 'delete'
-type FilterOperator = 'eq' | 'ilike'
+type FilterOperator = 'eq' | 'ilike' | 'gte' | 'lte'
 
 type QueryResult<T = unknown> = {
   data: T
@@ -220,6 +220,16 @@ class RemoteQueryBuilder implements PromiseLike<QueryResult<unknown>> {
     return this
   }
 
+  gte(field: string, value: string | number) {
+    this.filters.push({ field, op: 'gte', value })
+    return this
+  }
+
+  lte(field: string, value: string | number) {
+    this.filters.push({ field, op: 'lte', value })
+    return this
+  }
+
   or(expression: string) {
     this.orFilters.push(...parseOrExpression(expression))
     return this
@@ -418,6 +428,8 @@ function setDemoSession(user: (typeof DEMO_USERS)[number] | null) {
 class DemoQueryBuilder implements PromiseLike<QueryResult<unknown>> {
   private operation: QueryOperation = 'select'
   private eqFilters: Array<{ field: string; value: unknown }> = []
+  private gteFilters: Array<{ field: string; value: unknown }> = []
+  private lteFilters: Array<{ field: string; value: unknown }> = []
   private orSearch: string | null = null
   private sortField: string | null = null
   private sortAsc = true
@@ -468,6 +480,16 @@ class DemoQueryBuilder implements PromiseLike<QueryResult<unknown>> {
 
   eq(field: string, value: unknown) {
     this.eqFilters.push({ field, value })
+    return this
+  }
+
+  gte(field: string, value: unknown) {
+    this.gteFilters.push({ field, value })
+    return this
+  }
+
+  lte(field: string, value: unknown) {
+    this.lteFilters.push({ field, value })
     return this
   }
 
@@ -557,6 +579,12 @@ class DemoQueryBuilder implements PromiseLike<QueryResult<unknown>> {
     let result = [...items]
     for (const filter of this.eqFilters) {
       result = result.filter((item) => String(item[filter.field]) === String(filter.value))
+    }
+    for (const filter of this.gteFilters) {
+      result = result.filter((item) => Number(item[filter.field]) >= Number(filter.value))
+    }
+    for (const filter of this.lteFilters) {
+      result = result.filter((item) => Number(item[filter.field]) <= Number(filter.value))
     }
 
     if (this.orSearch) {

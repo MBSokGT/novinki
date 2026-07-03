@@ -12,7 +12,7 @@ function isSingleAdminModeEnabled() {
 }
 
 type DataOperation = 'select' | 'insert' | 'update' | 'upsert' | 'delete'
-type FilterOperator = 'eq' | 'ilike'
+type FilterOperator = 'eq' | 'ilike' | 'gte' | 'lte'
 
 type DataFilter = {
   field: string
@@ -83,6 +83,10 @@ const PRODUCT_COLUMNS = [
   'website_link',
   'is_archived',
   'is_supplier_novelty',
+  'is_dishwasher_safe',
+  'is_microwave_safe',
+  'temp_min',
+  'temp_max',
   'category',
   'year',
   'rating',
@@ -99,7 +103,7 @@ const COLLECTIONS: Record<string, CollectionConfig> = {
   products: {
     table: 'products',
     columns: [...PRODUCT_COLUMNS],
-    booleanFields: ['is_archived', 'is_supplier_novelty'],
+    booleanFields: ['is_archived', 'is_supplier_novelty', 'is_dishwasher_safe', 'is_microwave_safe'],
     publicRead: true,
     requiresAdmin: true,
   },
@@ -296,6 +300,11 @@ function buildWhereClause(collection: string, filters: DataFilter[] = [], orFilt
     if (filter.op === 'ilike') {
       params.push(`%${String(filter.value ?? '').toLowerCase()}%`)
       return `LOWER(${column}) LIKE ?`
+    }
+
+    if (filter.op === 'gte' || filter.op === 'lte') {
+      params.push(prepareFieldValue(collection, filter.field, filter.value) as string | number | null)
+      return `${column} ${filter.op === 'gte' ? '>=' : '<='} ?`
     }
 
     throw new Error(`Unsupported filter operator "${filter.op}"`)

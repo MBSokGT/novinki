@@ -14,6 +14,8 @@ import SearchBar from './SearchBar'
 import CompareBar from './CompareBar'
 import Breadcrumbs from './Breadcrumbs'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { isTemperatureCategory } from '@/lib/constants'
+import { exportProductsToExcel } from '@/lib/export'
 
 interface ProductsTableProps {
   isAdmin: boolean
@@ -25,6 +27,8 @@ const SORT_BY_KEY = 'novinki:sortBy'
 const CATEGORY_KEY = 'novinki:selectedCategory'
 const YEAR_KEY = 'novinki:selectedYear'
 const SUPPLIER_NOVELTIES_KEY = 'novinki:supplierNoveltiesOnly'
+const DISHWASHER_SAFE_KEY = 'novinki:dishwasherSafeOnly'
+const MICROWAVE_SAFE_KEY = 'novinki:microwaveSafeOnly'
 const VIEW_HISTORY_KEY = 'novinki:viewHistory'
 const BOOKMARKS_SYNC_KEY = 'novinki:bookmarks_sync'
 
@@ -47,6 +51,10 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [selectedYear, setSelectedYear] = useState<string | null>(null)
   const [supplierNoveltiesOnly, setSupplierNoveltiesOnly] = useState(false)
+  const [dishwasherSafeOnly, setDishwasherSafeOnly] = useState(false)
+  const [microwaveSafeOnly, setMicrowaveSafeOnly] = useState(false)
+  const [tempMin, setTempMin] = useState('')
+  const [tempMax, setTempMax] = useState('')
   const [sortBy, setSortBy] = useState<'date' | 'name' | 'rating'>('date')
   const [userRatings, setUserRatings] = useState<Map<string, number>>(new Map())
   const [compareProducts, setCompareProducts] = useState<Product[]>([])
@@ -83,6 +91,16 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
     const savedSupplierNovelties = window.localStorage.getItem(SUPPLIER_NOVELTIES_KEY)
     if (savedSupplierNovelties === '1') {
       setSupplierNoveltiesOnly(true)
+    }
+
+    const savedDishwasherSafe = window.localStorage.getItem(DISHWASHER_SAFE_KEY)
+    if (savedDishwasherSafe === '1') {
+      setDishwasherSafeOnly(true)
+    }
+
+    const savedMicrowaveSafe = window.localStorage.getItem(MICROWAVE_SAFE_KEY)
+    if (savedMicrowaveSafe === '1') {
+      setMicrowaveSafeOnly(true)
     }
 
     const savedHistory = window.localStorage.getItem(VIEW_HISTORY_KEY)
@@ -229,6 +247,32 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
 
   useEffect(() => {
     if (typeof window === 'undefined') return
+    if (dishwasherSafeOnly) {
+      window.localStorage.setItem(DISHWASHER_SAFE_KEY, '1')
+    } else {
+      window.localStorage.removeItem(DISHWASHER_SAFE_KEY)
+    }
+  }, [dishwasherSafeOnly])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (microwaveSafeOnly) {
+      window.localStorage.setItem(MICROWAVE_SAFE_KEY, '1')
+    } else {
+      window.localStorage.removeItem(MICROWAVE_SAFE_KEY)
+    }
+  }, [microwaveSafeOnly])
+
+  // Температурный фильтр имеет смысл только для категорий со списка TEMPERATURE_CATEGORIES
+  useEffect(() => {
+    if (!isTemperatureCategory(selectedCategory)) {
+      setTempMin('')
+      setTempMax('')
+    }
+  }, [selectedCategory])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
     if (viewHistory.length > 0) {
       window.localStorage.setItem(VIEW_HISTORY_KEY, JSON.stringify(viewHistory))
     } else {
@@ -270,7 +314,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
   useEffect(() => {
     if (currentPage !== 1) setCurrentPage(1)
     else fetchProducts()
-  }, [debouncedSearch, selectedBrand, selectedCategory, selectedYear, supplierNoveltiesOnly, sortBy])
+  }, [debouncedSearch, selectedBrand, selectedCategory, selectedYear, supplierNoveltiesOnly, dishwasherSafeOnly, microwaveSafeOnly, tempMin, tempMax, sortBy])
 
   // Загрузка страницы при изменении currentPage
   useEffect(() => {
@@ -309,6 +353,14 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
     if (selectedCategory) query = query.eq('category', selectedCategory)
     if (selectedYear) query = query.eq('year', selectedYear)
     if (supplierNoveltiesOnly) query = query.eq('is_supplier_novelty', true)
+    if (dishwasherSafeOnly) query = query.eq('is_dishwasher_safe', true)
+    if (microwaveSafeOnly) query = query.eq('is_microwave_safe', true)
+    if (isTemperatureCategory(selectedCategory)) {
+      // Пересечение диапазонов: товар подходит, если его температурный
+      // диапазон хранения пересекается с диапазоном, заданным в фильтре.
+      if (tempMin) query = query.gte('temp_max', parseFloat(tempMin))
+      if (tempMax) query = query.lte('temp_min', parseFloat(tempMax))
+    }
 
     if (sortBy === 'name') {
       query = query.order('name', { ascending: true })
@@ -512,6 +564,10 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
     setSelectedCategory(null)
     setSelectedYear(null)
     setSupplierNoveltiesOnly(false)
+    setDishwasherSafeOnly(false)
+    setMicrowaveSafeOnly(false)
+    setTempMin('')
+    setTempMax('')
     setSortBy('date')
     setCurrentPage(1)
   }
@@ -522,7 +578,33 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
     (selectedCategory ? 1 : 0) +
     (selectedYear ? 1 : 0) +
     (supplierNoveltiesOnly ? 1 : 0) +
+    (dishwasherSafeOnly ? 1 : 0) +
+    (microwaveSafeOnly ? 1 : 0) +
+    (tempMin ? 1 : 0) +
+    (tempMax ? 1 : 0) +
     (sortBy !== 'date' ? 1 : 0)
+
+  const handleExport = async () => {
+    let query = apiClient.from('products').select('*')
+    if (!isAdmin) query = query.eq('is_archived', false)
+    if (selectedBrand) query = query.eq('brand', selectedBrand)
+    if (selectedCategory) query = query.eq('category', selectedCategory)
+    if (selectedYear) query = query.eq('year', selectedYear)
+    if (supplierNoveltiesOnly) query = query.eq('is_supplier_novelty', true)
+    if (dishwasherSafeOnly) query = query.eq('is_dishwasher_safe', true)
+    if (microwaveSafeOnly) query = query.eq('is_microwave_safe', true)
+    if (isTemperatureCategory(selectedCategory)) {
+      if (tempMin) query = query.gte('temp_max', parseFloat(tempMin))
+      if (tempMax) query = query.lte('temp_min', parseFloat(tempMax))
+    }
+    const { data } = await query
+    if (data && data.length > 0) {
+      exportProductsToExcel(data as Product[])
+      showToast('Файл Excel сформирован', 'success')
+    } else {
+      showToast('Нет товаров для выгрузки', 'info')
+    }
+  }
 
   const popularBrands = useMemo(() => {
     const counts = new Map<string, number>()
@@ -560,6 +642,15 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
         setSelectedYear={setSelectedYear}
         supplierNoveltiesOnly={supplierNoveltiesOnly}
         setSupplierNoveltiesOnly={setSupplierNoveltiesOnly}
+        dishwasherSafeOnly={dishwasherSafeOnly}
+        setDishwasherSafeOnly={setDishwasherSafeOnly}
+        microwaveSafeOnly={microwaveSafeOnly}
+        setMicrowaveSafeOnly={setMicrowaveSafeOnly}
+        tempMin={tempMin}
+        setTempMin={setTempMin}
+        tempMax={tempMax}
+        setTempMax={setTempMax}
+        showTemperatureFilter={isTemperatureCategory(selectedCategory)}
         sortBy={sortBy}
         setSortBy={setSortBy}
         viewMode={viewMode}
@@ -569,6 +660,7 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
         currentPage={currentPage}
         totalPages={totalPages}
         onClearFilters={clearAllFilters}
+        onExport={handleExport}
       />
       
       {popularBrands.length > 0 && (
