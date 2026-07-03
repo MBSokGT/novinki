@@ -394,13 +394,7 @@ let demoBookmarks: Array<{ id: string; user_id: string; product_id: string; crea
 let demoRatings: Array<{ id: string; user_id: string; product_id: string; rating: number; created_at: string; updated_at: string }> = []
 let demoDeleted: Array<Record<string, unknown>> = []
 let demoRequests: Array<Record<string, unknown>> = []
-let demoProductRequests: Array<Record<string, unknown>> = []
 let demoCategories: Array<Record<string, unknown>> = []
-let demoTags: Array<Record<string, unknown>> = []
-const demoSiteSettings: Array<Record<string, unknown>> = [
-  { id: 'site-name', key: 'site_name', value: 'Новинки ассортимента', updated_at: new Date().toISOString() },
-  { id: 'primary-color', key: 'primary_color', value: '#9B1B1B', updated_at: new Date().toISOString() },
-]
 
 function getDemoSession() {
   if (typeof window === 'undefined') return null
@@ -538,14 +532,8 @@ class DemoQueryBuilder implements PromiseLike<QueryResult<unknown>> {
         return demoDeleted
       case 'requests':
         return demoRequests
-      case 'product_requests':
-        return demoProductRequests
       case 'categories':
         return demoCategories
-      case 'tags':
-        return demoTags
-      case 'site_settings':
-        return demoSiteSettings
       case 'user_profiles':
         return DEMO_USERS.map((user) => ({
           id: user.id,
@@ -694,14 +682,8 @@ class DemoQueryBuilder implements PromiseLike<QueryResult<unknown>> {
       case 'requests':
         demoRequests = [...demoRequests, ...payloads]
         break
-      case 'product_requests':
-        demoProductRequests = [...demoProductRequests, ...payloads]
-        break
       case 'categories':
         demoCategories = [...demoCategories, ...payloads]
-        break
-      case 'tags':
-        demoTags = [...demoTags, ...payloads]
         break
     }
 
@@ -770,22 +752,6 @@ class DemoQueryBuilder implements PromiseLike<QueryResult<unknown>> {
         )
       }
 
-      if (this.collection === 'site_settings') {
-        const index = demoSiteSettings.findIndex((setting) => setting.key === item.key)
-        const next = {
-          id: index >= 0 ? String(demoSiteSettings[index].id) : `demo-setting-${Date.now()}`,
-          key: item.key,
-          value: item.value,
-          updated_by: item.updated_by || null,
-          updated_at: new Date().toISOString(),
-        }
-        if (index >= 0) {
-          demoSiteSettings[index] = next
-        } else {
-          demoSiteSettings.push(next)
-        }
-        results.push(next)
-      }
     }
 
     return {
@@ -809,9 +775,6 @@ class DemoQueryBuilder implements PromiseLike<QueryResult<unknown>> {
         break
       case 'categories':
         demoCategories = demoCategories.filter((item) => !ids.has(item.id))
-        break
-      case 'tags':
-        demoTags = demoTags.filter((item) => !ids.has(item.id))
         break
     }
 

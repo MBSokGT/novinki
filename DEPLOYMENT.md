@@ -1,6 +1,6 @@
-# Инструкция по развёртыванию (для ИТ)
+# Инструкция по развёртыванию
 
-Это техническая инструкция для команды, которая будет разворачивать приложение на своём сервере. Пользовательская документация — в [README.md](README.md) и [ADMIN_GUIDE.md](ADMIN_GUIDE.md).
+Техническая инструкция для того, кто будет разворачивать приложение на новом сервере. Пользовательская документация — в [README.md](README.md) и [ADMIN_GUIDE.md](ADMIN_GUIDE.md).
 
 ## 1. Что нужно на сервере
 
@@ -29,7 +29,6 @@ cp .env.example .env
 | `SQLITE_DB_PATH` | **абсолютный** путь, например `/var/www/novinki/data/novinki.db` |
 | `NEXT_PUBLIC_STORAGE_DRIVER` | `filesystem` — рекомендуется на новом сервере, чтобы фото/PDF не раздували базу (см. п.6) |
 | `UPLOAD_DIR` | **абсолютный** путь, например `/var/www/novinki/uploads` (только если `NEXT_PUBLIC_STORAGE_DRIVER=filesystem`) |
-| `ENCRYPTION_KEY` | сгенерировать новую случайную строку: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` — **не копировать** из `.env.example` и не переносить со старого сервера |
 | `APP_URL` | полный URL, например `https://company.ru/novinki/reset-password` |
 | `SINGLE_ADMIN_MODE` | оставить `true`, если сайтом будут пользоваться только сотрудники с логином-админом |
 | `NEXT_PUBLIC_DEMO_MODE` | оставить `false`/пустым — иначе включится демо-режим с тестовыми данными и захардкоженным паролем |

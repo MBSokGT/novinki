@@ -1,52 +1,5 @@
 import crypto from 'crypto'
 
-function getEncryptionKey(): string {
-  const key = process.env.ENCRYPTION_KEY
-  if (!key) {
-    throw new Error(
-      'ENCRYPTION_KEY environment variable is not set. ' +
-      'Generate one with: node -e "require(\'crypto\').randomBytes(32).toString(\'hex\')" | cat'
-    )
-  }
-  return key
-}
-
-const ALGORITHM = 'aes-256-gcm'
-
-function getEncryptionKeyBuffer(): Buffer {
-  const key = getEncryptionKey()
-  return Buffer.from(key.slice(0, 64), 'hex')
-}
-
-export function encrypt(text: string): string {
-  const iv = crypto.randomBytes(16)
-  const key = getEncryptionKeyBuffer()
-  const cipher = crypto.createCipheriv(ALGORITHM, key, iv)
-
-  let encrypted = cipher.update(text, 'utf8', 'hex')
-  encrypted += cipher.final('hex')
-
-  const authTag = cipher.getAuthTag()
-
-  return iv.toString('hex') + ':' + authTag.toString('hex') + ':' + encrypted
-}
-
-export function decrypt(encryptedData: string): string {
-  const parts = encryptedData.split(':')
-  const iv = Buffer.from(parts[0], 'hex')
-  const authTag = Buffer.from(parts[1], 'hex')
-  const encrypted = parts[2]
-
-  const key = getEncryptionKeyBuffer()
-  const decipher = crypto.createDecipheriv(ALGORITHM, key, iv)
-  decipher.setAuthTag(authTag)
-
-  let decrypted = decipher.update(encrypted, 'hex', 'utf8')
-  decrypted += decipher.final('utf8')
-
-  return decrypted
-}
-
 // Хеширование пароля с использованием scrypt (memory-hard, устойчиво к brute-force)
 export function hashPassword(password: string, salt?: string): string {
   const useSalt = salt ?? crypto.randomBytes(16).toString('hex')

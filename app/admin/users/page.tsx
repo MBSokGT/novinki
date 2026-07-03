@@ -179,7 +179,7 @@ export default function UsersPage() {
           <div className="px-6 py-4 bg-slate-50 border-b">
             <h2 className="text-lg font-bold text-slate-900">Добавить сотрудника</h2>
             <p className="text-sm text-slate-500 mt-1">
-              Создаёт админский аккаунт сразу с паролем — сотрудник входит и сразу может загружать новинки, без участия IT.
+              Создаёт админский аккаунт сразу с паролем — сотрудник может сразу войти и загружать новинки.
             </p>
           </div>
           <form onSubmit={createUser} className="p-6 grid gap-4 sm:grid-cols-3 items-end">

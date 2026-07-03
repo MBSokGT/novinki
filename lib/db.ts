@@ -156,34 +156,16 @@ const COLLECTIONS: Record<string, CollectionConfig> = {
     publicRead: true,
     requiresAdmin: true,
   },
-  tags: {
-    table: 'tags',
-    columns: ['id', 'name', 'created_at'],
-    publicRead: true,
-    requiresAdmin: true,
-  },
   years: {
     table: 'years',
     columns: ['id', 'name', 'created_at'],
     publicRead: true,
     requiresAdmin: true,
   },
-  site_settings: {
-    table: 'site_settings',
-    columns: ['id', 'key', 'value', 'updated_by', 'updated_at'],
-    publicRead: true,
-    requiresAdmin: true,
-    upsertKeys: [['key']],
-  },
   requests: {
     table: 'requests',
     columns: ['id', 'name', 'contact', 'product', 'article', 'delivered', 'created_at'],
     booleanFields: ['delivered'],
-    requiresAdmin: true,
-  },
-  product_requests: {
-    table: 'product_requests',
-    columns: ['id', 'name', 'contact', 'product_name', 'article', 'created_at'],
     requiresAdmin: true,
   },
   product_statistics: {

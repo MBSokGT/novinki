@@ -18,12 +18,11 @@ npm install
 ### 2. Настройте переменные
 Скопируйте [.env.example](.env.example) в `.env` и заполните значения. Ключевые:
 - `SQLITE_DB_PATH` — путь к файлу базы данных
-- `ENCRYPTION_KEY` — секрет для криптографических хелперов (`node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`)
 - `APP_URL` — полный URL страницы восстановления пароля
 - `NEXT_PUBLIC_BASE_PATH` — если приложение размещено на подпути (например `/novinki`)
 - `NEXT_PUBLIC_STORAGE_DRIVER` / `UPLOAD_DIR` — хранить фото/PDF в базе (`base64`, по умолчанию) или на диске (`filesystem`)
 
-Полная инструкция по развёртыванию на новом сервере (для ИТ) — в [DEPLOYMENT.md](DEPLOYMENT.md).
+Полная инструкция по развёртыванию на новом сервере — в [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ### 3. Создайте первый аккаунт
 В приложении нет публичной регистрации. Первый (и любой последующий) аккаунт создаётся вручную:
@@ -65,6 +64,6 @@ docker compose up -d --build
 - `products`, `deleted_products`, `archived_products`
 - `bookmarks`, `product_ratings`, `view_history`, `product_views`
 - `categories`, `tags`, `site_settings`
-- `requests`, `product_requests`, `audit_logs`
+- `requests`
 
 И view `product_statistics`.
