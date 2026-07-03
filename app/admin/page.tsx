@@ -228,17 +228,26 @@ export default function AdminPage() {
       const productData = buildProductPayload(images, flyerUrl)
 
       if (editId) {
-        const { error } = await apiClient.from('products').update(productData).eq('id', editId)
+        const { data, error } = await apiClient.from('products').update(productData).eq('id', editId).select()
         if (error) throw error
+        if (data?.[0]) {
+          setProducts((prev) => prev.map((p) => (p.id === editId ? (data[0] as Product) : p)))
+        } else {
+          await fetchProducts()
+        }
         showToast('Товар обновлён', 'success')
       } else {
-        const { error } = await apiClient.from('products').insert([productData])
+        const { data, error } = await apiClient.from('products').insert([productData]).select()
         if (error) throw error
+        if (data?.[0]) {
+          setProducts((prev) => [data[0] as Product, ...prev])
+        } else {
+          await fetchProducts()
+        }
         showToast('Товар добавлен', 'success')
       }
 
       resetForm()
-      await fetchProducts()
     } catch (error: any) {
       console.error('Save error:', error)
       showToast(error?.message || 'Ошибка при сохранении товара', 'error')
@@ -303,10 +312,14 @@ export default function AdminPage() {
         temp_max: product.temp_max ?? null,
       }
 
-      const { error } = await apiClient.from('products').insert([payload])
+      const { data, error } = await apiClient.from('products').insert([payload]).select()
       if (error) throw error
 
-      await fetchProducts()
+      if (data?.[0]) {
+        setProducts((prev) => [data[0] as Product, ...prev])
+      } else {
+        await fetchProducts()
+      }
       showToast('Копия товара создана', 'success')
     } catch (error: any) {
       console.error('Duplicate error:', error)
@@ -361,7 +374,13 @@ export default function AdminPage() {
           }
           
           console.log('Product moved to trash successfully')
-          fetchProducts()
+          setProducts((prev) => prev.filter((p) => p.id !== id))
+          setSelectedIds((prev) => {
+            if (!prev.has(id)) return prev
+            const next = new Set(prev)
+            next.delete(id)
+            return next
+          })
         }
       } catch (error) {
         console.error('Delete operation failed:', error)
@@ -390,7 +409,7 @@ export default function AdminPage() {
         }
         
         console.log('Archive result:', data)
-        fetchProducts()
+        setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, is_archived: !isArchived } : p)))
       } catch (error) {
         console.error('Archive operation failed:', error)
         showToast('Ошибка операции архивирования', 'error')
@@ -418,11 +437,12 @@ export default function AdminPage() {
     if (!confirm(`Архивировать выбранные товары (${selectedIds.size})?`)) return
 
     try {
+      const ids = Array.from(selectedIds)
       await Promise.all(
-        Array.from(selectedIds).map((id) => apiClient.from('products').update({ is_archived: true }).eq('id', id))
+        ids.map((id) => apiClient.from('products').update({ is_archived: true }).eq('id', id))
       )
+      setProducts((prev) => prev.map((p) => (selectedIds.has(p.id) ? { ...p, is_archived: true } : p)))
       setSelectedIds(new Set())
-      await fetchProducts()
       showToast('Товары архивированы', 'success')
     } catch (error) {
       console.error('Bulk archive failed:', error)
@@ -435,11 +455,12 @@ export default function AdminPage() {
     if (!confirm(`Опубликовать выбранные товары (${selectedIds.size})? Они станут видны на сайте.`)) return
 
     try {
+      const ids = Array.from(selectedIds)
       await Promise.all(
-        Array.from(selectedIds).map((id) => apiClient.from('products').update({ is_archived: false }).eq('id', id))
+        ids.map((id) => apiClient.from('products').update({ is_archived: false }).eq('id', id))
       )
+      setProducts((prev) => prev.map((p) => (selectedIds.has(p.id) ? { ...p, is_archived: false } : p)))
       setSelectedIds(new Set())
-      await fetchProducts()
       showToast('Товары опубликованы', 'success')
     } catch (error) {
       console.error('Bulk publish failed:', error)

@@ -143,6 +143,7 @@ const COLLECTIONS: Record<string, CollectionConfig> = {
       ...PRODUCT_COLUMNS.filter((column) => column !== 'id' && column !== 'updated_at' && column !== 'is_archived'),
       'deleted_at',
     ],
+    booleanFields: ['is_supplier_novelty', 'is_dishwasher_safe', 'is_microwave_safe'],
     requiresAdmin: true,
   },
   archived_products: {
@@ -152,6 +153,7 @@ const COLLECTIONS: Record<string, CollectionConfig> = {
       ...PRODUCT_COLUMNS.filter((column) => column !== 'id' && column !== 'updated_at' && column !== 'is_archived'),
       'deleted_at',
     ],
+    booleanFields: ['is_supplier_novelty', 'is_dishwasher_safe', 'is_microwave_safe'],
     requiresAdmin: true,
   },
   categories: {

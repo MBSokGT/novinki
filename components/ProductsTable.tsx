@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { apiClient } from '@/lib/api-client'
 import { openFileInNewTab } from '@/lib/openFile'
 import { Product } from '@/types/product'
@@ -19,6 +19,7 @@ import { exportProductsToExcel } from '@/lib/export'
 
 interface ProductsTableProps {
   isAdmin: boolean
+  onExportReady?: (exportFn: () => void) => void
 }
 
 const ITEMS_PER_PAGE = 30
@@ -32,7 +33,7 @@ const MICROWAVE_SAFE_KEY = 'novinki:microwaveSafeOnly'
 const VIEW_HISTORY_KEY = 'novinki:viewHistory'
 const BOOKMARKS_SYNC_KEY = 'novinki:bookmarks_sync'
 
-export default function ProductsTable({ isAdmin }: ProductsTableProps) {
+export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableProps) {
   // Текущая страница (серверная пагинация)
   const [products, setProducts] = useState<Product[]>([])
   // Лёгкий список всех товаров: автодополнение, категории, похожие товары
@@ -583,7 +584,9 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
     (sortBy !== 'date' ? 1 : 0)
 
   const handleExport = async () => {
-    let query = apiClient.from('products').select('*')
+    let query = apiClient
+      .from('products')
+      .select('name,brand,article_number,category,year,price,description,advantages,attention_points,website_link,is_supplier_novelty,is_dishwasher_safe,is_microwave_safe,temp_min,temp_max')
     if (!isAdmin) query = query.eq('is_archived', false)
     if (selectedBrand) query = query.eq('brand', selectedBrand)
     if (selectedCategory) query = query.eq('category', selectedCategory)
@@ -603,6 +606,14 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
       showToast('Нет товаров для выгрузки', 'info')
     }
   }
+
+  const handleExportRef = useRef(handleExport)
+  handleExportRef.current = handleExport
+
+  useEffect(() => {
+    onExportReady?.(() => handleExportRef.current())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const popularBrands = useMemo(() => {
     const counts = new Map<string, number>()
@@ -658,7 +669,6 @@ export default function ProductsTable({ isAdmin }: ProductsTableProps) {
         currentPage={currentPage}
         totalPages={totalPages}
         onClearFilters={clearAllFilters}
-        onExport={handleExport}
       />
       
       {popularBrands.length > 0 && (
