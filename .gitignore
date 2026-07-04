@@ -6,6 +6,7 @@ out
 .DS_Store
 tsconfig.tsbuildinfo
 data/
+uploads/
 *.db
 *.db-journal
 *.db-wal

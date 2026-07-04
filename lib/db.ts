@@ -363,6 +363,7 @@ export async function getCurrentUser(request: NextRequest): Promise<SessionUser 
 
   const user = row ? (normalizeRow('user_profiles', row) as SessionUser) : null
   if (!user) return null
+  if (user.is_blocked) return null
   if (isSingleAdminModeEnabled() && !user.is_admin) {
     return null
   }
@@ -475,7 +476,7 @@ async function attachBookmarkProducts(rows: Array<Record<string, unknown>>, sele
   }))
 }
 
-async function runSelect(payload: DataRequestPayload): Promise<QueryResult<unknown>> {
+async function runSelect(payload: DataRequestPayload, user: SessionUser | null): Promise<QueryResult<unknown>> {
   const config = ensureCollection(payload.collection)
   const selectedColumns = parseSelectedColumns(payload.collection, payload.selectColumns)
   const { whereSql, params } = buildWhereClause(payload.collection, payload.filters, payload.orFilters)
@@ -511,6 +512,14 @@ async function runSelect(payload: DataRequestPayload): Promise<QueryResult<unkno
 
   if (payload.collection === 'bookmarks' && payload.selectColumns?.includes('products(*)')) {
     rows = await attachBookmarkProducts(rows, selectedColumns)
+  }
+
+  // created_by/updated_by hold the acting admin's email — only admins may see them.
+  if (payload.collection === 'products' && !user?.is_admin) {
+    rows = rows.map((row) => {
+      const { created_by, updated_by, ...rest } = row
+      return rest
+    })
   }
 
   let count: number | null = null
@@ -640,6 +649,13 @@ async function runUpdate(payload: DataRequestPayload): Promise<QueryResult<unkno
       .run()
   }
 
+  // A newly-blocked user must not keep using an already-issued session.
+  if (payload.collection === 'user_profiles' && normalizeBoolean(updateData.is_blocked)) {
+    for (const id of ids) {
+      await db.prepare('DELETE FROM sessions WHERE user_id = ?').bind(id).run()
+    }
+  }
+
   const updatedRows = payload.returnOnWrite ? await fetchByIds(payload.collection, ids, payload.selectColumns || '*') : null
   return { data: updatedRows, error: null }
 }
@@ -734,7 +750,7 @@ export async function executeDataRequest(request: NextRequest, payload: DataRequ
 
     switch (payload.operation) {
       case 'select':
-        return await runSelect(payload)
+        return await runSelect(payload, user)
       case 'insert':
         return {
           data: await insertRows(

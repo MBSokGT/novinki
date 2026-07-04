@@ -73,18 +73,14 @@ export default function CompareBar({ compareProducts, onRemove, onClear }: Compa
                     {compareProducts.map(p => <td key={p.id} className="p-4">{p.category || '—'}</td>)}
                   </tr>
                   <tr className="border-t bg-gray-50">
-                    <td className="p-4 font-medium">Рейтинг</td>
-                    {compareProducts.map(p => <td key={p.id} className="p-4">{(p.rating || 0).toFixed(1)}</td>)}
-                  </tr>
-                  <tr className="border-t">
                     <td className="p-4 font-medium">Описание</td>
                     {compareProducts.map(p => <td key={p.id} className="p-4 text-sm">{p.description}</td>)}
                   </tr>
-                  <tr className="border-t bg-gray-50">
+                  <tr className="border-t">
                     <td className="p-4 font-medium">Преимущества</td>
                     {compareProducts.map(p => <td key={p.id} className="p-4 text-sm text-green-700">{p.advantages}</td>)}
                   </tr>
-                  <tr className="border-t">
+                  <tr className="border-t bg-gray-50">
                     <td className="p-4 font-medium">Внимание</td>
                     {compareProducts.map(p => <td key={p.id} className="p-4 text-sm text-slate-700">{p.attention_points}</td>)}
                   </tr>

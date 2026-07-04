@@ -9,7 +9,6 @@ import ProductSkeleton from './ProductSkeleton'
 import ImageCarousel from './ImageCarousel'
 import { showToast } from './Toast'
 import FilterBar from './FilterBar'
-import StarRating from './StarRating'
 import SearchBar from './SearchBar'
 import CompareBar from './CompareBar'
 import Breadcrumbs from './Breadcrumbs'
@@ -30,8 +29,6 @@ const YEAR_KEY = 'novinki:selectedYear'
 const SUPPLIER_NOVELTIES_KEY = 'novinki:supplierNoveltiesOnly'
 const DISHWASHER_SAFE_KEY = 'novinki:dishwasherSafeOnly'
 const MICROWAVE_SAFE_KEY = 'novinki:microwaveSafeOnly'
-const VIEW_HISTORY_KEY = 'novinki:viewHistory'
-const BOOKMARKS_SYNC_KEY = 'novinki:bookmarks_sync'
 
 export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableProps) {
   // Текущая страница (серверная пагинация)
@@ -45,8 +42,6 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
-  const [bookmarks, setBookmarks] = useState<Set<string>>(new Set())
-  const [hasUserSession, setHasUserSession] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('cards')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
@@ -57,9 +52,7 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
   const [tempMin, setTempMin] = useState('')
   const [tempMax, setTempMax] = useState('')
   const [sortBy, setSortBy] = useState<'date' | 'name'>('date')
-  const [userRatings, setUserRatings] = useState<Map<string, number>>(new Map())
   const [compareProducts, setCompareProducts] = useState<Product[]>([])
-  const [viewHistory, setViewHistory] = useState<string[]>([])
   const [isUrlStateReady, setIsUrlStateReady] = useState(false)
   const [showScrollTop, setShowScrollTop] = useState(false)
   const router = useRouter()
@@ -102,18 +95,6 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
     const savedMicrowaveSafe = window.localStorage.getItem(MICROWAVE_SAFE_KEY)
     if (savedMicrowaveSafe === '1') {
       setMicrowaveSafeOnly(true)
-    }
-
-    const savedHistory = window.localStorage.getItem(VIEW_HISTORY_KEY)
-    if (savedHistory) {
-      try {
-        const parsedHistory = JSON.parse(savedHistory)
-        if (Array.isArray(parsedHistory)) {
-          setViewHistory(parsedHistory.filter((id) => typeof id === 'string').slice(0, 10))
-        }
-      } catch {
-        // Ignore invalid JSON and continue with empty history.
-      }
     }
   }, [])
 
@@ -273,15 +254,6 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
   }, [selectedCategory])
 
   useEffect(() => {
-    if (typeof window === 'undefined') return
-    if (viewHistory.length > 0) {
-      window.localStorage.setItem(VIEW_HISTORY_KEY, JSON.stringify(viewHistory))
-    } else {
-      window.localStorage.removeItem(VIEW_HISTORY_KEY)
-    }
-  }, [viewHistory])
-
-  useEffect(() => {
     const handleScroll = () => {
       setShowScrollTop(window.scrollY > 520)
     }
@@ -291,24 +263,9 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  // Cross-tab bookmark sync: refetch when another tab adds/removes a bookmark
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === BOOKMARKS_SYNC_KEY) fetchBookmarks()
-    }
-    window.addEventListener('storage', onStorage)
-    return () => window.removeEventListener('storage', onStorage)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  // Инициализация: загружаем мета-список (все товары, лёгкие поля) и остальное
+  // Инициализация: загружаем мета-список (все товары, лёгкие поля)
   useEffect(() => {
     fetchProductsMeta()
-    if (!isAdmin) {
-      fetchBookmarks()
-      fetchUserRatings()
-    }
   }, [isAdmin])
 
   // Сброс на 1-ю страницу при смене фильтров (не при смене самой страницы)
@@ -326,7 +283,7 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
   const fetchProductsMeta = async () => {
     let query = apiClient
       .from('products')
-      .select('id, name, brand, category, year, article_number, price, rating, image_url, description, advantages')
+      .select('id, name, brand, category, year, article_number, price, image_url, description, advantages')
     if (!isAdmin) query = query.eq('is_archived', false)
     query = query.order('created_at', { ascending: false })
     const { data } = await query
@@ -378,70 +335,6 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
     setLoading(false)
   }
 
-  const fetchBookmarks = async () => {
-    const { data: { user } } = await apiClient.auth.getUser()
-    setHasUserSession(Boolean(user))
-    if (!user) {
-      setBookmarks(new Set())
-      return
-    }
-
-    const { data } = await apiClient
-      .from('bookmarks')
-      .select('product_id')
-      .eq('user_id', user.id)
-    
-    if (data) setBookmarks(new Set(data.map((b: any) => b.product_id)))
-  }
-
-  const fetchUserRatings = async () => {
-    const { data: { user } } = await apiClient.auth.getUser()
-    if (!user) return
-
-    const { data } = await apiClient
-      .from('product_ratings')
-      .select('product_id, rating')
-      .eq('user_id', user.id)
-    
-    if (data) setUserRatings(new Map(data.map((r: any) => [r.product_id, r.rating])))
-  }
-
-  const rateProduct = async (productId: string, rating: number) => {
-    const { data: { user } } = await apiClient.auth.getUser()
-    if (!user) return
-
-    // Optimistic update: immediately reflect the new user rating in the UI
-    setUserRatings(prev => new Map(prev).set(productId, rating))
-
-    try {
-      await apiClient
-        .from('product_ratings')
-        .upsert({ product_id: productId, user_id: user.id, rating })
-
-      // Fetch only the single updated product to get the new average rating
-      const { data: updated } = await apiClient
-        .from('products')
-        .select('*')
-        .eq('id', productId)
-        .single()
-
-      if (updated) {
-        setProducts(prev => prev.map(p => p.id === productId ? updated as Product : p))
-        setProductsMeta(prev => prev.map(p => p.id === productId ? updated as Product : p))
-      }
-
-      showToast('Рейтинг сохранен', 'success')
-    } catch (error) {
-      // Revert optimistic update on error
-      setUserRatings(prev => {
-        const next = new Map(prev)
-        next.delete(productId)
-        return next
-      })
-      showToast('Ошибка при сохранении рейтинга', 'error')
-    }
-  }
-
   const toggleCompare = (product: Product) => {
     setCompareProducts(prev => {
       const exists = prev.find(p => p.id === product.id)
@@ -456,18 +349,8 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
     })
   }
 
-  const addToHistory = async (productId: string) => {
-    setViewHistory((prev) => [productId, ...prev.filter((id) => id !== productId)].slice(0, 10))
-    
-    const { data: { user } } = await apiClient.auth.getUser()
-    if (user) {
-      await apiClient.from('view_history').insert({ user_id: user.id, product_id: productId })
-    }
-  }
-
   const viewProduct = (product: Product) => {
     setSelectedProduct(product)
-    addToHistory(product.id)
   }
 
   const getSimilarProducts = (product: Product) => {
@@ -506,9 +389,6 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
         const matchingSizes = currentSizes.filter(s => pSizes.includes(s)).length
         score += matchingSizes * 2
 
-        // Высокий рейтинг = +1
-        if ((p.rating || 0) >= 4) score += 1
-
         return { product: p, score }
       })
       .filter(item => item.score > 0)
@@ -523,39 +403,6 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [selectedProduct, productsMeta]
   )
-
-  const toggleBookmark = async (productId: string) => {
-    const { data: { user } } = await apiClient.auth.getUser()
-    if (!user) return
-
-    try {
-      if (bookmarks.has(productId)) {
-        await apiClient
-          .from('bookmarks')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('product_id', productId)
-
-        setBookmarks(prev => {
-          const next = new Set(prev)
-          next.delete(productId)
-          return next
-        })
-        window.localStorage.setItem(BOOKMARKS_SYNC_KEY, Date.now().toString())
-        showToast('Удалено из закладок', 'info')
-      } else {
-        await apiClient
-          .from('bookmarks')
-          .insert({ user_id: user.id, product_id: productId })
-
-        setBookmarks(prev => new Set(prev).add(productId))
-        window.localStorage.setItem(BOOKMARKS_SYNC_KEY, Date.now().toString())
-        showToast('Добавлено в закладки', 'success')
-      }
-    } catch (error) {
-      showToast('Ошибка при работе с закладками', 'error')
-    }
-  }
 
   const clearAllFilters = () => {
     setSearch('')
@@ -726,11 +573,6 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
               <div className="p-3 flex flex-col flex-1">
                 <div className="flex items-start justify-between mb-1.5">
                   <h3 className="font-semibold text-slate-900 text-sm leading-snug line-clamp-2 flex-1 mr-1">{product.name}</h3>
-                  {!isAdmin && hasUserSession && (
-                    <button onClick={(e) => { e.stopPropagation(); toggleBookmark(product.id) }} className={`p-1.5 rounded-lg transition flex-shrink-0 ${bookmarks.has(product.id) ? 'text-yellow-500' : 'text-slate-300 hover:text-slate-500'}`}>
-                      <svg className="w-4 h-4" fill={bookmarks.has(product.id) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
-                    </button>
-                  )}
                 </div>
                 {product.article_number && <p className="text-[10px] text-slate-400 mb-1 font-mono">{product.article_number}</p>}
                 {product.flyer_url && (
@@ -753,11 +595,6 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
                   {product.is_microwave_safe && <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700">СВЧ</span>}
                 </div>
                 <p className="text-xs text-slate-500 line-clamp-2 mb-2">{product.description}</p>
-                {!isAdmin && hasUserSession && (
-                  <div onClick={(e) => e.stopPropagation()}>
-                    <StarRating rating={product.rating || 0} userRating={userRatings.get(product.id)} onRate={(r) => rateProduct(product.id, r)} />
-                  </div>
-                )}
                 <button onClick={(e) => { e.stopPropagation(); viewProduct(product) }} className="w-full px-3 py-1.5 bg-[#9B1B1B] text-white text-xs font-medium rounded-lg hover:bg-[#7A1515] transition mt-auto">Подробнее</button>
               </div>
             </div>
@@ -786,14 +623,6 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
                           title="Сравнить"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-                        </button>
-                      )}
-                      {!isAdmin && hasUserSession && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); toggleBookmark(product.id) }}
-                          className={`p-1.5 rounded-lg transition ${bookmarks.has(product.id) ? 'bg-yellow-100 text-yellow-600' : 'bg-slate-100 text-slate-400'}`}
-                        >
-                          <svg className="w-4 h-4" fill={bookmarks.has(product.id) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
                         </button>
                       )}
                     </div>
@@ -866,15 +695,6 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
                             title="Сравнить"
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-                          </button>
-                        )}
-                        {!isAdmin && hasUserSession && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); toggleBookmark(product.id) }}
-                            className={`p-2 rounded-lg transition ${bookmarks.has(product.id) ? 'bg-yellow-100 text-yellow-600 hover:bg-yellow-200' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}
-                            title={bookmarks.has(product.id) ? 'Удалить из закладок' : 'Добавить в закладки'}
-                          >
-                            <svg className="w-5 h-5" fill={bookmarks.has(product.id) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
                           </button>
                         )}
                         <button onClick={(e) => { e.stopPropagation(); viewProduct(product) }} className="inline-flex items-center px-3 py-1.5 bg-[#9B1B1B] text-white text-sm font-medium rounded-lg hover:bg-[#7A1515] transition">

@@ -86,10 +86,6 @@ export default function Home() {
               </Link>
             </div>
             <div className="hidden sm:flex items-center gap-2">
-              <Link href="/recent" className="inline-flex items-center gap-1.5 whitespace-nowrap px-3 py-1.5 text-gray-300 hover:bg-white/10 rounded-lg transition text-sm font-medium" title="Недавно просмотренные">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                <span className="hidden lg:inline">Недавно просмотренные</span>
-              </Link>
               <RequestForm />
               {exportProducts && (
                 <button
@@ -139,10 +135,6 @@ export default function Home() {
                   </Link>
                 )}
               </div>
-              <Link href="/recent" className="flex items-center gap-2 w-full px-4 py-3 bg-white/10 text-gray-200 rounded-lg hover:bg-white/20 transition font-medium">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                Недавно просмотренные
-              </Link>
               {exportProducts && (
                 <button
                   onClick={exportProducts}

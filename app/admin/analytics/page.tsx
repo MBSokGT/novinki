@@ -8,7 +8,6 @@ import { useRouter } from 'next/navigation'
 
 export default function AnalyticsPage() {
   const [stats, setStats] = useState<any>(null)
-  const [topProducts, setTopProducts] = useState<any[]>([])
   const [topBrands, setTopBrands] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
@@ -42,34 +41,12 @@ export default function AnalyticsPage() {
 
   const fetchAnalytics = async () => {
     // Для счётчиков выбираем только id — намного быстрее, чем select('*')
-    const { data: products } = await apiClient.from('products').select('id, name, brand, rating, is_archived').catch(() => ({ data: [] }))
-    const { data: bookmarks } = await apiClient.from('bookmarks').select('id').catch(() => ({ data: [] }))
-
-    // product_views / product_statistics могут отсутствовать в схеме
-    let totalViews = 0
-    let topProds: any[] = []
-    try {
-      const { data: views } = await apiClient.from('product_views').select('*')
-      totalViews = views?.length || 0
-    } catch { /* коллекция не существует */ }
-
-    try {
-      const { data: stats } = await apiClient
-        .from('product_statistics')
-        .select('id, name, brand, view_count, bookmark_count')
-        .order('view_count', { ascending: false })
-        .limit(10)
-      topProds = stats || []
-    } catch { /* коллекция не существует */ }
+    const { data: products } = await apiClient.from('products').select('id, name, brand, is_archived').catch(() => ({ data: [] }))
 
     setStats({
       totalProducts: products?.length || 0,
       activeProducts: products?.filter((product: any) => !product.is_archived).length || 0,
-      totalViews,
-      totalBookmarks: bookmarks?.length || 0,
     })
-
-    setTopProducts(topProds)
 
     // Популярные бренды — вычисляем из активных (неархивных) товаров
     const brandStats: Record<string, number> = {}
@@ -107,7 +84,7 @@ export default function AnalyticsPage() {
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         {/* Общая статистика */}
-        <div className="mb-8 grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mb-8 grid gap-6 sm:grid-cols-2">
           <div className="bg-white p-6 rounded-xl shadow-sm">
             <div className="text-3xl font-bold text-slate-900">{stats.totalProducts}</div>
             <div className="text-slate-600 mt-1">Всего новинок</div>
@@ -116,55 +93,23 @@ export default function AnalyticsPage() {
             <div className="text-3xl font-bold text-blue-900">{stats.activeProducts}</div>
             <div className="text-slate-600 mt-1">Активных товаров</div>
           </div>
-          <div className="bg-white p-6 rounded-xl shadow-sm">
-            <div className="text-3xl font-bold text-green-900">{stats.totalViews}</div>
-            <div className="text-slate-600 mt-1">Просмотров</div>
-          </div>
-          <div className="bg-white p-6 rounded-xl shadow-sm">
-            <div className="text-3xl font-bold text-purple-900">{stats.totalBookmarks}</div>
-            <div className="text-slate-600 mt-1">Закладок</div>
-          </div>
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-2">
-          {/* Топ-10 новинок */}
-          <div className="bg-white p-6 rounded-xl shadow-sm">
-            <h2 className="text-xl font-bold mb-4">Топ-10 новинок</h2>
-            <div className="space-y-3">
-              {topProducts.map((product, idx) => (
-                <div key={product.id} className="flex flex-col gap-3 rounded-lg bg-slate-50 p-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <span className="text-2xl font-bold text-slate-300">#{idx + 1}</span>
-                    <div className="min-w-0">
-                      <div className="break-words font-medium">{product.name}</div>
-                      <div className="break-words text-sm text-slate-600">{product.brand}</div>
-                    </div>
-                  </div>
-                  <div className="text-left sm:text-right">
-                    <div className="font-bold text-green-600">{product.view_count} просмотров</div>
-                    <div className="text-sm text-purple-600">{product.bookmark_count} в закладках</div>
-                  </div>
+        {/* Популярные бренды */}
+        <div className="bg-white p-6 rounded-xl shadow-sm">
+          <h2 className="text-xl font-bold mb-4">Популярные бренды</h2>
+          <div className="space-y-3">
+            {topBrands.map((brand: any, idx) => (
+              <div key={idx} className="flex flex-col gap-3 rounded-lg bg-slate-50 p-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="text-2xl font-bold text-slate-300">#{idx + 1}</span>
+                  <span className="break-words font-medium">{brand.brand}</span>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Популярные бренды */}
-          <div className="bg-white p-6 rounded-xl shadow-sm">
-            <h2 className="text-xl font-bold mb-4">Популярные бренды</h2>
-            <div className="space-y-3">
-              {topBrands.map((brand: any, idx) => (
-                <div key={idx} className="flex flex-col gap-3 rounded-lg bg-slate-50 p-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <span className="text-2xl font-bold text-slate-300">#{idx + 1}</span>
-                    <span className="break-words font-medium">{brand.brand}</span>
-                  </div>
-                  <span className="px-3 py-1 bg-slate-100 text-slate-900 rounded-full text-sm font-bold">
-                    {brand.count} товаров
-                  </span>
-                </div>
-              ))}
-            </div>
+                <span className="px-3 py-1 bg-slate-100 text-slate-900 rounded-full text-sm font-bold">
+                  {brand.count} товаров
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       </main>
