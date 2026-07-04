@@ -9,6 +9,8 @@ import { useRouter } from 'next/navigation'
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<any[]>([])
   const [years, setYears] = useState<any[]>([])
+  const [categoryUsage, setCategoryUsage] = useState<Record<string, number>>({})
+  const [yearUsage, setYearUsage] = useState<Record<string, number>>({})
   const [newCategory, setNewCategory] = useState('')
   const [newYear, setNewYear] = useState('')
   const [loading, setLoading] = useState(true)
@@ -45,33 +47,61 @@ export default function CategoriesPage() {
   const fetchData = async () => {
     const { data: cats } = await apiClient.from('categories').select('*')
     const { data: yrs } = await apiClient.from('years').select('*')
+    const { data: products } = await apiClient.from('products').select('category, year')
     setCategories(cats || [])
     setYears((yrs || []).slice().sort((a: any, b: any) => a.name.localeCompare(b.name)))
+
+    const catUsage: Record<string, number> = {}
+    const yrUsage: Record<string, number> = {}
+    ;(products || []).forEach((p: any) => {
+      if (p.category) catUsage[p.category] = (catUsage[p.category] || 0) + 1
+      if (p.year) yrUsage[p.year] = (yrUsage[p.year] || 0) + 1
+    })
+    setCategoryUsage(catUsage)
+    setYearUsage(yrUsage)
   }
 
   const addCategory = async () => {
-    if (!newCategory.trim()) return
-    await apiClient.from('categories').insert({ name: newCategory })
+    const name = newCategory.trim()
+    if (!name) return
+    if (categories.some((cat) => cat.name.trim().toLowerCase() === name.toLowerCase())) {
+      alert('Такая категория уже существует')
+      return
+    }
+    await apiClient.from('categories').insert({ name })
     setNewCategory('')
     fetchData()
   }
 
   const addYear = async () => {
-    if (!newYear.trim()) return
-    await apiClient.from('years').insert({ name: newYear.trim() })
+    const name = newYear.trim()
+    if (!name) return
+    if (years.some((year) => year.name.trim().toLowerCase() === name.toLowerCase())) {
+      alert('Такой год уже добавлен')
+      return
+    }
+    await apiClient.from('years').insert({ name })
     setNewYear('')
     fetchData()
   }
 
-  const deleteCategory = async (id: string) => {
-    if (confirm('Удалить категорию?')) {
+  const deleteCategory = async (id: string, name: string) => {
+    const inUse = categoryUsage[name] || 0
+    const warning = inUse > 0
+      ? `Категория "${name}" используется в ${inUse} товар(ах). Они не потеряют категорию, но она пропадёт из списка для выбора. Удалить?`
+      : 'Удалить категорию?'
+    if (confirm(warning)) {
       await apiClient.from('categories').delete().eq('id', id)
       fetchData()
     }
   }
 
-  const deleteYear = async (id: string) => {
-    if (confirm('Удалить год?')) {
+  const deleteYear = async (id: string, name: string) => {
+    const inUse = yearUsage[name] || 0
+    const warning = inUse > 0
+      ? `Год "${name}" используется в ${inUse} товар(ах). Они не потеряют год, но он пропадёт из списка для выбора. Удалить?`
+      : 'Удалить год?'
+    if (confirm(warning)) {
       await apiClient.from('years').delete().eq('id', id)
       fetchData()
     }
@@ -123,8 +153,13 @@ export default function CategoriesPage() {
             <div className="space-y-2">
               {categories.map((cat) => (
                 <div key={cat.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                  <span className="font-medium">{cat.name}</span>
-                  <button onClick={() => deleteCategory(cat.id)} className="text-slate-600 hover:text-slate-700">
+                  <span className="font-medium">
+                    {cat.name}
+                    {categoryUsage[cat.name] > 0 && (
+                      <span className="ml-2 text-xs font-normal text-slate-400">{categoryUsage[cat.name]} тов.</span>
+                    )}
+                  </span>
+                  <button onClick={() => deleteCategory(cat.id, cat.name)} className="text-slate-600 hover:text-slate-700">
                     Удалить
                   </button>
                 </div>
@@ -150,8 +185,13 @@ export default function CategoriesPage() {
             <div className="flex flex-wrap gap-2">
               {years.map((year) => (
                 <div key={year.id} className="inline-flex items-center gap-2 px-3 py-1 bg-amber-100 text-amber-900 rounded-full">
-                  <span>{year.name}</span>
-                  <button onClick={() => deleteYear(year.id)} className="text-amber-700 hover:text-amber-900">
+                  <span>
+                    {year.name}
+                    {yearUsage[year.name] > 0 && (
+                      <span className="ml-1 text-xs text-amber-700/70">({yearUsage[year.name]})</span>
+                    )}
+                  </span>
+                  <button onClick={() => deleteYear(year.id, year.name)} className="text-amber-700 hover:text-amber-900">
                     ×
                   </button>
                 </div>

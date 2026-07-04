@@ -71,10 +71,10 @@ export default function AnalyticsPage() {
 
     setTopProducts(topProds)
 
-    // Популярные бренды — вычисляем из списка товаров
+    // Популярные бренды — вычисляем из активных (неархивных) товаров
     const brandStats: Record<string, number> = {}
     products?.forEach((p: any) => {
-      if (p.brand) brandStats[p.brand] = (brandStats[p.brand] || 0) + 1
+      if (p.brand && !p.is_archived) brandStats[p.brand] = (brandStats[p.brand] || 0) + 1
     })
 
     const brandsArray = Object.entries(brandStats)

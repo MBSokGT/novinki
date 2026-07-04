@@ -519,7 +519,7 @@ export default function AdminPage() {
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         {/* Меню функций */}
-        <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <Link href="/admin/analytics" className="group p-3 bg-white rounded-xl shadow-lg border border-slate-200 hover:shadow-xl hover:border-slate-200 transition-all duration-300 text-center transform hover:-translate-y-1">
             <div className="mb-1 flex justify-center text-[#9B1B1B] group-hover:scale-110 transition-transform duration-300">
               <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
@@ -540,13 +540,6 @@ export default function AdminPage() {
             </div>
             <div className="font-bold text-slate-800 group-hover:text-slate-800 transition-colors">Пользователи</div>
             <div className="text-sm text-slate-500 mt-1">Сотрудники и админы</div>
-          </Link>
-          <Link href="/admin/archive" className="group p-3 bg-white rounded-xl shadow-lg border border-slate-200 hover:shadow-xl hover:border-slate-200 transition-all duration-300 text-center transform hover:-translate-y-1">
-            <div className="mb-1 flex justify-center text-[#9B1B1B] group-hover:scale-110 transition-transform duration-300">
-              <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 01-2-2V4a2 2 0 012-2h14a2 2 0 012 2v2a2 2 0 01-2 2M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
-            </div>
-            <div className="font-bold text-slate-800 group-hover:text-slate-800 transition-colors">Архив</div>
-            <div className="text-sm text-slate-500 mt-1">Архивные записи</div>
           </Link>
           <Link href="/admin/requests" className="group p-3 bg-white rounded-xl shadow-lg border border-slate-200 hover:shadow-xl hover:border-slate-200 transition-all duration-300 text-center transform hover:-translate-y-1">
             <div className="mb-1 flex justify-center text-[#9B1B1B] group-hover:scale-110 transition-transform duration-300">

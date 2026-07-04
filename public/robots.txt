@@ -1,8 +1,8 @@
 User-agent: *
 Allow: /
-Allow: /login
 Disallow: /admin
 Disallow: /api
+Disallow: /login
 Disallow: /reset-password
 
-Sitemap: https://your-domain.com/sitemap.xml
+Sitemap: https://cbdigest.duckdns.org/novinki/sitemap.xml

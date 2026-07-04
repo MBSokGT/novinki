@@ -20,6 +20,7 @@ export default function RequestsPage() {
   const [requests, setRequests] = useState<ProductRequest[]>([])
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'delivered'>('all')
   const router = useRouter()
 
   useEffect(() => {
@@ -58,6 +59,22 @@ export default function RequestsPage() {
     showToast('Запрос удалён', 'success')
   }
 
+  const toggleDelivered = async (request: ProductRequest) => {
+    const { error } = await apiClient.from('requests').update({ delivered: !request.delivered }).eq('id', request.id)
+    if (error) {
+      showToast('Ошибка обновления статуса', 'error')
+      return
+    }
+    setRequests((prev) => prev.map((r) => (r.id === request.id ? { ...r, delivered: !r.delivered } : r)))
+    showToast(request.delivered ? 'Отмечено как необработанное' : 'Отмечено как обработанное', 'success')
+  }
+
+  const filteredRequests = requests.filter((request) => {
+    if (statusFilter === 'pending') return !request.delivered
+    if (statusFilter === 'delivered') return request.delivered
+    return true
+  })
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -85,15 +102,33 @@ export default function RequestsPage() {
       </nav>
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+        <div className="mb-4 flex gap-2">
+          {([
+            ['all', 'Все'],
+            ['pending', 'Не доставлено'],
+            ['delivered', 'Доставлено'],
+          ] as const).map(([value, label]) => (
+            <button
+              key={value}
+              onClick={() => setStatusFilter(value)}
+              className={`px-3 py-1.5 text-sm font-medium rounded-lg transition ${statusFilter === value ? 'bg-[#9B1B1B] text-white' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
           <div className="lg:hidden divide-y divide-slate-100">
-            {requests.map((request) => (
+            {filteredRequests.map((request) => (
               <div key={request.id} className="space-y-2 p-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="break-words font-medium text-slate-900">{request.product}</div>
-                  <span className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${request.delivered ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-600'}`}>
+                  <button
+                    onClick={() => toggleDelivered(request)}
+                    className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium transition ${request.delivered ? 'bg-green-100 text-green-800 hover:bg-green-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                  >
                     {request.delivered ? 'Доставлено' : 'Не доставлено'}
-                  </span>
+                  </button>
                 </div>
                 {request.article && <div className="text-sm text-slate-500">Артикул: {request.article}</div>}
                 <div className="text-sm text-slate-600">{request.name}</div>
@@ -107,21 +142,30 @@ export default function RequestsPage() {
           <table className="hidden w-full table-fixed lg:table">
             <thead className="bg-slate-50">
               <tr>
-                <th className="w-[24%] px-4 py-4 text-left text-sm font-semibold">Имя</th>
-                <th className="w-[30%] px-4 py-4 text-left text-sm font-semibold">Товар</th>
-                <th className="w-[14%] px-4 py-4 text-left text-sm font-semibold">Артикул</th>
-                <th className="w-[16%] px-4 py-4 text-left text-sm font-semibold">Дата</th>
-                <th className="w-[16%] px-4 py-4 text-right text-sm font-semibold">Действия</th>
+                <th className="w-[20%] px-4 py-4 text-left text-sm font-semibold">Имя</th>
+                <th className="w-[26%] px-4 py-4 text-left text-sm font-semibold">Товар</th>
+                <th className="w-[12%] px-4 py-4 text-left text-sm font-semibold">Артикул</th>
+                <th className="w-[14%] px-4 py-4 text-left text-sm font-semibold">Дата</th>
+                <th className="w-[14%] px-4 py-4 text-left text-sm font-semibold">Статус</th>
+                <th className="w-[14%] px-4 py-4 text-right text-sm font-semibold">Действия</th>
               </tr>
             </thead>
             <tbody className="divide-y">
-              {requests.map((request) => (
+              {filteredRequests.map((request) => (
                 <tr key={request.id} className="hover:bg-slate-50">
                   <td className="break-words px-4 py-4 font-medium">{request.name}</td>
                   <td className="break-words px-4 py-4">{request.product}</td>
                   <td className="break-words px-4 py-4 text-sm text-slate-500">{request.article || '—'}</td>
                   <td className="px-4 py-4 text-sm text-slate-600">
                     {new Date(request.created_at).toLocaleDateString('ru-RU')}
+                  </td>
+                  <td className="px-4 py-4">
+                    <button
+                      onClick={() => toggleDelivered(request)}
+                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium transition ${request.delivered ? 'bg-green-100 text-green-800 hover:bg-green-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                    >
+                      {request.delivered ? 'Доставлено' : 'Не доставлено'}
+                    </button>
                   </td>
                   <td className="px-4 py-4 text-right">
                     <button onClick={() => removeRequest(request.id)} className="text-slate-600 hover:text-slate-700 font-medium">
@@ -132,9 +176,9 @@ export default function RequestsPage() {
               ))}
             </tbody>
           </table>
-          {requests.length === 0 && (
+          {filteredRequests.length === 0 && (
             <div className="text-center py-12 text-slate-400">
-              Запросов пока нет
+              {requests.length === 0 ? 'Запросов пока нет' : 'Нет запросов с таким статусом'}
             </div>
           )}
         </div>

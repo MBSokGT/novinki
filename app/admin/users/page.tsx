@@ -24,6 +24,10 @@ export default function UsersPage() {
   const [newEmail, setNewEmail] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [creating, setCreating] = useState(false)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [resetTarget, setResetTarget] = useState<{ userId: string; email: string } | null>(null)
+  const [resetPasswordValue, setResetPasswordValue] = useState('')
+  const [resetSaving, setResetSaving] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -44,6 +48,7 @@ export default function UsersPage() {
     }
 
     setIsAdmin(true)
+    setCurrentUserId(user.id)
     fetchUsers()
   }
 
@@ -88,6 +93,11 @@ export default function UsersPage() {
   }
 
   const toggleAdmin = async (userId: string, currentStatus: boolean) => {
+    if (userId === currentUserId && currentStatus) {
+      showToast('Нельзя снять админку с самого себя', 'error')
+      return
+    }
+
     await apiClient
       .from('user_profiles')
       .update({ is_admin: !currentStatus })
@@ -96,20 +106,30 @@ export default function UsersPage() {
     fetchUsers()
   }
 
-  const resetPassword = async (userId: string, email: string) => {
-    const password = prompt(`Новый пароль для ${email} (мин. 8 символов):`)
-    if (!password) return
-    if (password.length < 8) {
+  const openResetPassword = (userId: string, email: string) => {
+    setResetTarget({ userId, email })
+    setResetPasswordValue('')
+  }
+
+  const submitResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!resetTarget || resetSaving) return
+    if (resetPasswordValue.length < 8) {
       showToast('Пароль должен быть не короче 8 символов', 'error')
       return
     }
 
+    setResetSaving(true)
     try {
-      const { error } = await apiClient.auth.adminSetUserPassword({ userId, password })
+      const { error } = await apiClient.auth.adminSetUserPassword({ userId: resetTarget.userId, password: resetPasswordValue })
       if (error) throw new Error(error.message)
       showToast('Пароль обновлён', 'success')
+      setResetTarget(null)
+      setResetPasswordValue('')
     } catch (error: any) {
       showToast(error?.message || 'Ошибка при смене пароля', 'error')
+    } finally {
+      setResetSaving(false)
     }
   }
 
@@ -265,7 +285,9 @@ export default function UsersPage() {
                     <td className="px-6 py-4 text-center space-x-2">
                       <button
                         onClick={() => toggleAdmin(user.id, user.is_admin)}
-                        className={`px-3 py-1 rounded-lg text-sm font-medium transition ${
+                        disabled={user.id === currentUserId && user.is_admin}
+                        title={user.id === currentUserId && user.is_admin ? 'Нельзя снять админку с самого себя' : undefined}
+                        className={`px-3 py-1 rounded-lg text-sm font-medium transition disabled:opacity-40 disabled:cursor-not-allowed ${
                           user.is_admin
                             ? 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                             : 'bg-purple-600 text-white hover:bg-purple-700'
@@ -284,7 +306,7 @@ export default function UsersPage() {
                         {user.is_blocked ? 'Разблокировать' : 'Заблокировать'}
                       </button>
                       <button
-                        onClick={() => resetPassword(user.id, user.email)}
+                        onClick={() => openResetPassword(user.id, user.email)}
                         className="px-3 py-1 rounded-lg text-sm font-medium bg-amber-100 text-amber-800 hover:bg-amber-200 transition"
                       >
                         Сменить пароль
@@ -297,6 +319,44 @@ export default function UsersPage() {
           </div>
         </div>
       </main>
+
+      {resetTarget && (
+        <div onClick={() => !resetSaving && setResetTarget(null)} className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl max-w-sm w-full shadow-2xl p-6">
+            <h2 className="text-lg font-bold text-slate-900 mb-1">Сменить пароль</h2>
+            <p className="text-sm text-slate-500 mb-4">{resetTarget.email}</p>
+            <form onSubmit={submitResetPassword} className="space-y-4">
+              <input
+                type="password"
+                autoFocus
+                placeholder="Новый пароль (мин. 8 символов)"
+                value={resetPasswordValue}
+                onChange={(e) => setResetPasswordValue(e.target.value)}
+                minLength={8}
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition"
+                required
+              />
+              <div className="flex gap-3">
+                <button
+                  type="submit"
+                  disabled={resetSaving}
+                  className="flex-1 px-4 py-2.5 bg-[#9B1B1B] text-white rounded-xl hover:bg-[#7A1515] transition font-medium disabled:opacity-60"
+                >
+                  {resetSaving ? 'Сохранение...' : 'Сохранить'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setResetTarget(null)}
+                  disabled={resetSaving}
+                  className="px-4 py-2.5 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition font-medium"
+                >
+                  Отмена
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
