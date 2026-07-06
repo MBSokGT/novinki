@@ -1,18 +1,24 @@
 services:
   novinki-app:
-    build: .
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_BASE_PATH: ""
+        NEXT_PUBLIC_STORAGE_DRIVER: "filesystem"
     restart: unless-stopped
     ports:
       - "3000:3000"
     volumes:
       - novinki-data:/app/data
+      - novinki-uploads:/app/uploads
+    env_file:
+      - .env
     environment:
-      NEXT_PUBLIC_DEMO_MODE: "false"
-      SINGLE_ADMIN_MODE: "true"
-      APP_URL: "https://your-domain.example/reset-password"
-      ENCRYPTION_KEY: "${ENCRYPTION_KEY}"
+      NODE_ENV: production
       SQLITE_DB_PATH: /app/data/novinki.db
-      NEXT_PUBLIC_BASE_PATH: ""
+      UPLOAD_DIR: /app/uploads
+      NEXT_PUBLIC_STORAGE_DRIVER: filesystem
 
 volumes:
   novinki-data:
+  novinki-uploads:
