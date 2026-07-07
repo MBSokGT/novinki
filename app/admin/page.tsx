@@ -720,8 +720,8 @@ export default function AdminPage() {
               <textarea placeholder="Например: Натуральные ингредиенты, без ГМО. Универсален — работает в латте, лимонадах и коктейлях." value={form.advantages} onChange={(e) => setForm({...form, advantages: e.target.value})} onInput={autoResize} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" style={{resize: 'none', overflow: 'hidden', minHeight: '80px'}} required />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">На что обратить внимание <span className="text-red-500">*</span> <span className="text-slate-400 font-normal">— особенности хранения, применения, совместимости</span></label>
-              <textarea placeholder="Например: Хранить при t +5…+25°C. После вскрытия — в холодильнике, использовать в течение 30 дней." value={form.attention_points} onChange={(e) => setForm({...form, attention_points: e.target.value})} onInput={autoResize} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" style={{resize: 'none', overflow: 'hidden', minHeight: '80px'}} required />
+              <label className="block text-xs font-medium text-slate-500 mb-1">На что обратить внимание <span className="text-slate-400 font-normal">— особенности хранения, применения, совместимости</span></label>
+              <textarea placeholder="Например: Хранить при t +5…+25°C. После вскрытия — в холодильнике, использовать в течение 30 дней." value={form.attention_points} onChange={(e) => setForm({...form, attention_points: e.target.value})} onInput={autoResize} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" style={{resize: 'none', overflow: 'hidden', minHeight: '80px'}} />
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">Ссылка на сайт поставщика <span className="text-slate-400 font-normal">(если есть)</span></label>
