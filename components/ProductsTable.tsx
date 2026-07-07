@@ -805,6 +805,7 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
                   </div>
                   <p className="text-green-800 leading-relaxed">{selectedProduct.advantages}</p>
                 </div>
+                {selectedProduct.attention_points && (
                 <div className="bg-slate-100 rounded-xl p-5 border border-slate-200">
                   <div className="flex items-center gap-2 mb-2">
                     <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
@@ -812,6 +813,7 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
                   </div>
                   <p className="text-slate-700 leading-relaxed">{selectedProduct.attention_points}</p>
                 </div>
+                )}
                 {(selectedProduct.website_link || selectedProduct.flyer_url) && (
                   <div className="bg-blue-50 rounded-xl p-5 border border-blue-100">
                     <div className="flex items-center gap-2 mb-3">
