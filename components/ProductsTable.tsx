@@ -283,7 +283,7 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
   const fetchProductsMeta = async () => {
     let query = apiClient
       .from('products')
-      .select('id, name, brand, category, year, article_number, price, image_url, description, advantages')
+      .select('id, name, brand, category, year, article_number, image_url, description, advantages')
     if (!isAdmin) query = query.eq('is_archived', false)
     query = query.order('created_at', { ascending: false })
     const { data } = await query
@@ -361,7 +361,6 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
     }
 
     const currentSizes = extractSizes((product.description || '') + ' ' + (product.advantages || ''))
-    const currentPrice = product.price || 0
 
     // Вычисляем score похожести для каждого товара (работаем с полным мета-списком)
     const scored = productsMeta
@@ -369,7 +368,6 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
       .map(p => {
         let score = 0
         const pSizes = extractSizes(p.description + ' ' + p.advantages)
-        const pPrice = p.price || 0
 
         // Та же категория И бренд = +10
         if (p.category === product.category && p.brand === product.brand) score += 10
@@ -377,13 +375,6 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
         else if (p.category === product.category) score += 5
         // Тот же бренд = +3
         else if (p.brand === product.brand) score += 3
-
-        // Похожая цена (±30%) = +4
-        if (currentPrice > 0 && pPrice > 0) {
-          const priceDiff = Math.abs(pPrice - currentPrice) / currentPrice
-          if (priceDiff <= 0.3) score += 4
-          else if (priceDiff <= 0.5) score += 2
-        }
 
         // Совпадающие размеры = +2 за каждый
         const matchingSizes = currentSizes.filter(s => pSizes.includes(s)).length
@@ -433,7 +424,7 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
   const handleExport = async () => {
     let query = apiClient
       .from('products')
-      .select('name,brand,article_number,category,year,price,description,advantages,attention_points,website_link,is_supplier_novelty,is_dishwasher_safe,is_microwave_safe,temp_min,temp_max')
+      .select('name,brand,article_number,category,year,description,advantages,attention_points,website_link,is_supplier_novelty,is_dishwasher_safe,is_microwave_safe,temp_min,temp_max')
     if (!isAdmin) query = query.eq('is_archived', false)
     if (selectedBrand) query = query.eq('brand', selectedBrand)
     if (selectedCategory) query = query.eq('category', selectedCategory)

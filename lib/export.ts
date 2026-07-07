@@ -8,7 +8,6 @@ export function exportProductsToExcel(products: Product[], filename = 'novinki.x
     'Артикул': p.article_number || '',
     'Категория': p.category || '',
     'Год': p.year || '',
-    'Цена': p.price ?? '',
     'Описание': p.description,
     'Преимущества': p.advantages,
     'На что обратить внимание': p.attention_points,

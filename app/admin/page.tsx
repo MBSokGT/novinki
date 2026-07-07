@@ -19,7 +19,6 @@ const EMPTY_FORM = {
   advantages: '',
   attention_points: '',
   website_link: '',
-  price: '',
   category: '',
   year: '',
   is_supplier_novelty: false,
@@ -46,8 +45,24 @@ export default function AdminPage() {
   const [submitLoading, setSubmitLoading] = useState(false)
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null) // null = загрузка, false = не админ, true = админ
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [catInput, setCatInput] = useState('')
+  const [showCatDrop, setShowCatDrop] = useState(false)
   const router = useRouter()
   const formRef = useRef<HTMLFormElement>(null)
+
+  const autoResize = (e: React.FormEvent<HTMLTextAreaElement>) => {
+    const el = e.currentTarget
+    el.style.height = 'auto'
+    el.style.height = el.scrollHeight + 'px'
+  }
+
+  useEffect(() => {
+    if (!formRef.current) return
+    formRef.current.querySelectorAll('textarea').forEach((el) => {
+      el.style.height = 'auto'
+      el.style.height = el.scrollHeight + 'px'
+    })
+  }, [editId])
 
   useEffect(() => {
     let cancelled = false
@@ -136,6 +151,26 @@ export default function AdminPage() {
     if (data) setYears(data)
   }
 
+  const addCategoryInline = async (name: string) => {
+    const trimmed = name.trim()
+    if (!trimmed) return
+    const existing = categories.find((c) => c.name.toLowerCase() === trimmed.toLowerCase())
+    if (existing) {
+      setForm((prev) => ({ ...prev, category: existing.name }))
+      setCatInput(existing.name)
+      setShowCatDrop(false)
+      return
+    }
+    const { data, error } = await apiClient.from('categories').insert([{ name: trimmed }]).select()
+    if (!error && data?.[0]) {
+      setCategories((prev) => [...prev, data[0]].sort((a, b) => a.name.localeCompare(b.name, 'ru')))
+      setForm((prev) => ({ ...prev, category: data[0].name }))
+      setCatInput(data[0].name)
+      showToast(`Категория «${data[0].name}» добавлена`, 'success')
+    }
+    setShowCatDrop(false)
+  }
+
   const normalizeLink = (link?: string) => {
     const trimmed = (link || '').trim()
     if (!trimmed) return ''
@@ -149,6 +184,7 @@ export default function AdminPage() {
     setNewImages([])
     setFlyer(null)
     setEditId(null)
+    setCatInput('')
     if (typeof window !== 'undefined') {
       window.localStorage.removeItem(ADMIN_DRAFT_KEY)
     }
@@ -208,9 +244,8 @@ export default function AdminPage() {
     is_supplier_novelty: form.is_supplier_novelty,
     is_dishwasher_safe: form.is_dishwasher_safe,
     is_microwave_safe: form.is_microwave_safe,
-    temp_min: isTemperatureCategory(form.category) && form.temp_min ? parseFloat(form.temp_min) : null,
-    temp_max: isTemperatureCategory(form.category) && form.temp_max ? parseFloat(form.temp_max) : null,
-    price: form.price ? parseFloat(form.price) : null,
+    temp_min: form.temp_min ? parseFloat(form.temp_min) : null,
+    temp_max: form.temp_max ? parseFloat(form.temp_max) : null,
     images,
     image_url: images[0] || '',
     flyer_url: flyerUrl || (editId ? products.find(p => p.id === editId)?.flyer_url : ''),
@@ -257,6 +292,7 @@ export default function AdminPage() {
   }
 
   const handleEdit = (product: Product) => {
+    const cat = (product as any).category || ''
     setForm({
       name: product.name,
       brand: product.brand,
@@ -265,8 +301,7 @@ export default function AdminPage() {
       advantages: product.advantages,
       attention_points: product.attention_points,
       website_link: product.website_link || '',
-      price: product.price != null ? String(product.price) : '',
-      category: (product as any).category || '',
+      category: cat,
       year: product.year || '',
       is_supplier_novelty: Boolean(product.is_supplier_novelty),
       is_dishwasher_safe: Boolean(product.is_dishwasher_safe),
@@ -274,6 +309,7 @@ export default function AdminPage() {
       temp_min: product.temp_min != null ? String(product.temp_min) : '',
       temp_max: product.temp_max != null ? String(product.temp_max) : '',
     })
+    setCatInput(cat)
     setExistingImages(product.images?.length ? product.images : (product.image_url ? [product.image_url] : []))
     setNewImages([])
     setFlyer(null)
@@ -303,7 +339,6 @@ export default function AdminPage() {
         website_link: product.website_link || '',
         category: (product as any).category || '',
         year: product.year || '',
-        price: product.price ?? null,
         is_archived: false,
         is_supplier_novelty: Boolean(product.is_supplier_novelty),
         is_dishwasher_safe: Boolean(product.is_dishwasher_safe),
@@ -561,80 +596,137 @@ export default function AdminPage() {
             </div>
             <h2 className="text-xl font-bold text-slate-800 sm:text-2xl">{editId ? 'Редактировать новинку' : 'Добавить новинку'}</h2>
           </div>
-          <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
+          <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">
+            {/* Основные поля */}
             <div className="grid gap-4 lg:grid-cols-3">
-              <input type="text" placeholder="Название" value={form.name} onChange={(e) => setForm({...form, name: e.target.value})} className="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" required />
-              <input type="text" placeholder="Бренд" value={form.brand} onChange={(e) => setForm({...form, brand: e.target.value})} className="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" required />
-              <input type="text" placeholder="Артикул" value={form.article_number} onChange={(e) => setForm({...form, article_number: e.target.value})} className="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" />
-            </div>
-            <div className="grid gap-4 lg:grid-cols-3">
-              <input type="number" min="0" step="0.01" placeholder="Цена (руб.)" value={form.price} onChange={(e) => setForm({...form, price: e.target.value})} className="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" />
-              <select value={form.category} onChange={(e) => setForm({...form, category: e.target.value})} className="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition bg-white">
-                <option value="">Категория...</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.name}>{cat.name}</option>
-                ))}
-              </select>
-              <select value={form.year} onChange={(e) => setForm({...form, year: e.target.value})} className="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition bg-white">
-                <option value="">Год...</option>
-                {years.map((year) => (
-                  <option key={year.id} value={year.name}>{year.name}</option>
-                ))}
-              </select>
-            </div>
-            <label className="flex items-center gap-2 px-4 py-3 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition w-fit">
-              <input
-                type="checkbox"
-                checked={form.is_supplier_novelty}
-                onChange={(e) => setForm({ ...form, is_supplier_novelty: e.target.checked })}
-                className="w-4 h-4 accent-[#9B1B1B]"
-              />
-              <span className="text-sm font-medium text-slate-700">Это новинка поставщика</span>
-            </label>
-            <div className="flex flex-wrap gap-3">
-              <label className="flex items-center gap-2 px-4 py-3 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition w-fit">
-                <input
-                  type="checkbox"
-                  checked={form.is_dishwasher_safe}
-                  onChange={(e) => setForm({ ...form, is_dishwasher_safe: e.target.checked })}
-                  className="w-4 h-4 accent-[#9B1B1B]"
-                />
-                <span className="text-sm font-medium text-slate-700">Можно мыть в посудомоечной машине</span>
-              </label>
-              <label className="flex items-center gap-2 px-4 py-3 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition w-fit">
-                <input
-                  type="checkbox"
-                  checked={form.is_microwave_safe}
-                  onChange={(e) => setForm({ ...form, is_microwave_safe: e.target.checked })}
-                  className="w-4 h-4 accent-[#9B1B1B]"
-                />
-                <span className="text-sm font-medium text-slate-700">Можно использовать в микроволновой печи</span>
-              </label>
-            </div>
-            {isTemperatureCategory(form.category) && (
-              <div className="grid gap-4 sm:grid-cols-2">
-                <input
-                  type="number"
-                  step="0.1"
-                  placeholder="Температура от, °C"
-                  value={form.temp_min}
-                  onChange={(e) => setForm({ ...form, temp_min: e.target.value })}
-                  className="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition"
-                />
-                <input
-                  type="number"
-                  step="0.1"
-                  placeholder="Температура до, °C"
-                  value={form.temp_max}
-                  onChange={(e) => setForm({ ...form, temp_max: e.target.value })}
-                  className="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition"
-                />
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Название товара <span className="text-red-500">*</span></label>
+                <input type="text" placeholder="Например: Сироп Лесная ягода 1 л" value={form.name} onChange={(e) => setForm({...form, name: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" required />
               </div>
-            )}
-            <textarea placeholder="Описание" value={form.description} onChange={(e) => setForm({...form, description: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" rows={2} required />
-            <textarea placeholder="Преимущества" value={form.advantages} onChange={(e) => setForm({...form, advantages: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" rows={2} required />
-            <textarea placeholder="На что обратить внимание" value={form.attention_points} onChange={(e) => setForm({...form, attention_points: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" rows={2} required />
-            <input type="text" placeholder="Ссылка на товар на сайте" value={form.website_link} onChange={(e) => setForm({...form, website_link: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" />
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Бренд / производитель <span className="text-red-500">*</span></label>
+                <input type="text" placeholder="Например: Monin" value={form.brand} onChange={(e) => setForm({...form, brand: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" required />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Артикул <span className="text-slate-400 font-normal">(если есть)</span></label>
+                <input type="text" placeholder="Например: MON-1234" value={form.article_number} onChange={(e) => setForm({...form, article_number: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" />
+              </div>
+            </div>
+
+            {/* Категория + год */}
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Категория</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={catInput}
+                    onFocus={() => setShowCatDrop(true)}
+                    onChange={(e) => {
+                      setCatInput(e.target.value)
+                      setForm((prev) => ({ ...prev, category: '' }))
+                      setShowCatDrop(true)
+                    }}
+                    onBlur={() => setTimeout(() => setShowCatDrop(false), 150)}
+                    placeholder="Поиск или выбор категории..."
+                    className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition ${form.category ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200'}`}
+                  />
+                  {form.category && (
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-600">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    </span>
+                  )}
+                  {showCatDrop && (
+                    <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-52 overflow-y-auto">
+                      {categories
+                        .filter((c) => !catInput || c.name.toLowerCase().includes(catInput.toLowerCase()))
+                        .map((cat) => (
+                          <button
+                            key={cat.id}
+                            type="button"
+                            onMouseDown={() => {
+                              setForm((prev) => ({ ...prev, category: cat.name }))
+                              setCatInput(cat.name)
+                              setShowCatDrop(false)
+                            }}
+                            className={`w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 transition ${form.category === cat.name ? 'text-[#9B1B1B] font-medium bg-red-50' : 'text-slate-700'}`}
+                          >
+                            {cat.name}
+                          </button>
+                        ))}
+                      {catInput && !categories.some((c) => c.name.toLowerCase() === catInput.toLowerCase()) && (
+                        <button
+                          type="button"
+                          onMouseDown={() => addCategoryInline(catInput)}
+                          className="w-full text-left px-4 py-2.5 text-sm text-[#9B1B1B] font-medium hover:bg-red-50 transition flex items-center gap-2 border-t border-slate-100"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                          Добавить «{catInput}»
+                        </button>
+                      )}
+                      {!catInput && categories.length === 0 && (
+                        <div className="px-4 py-3 text-sm text-slate-400">Нет категорий — введите название для создания</div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Год поставки</label>
+                <select value={form.year} onChange={(e) => setForm({...form, year: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition bg-white">
+                  <option value="">Выберите год...</option>
+                  {years.map((year) => (
+                    <option key={year.id} value={year.name}>{year.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Чекбоксы */}
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-2">Особенности</label>
+              <div className="flex flex-wrap gap-3">
+                <label className="flex items-center gap-2 px-4 py-3 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition w-fit">
+                  <input type="checkbox" checked={form.is_supplier_novelty} onChange={(e) => setForm({ ...form, is_supplier_novelty: e.target.checked })} className="w-4 h-4 accent-[#9B1B1B]" />
+                  <span className="text-sm font-medium text-slate-700">Новинка поставщика</span>
+                </label>
+                <label className="flex items-center gap-2 px-4 py-3 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition w-fit">
+                  <input type="checkbox" checked={form.is_dishwasher_safe} onChange={(e) => setForm({ ...form, is_dishwasher_safe: e.target.checked })} className="w-4 h-4 accent-[#9B1B1B]" />
+                  <span className="text-sm font-medium text-slate-700">ПММ (можно мыть в посудомоечной)</span>
+                </label>
+                <label className="flex items-center gap-2 px-4 py-3 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition w-fit">
+                  <input type="checkbox" checked={form.is_microwave_safe} onChange={(e) => setForm({ ...form, is_microwave_safe: e.target.checked })} className="w-4 h-4 accent-[#9B1B1B]" />
+                  <span className="text-sm font-medium text-slate-700">СВЧ (можно в микроволновой печи)</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Температура — для всех продуктов питания */}
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Температура хранения / применения <span className="text-slate-400 font-normal">(если указано на упаковке)</span></label>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <input type="number" step="0.1" placeholder="от, °C (например: -18)" value={form.temp_min} onChange={(e) => setForm({ ...form, temp_min: e.target.value })} className="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" />
+                <input type="number" step="0.1" placeholder="до, °C (например: +25)" value={form.temp_max} onChange={(e) => setForm({ ...form, temp_max: e.target.value })} className="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" />
+              </div>
+            </div>
+
+            {/* Текстовые поля */}
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Описание <span className="text-red-500">*</span> <span className="text-slate-400 font-normal">— объём, упаковка, вкус, применение</span></label>
+              <textarea placeholder="Например: Сироп 1 л, пластик. Спелая клубника с ягодной кислинкой + сливочно-ванильные ноты пломбира. Подходит для горячих и холодных напитков." value={form.description} onChange={(e) => setForm({...form, description: e.target.value})} onInput={autoResize} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" style={{resize: 'none', overflow: 'hidden', minHeight: '80px'}} required />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Преимущества <span className="text-red-500">*</span> <span className="text-slate-400 font-normal">— почему стоит попробовать, чем выделяется</span></label>
+              <textarea placeholder="Например: Натуральные ингредиенты, без ГМО. Универсален — работает в латте, лимонадах и коктейлях." value={form.advantages} onChange={(e) => setForm({...form, advantages: e.target.value})} onInput={autoResize} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" style={{resize: 'none', overflow: 'hidden', minHeight: '80px'}} required />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">На что обратить внимание <span className="text-red-500">*</span> <span className="text-slate-400 font-normal">— особенности хранения, применения, совместимости</span></label>
+              <textarea placeholder="Например: Хранить при t +5…+25°C. После вскрытия — в холодильнике, использовать в течение 30 дней." value={form.attention_points} onChange={(e) => setForm({...form, attention_points: e.target.value})} onInput={autoResize} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" style={{resize: 'none', overflow: 'hidden', minHeight: '80px'}} required />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Ссылка на сайт поставщика <span className="text-slate-400 font-normal">(если есть)</span></label>
+              <input type="text" placeholder="Например: monin.com/ru или https://..." value={form.website_link} onChange={(e) => setForm({...form, website_link: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" />
+            </div>
             <div className="space-y-2">
               {(existingImages.length > 0 || newImages.length > 0) && (
                 <div className="flex flex-wrap gap-2">
