@@ -25,8 +25,6 @@ interface FilterBarProps {
   setViewMode: (mode: 'table' | 'cards') => void
   activeFiltersCount: number
   totalCount: number
-  currentPage: number
-  totalPages: number
   onClearFilters: () => void
 }
 
@@ -53,8 +51,6 @@ export default function FilterBar({
   setViewMode,
   activeFiltersCount,
   totalCount,
-  currentPage,
-  totalPages,
   onClearFilters,
 }: FilterBarProps) {
   const categories = Array.from(new Set(products.map(p => p.category).filter(Boolean)))
@@ -169,9 +165,6 @@ export default function FilterBar({
         <div className="flex items-center gap-2 sm:gap-3">
           <p className="text-xs text-slate-500 whitespace-nowrap">
             <span className="font-semibold text-slate-700">{totalCount}</span> товаров
-            {totalPages > 1 && (
-              <span className="ml-1.5 text-slate-400">· стр. {currentPage}/{totalPages}</span>
-            )}
           </p>
           <div className="flex gap-1">
             <button onClick={() => setViewMode('cards')} className={`p-1.5 sm:p-2 rounded-lg transition-all ${viewMode === 'cards' ? 'bg-[#9B1B1B] text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`} title="Карточки">

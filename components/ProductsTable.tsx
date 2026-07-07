@@ -21,7 +21,6 @@ interface ProductsTableProps {
   onExportReady?: (exportFn: () => void) => void
 }
 
-const ITEMS_PER_PAGE = 30
 const VIEW_MODE_KEY = 'novinki:viewMode'
 const SORT_BY_KEY = 'novinki:sortBy'
 const CATEGORY_KEY = 'novinki:selectedCategory'
@@ -31,18 +30,15 @@ const DISHWASHER_SAFE_KEY = 'novinki:dishwasherSafeOnly'
 const MICROWAVE_SAFE_KEY = 'novinki:microwaveSafeOnly'
 
 export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableProps) {
-  // Текущая страница (серверная пагинация)
   const [products, setProducts] = useState<Product[]>([])
   // Лёгкий список всех товаров: автодополнение, категории, похожие товары
   const [productsMeta, setProductsMeta] = useState<Product[]>([])
-  const [totalCount, setTotalCount] = useState(0)
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
-  const [currentPage, setCurrentPage] = useState(1)
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('cards')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [selectedYear, setSelectedYear] = useState<string | null>(null)
@@ -121,9 +117,6 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
     const supplier = searchParams.get('supplier')
     const sort = searchParams.get('sort')
     const view = searchParams.get('view')
-    const pageFromQuery = Number.parseInt(searchParams.get('page') || '1', 10)
-    const page = Number.isFinite(pageFromQuery) && pageFromQuery > 0 ? pageFromQuery : 1
-
     setSearch(q)
     setDebouncedSearch(q)
     setSelectedBrand(brand || null)
@@ -132,7 +125,6 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
     setSupplierNoveltiesOnly(supplier === '1')
     setSortBy(sort === 'name' ? sort : 'date')
     setViewMode(view === 'table' ? 'table' : 'cards')
-    setCurrentPage(page)
     setIsUrlStateReady(true)
   }, [searchParams])
   // Дебаунс поиска: ждём 300мс после последнего символа
@@ -167,16 +159,12 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
     if (viewMode !== 'cards') params.set('view', viewMode)
     else params.delete('view')
 
-    if (currentPage > 1) params.set('page', String(currentPage))
-    else params.delete('page')
-
     const nextQuery = params.toString()
     const currentQuery = searchParams.toString()
     if (nextQuery !== currentQuery) {
       router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false })
     }
   }, [
-    currentPage,
     debouncedSearch,
     isUrlStateReady,
     pathname,
@@ -268,16 +256,9 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
     fetchProductsMeta()
   }, [isAdmin])
 
-  // Сброс на 1-ю страницу при смене фильтров (не при смене самой страницы)
-  useEffect(() => {
-    if (currentPage !== 1) setCurrentPage(1)
-    else fetchProducts()
-  }, [debouncedSearch, selectedBrand, selectedCategory, selectedYear, supplierNoveltiesOnly, dishwasherSafeOnly, microwaveSafeOnly, tempMin, tempMax, sortBy])
-
-  // Загрузка страницы при изменении currentPage
   useEffect(() => {
     fetchProducts()
-  }, [currentPage])
+  }, [debouncedSearch, selectedBrand, selectedCategory, selectedYear, supplierNoveltiesOnly, dishwasherSafeOnly, microwaveSafeOnly, tempMin, tempMax, sortBy])
 
   // Полный список товаров с базовыми полями — для автодополнения и похожих товаров
   const fetchProductsMeta = async () => {
@@ -326,12 +307,8 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
       query = query.order('created_at', { ascending: false })
     }
 
-    const start = (currentPage - 1) * ITEMS_PER_PAGE
-    query = query.range(start, start + ITEMS_PER_PAGE - 1)
-
-    const { data, count } = await query
+    const { data } = await query
     if (data) setProducts(data)
-    setTotalCount(count ?? 0)
     setLoading(false)
   }
 
@@ -406,7 +383,6 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
     setTempMin('')
     setTempMax('')
     setSortBy('date')
-    setCurrentPage(1)
   }
 
   const activeFiltersCount =
@@ -465,8 +441,28 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
       .map(([brand, count]) => ({ brand, count }))
   }, [productsMeta])
 
-  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE)
-  // products уже является текущей страницей, пагинация сделана на сервере
+  // Группировка по годам: текущий год — первым без заголовка, остальные — с красным заголовком
+  const productsByYear = useMemo(() => {
+    const currentYear = new Date().getFullYear().toString()
+    const map = new Map<string, Product[]>()
+    for (const p of products) {
+      const yr = p.year || ''
+      if (!map.has(yr)) map.set(yr, [])
+      map.get(yr)!.push(p)
+    }
+    const sorted = Array.from(map.entries()).sort(([a], [b]) => {
+      if (a === currentYear) return -1
+      if (b === currentYear) return 1
+      // Числовые годы — по убыванию; пустой год — в конец
+      if (!a) return 1
+      if (!b) return -1
+      return b.localeCompare(a)
+    })
+    return { currentYear, groups: sorted }
+  }, [products])
+
+  // Показывать год-разделители только когда нет фильтра по году и есть несколько лет
+  const showYearDividers = !selectedYear && productsByYear.groups.length > 1
 
   if (loading) return <ProductSkeleton viewMode={viewMode} />
 
@@ -503,9 +499,7 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
         viewMode={viewMode}
         setViewMode={setViewMode}
         activeFiltersCount={activeFiltersCount}
-        totalCount={totalCount}
-        currentPage={currentPage}
-        totalPages={totalPages}
+        totalCount={products.length}
         onClearFilters={clearAllFilters}
       />
       
@@ -542,8 +536,18 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
       )}
       
       {viewMode === 'cards' ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {products.map((product, idx) => (
+        <div className="space-y-10">
+          {productsByYear.groups.map(([year, yearProducts]) => (
+            <div key={year}>
+              {showYearDividers && year !== productsByYear.currentYear && (
+                <div className="mb-5 flex items-center gap-4">
+                  <div className="h-px flex-1 bg-slate-200" />
+                  <span className="text-2xl font-extrabold tracking-tight text-[#9B1B1B] select-none">{year || 'Без года'}</span>
+                  <div className="h-px flex-1 bg-slate-200" />
+                </div>
+              )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {yearProducts.map((product, idx) => (
             <div
               key={product.id}
               onClick={() => viewProduct(product)}
@@ -590,12 +594,25 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
               </div>
             </div>
           ))}
+              </div>
+            </div>
+          ))}
         </div>
       ) : (
+        <div className="space-y-10">
+          {productsByYear.groups.map(([year, yearProducts]) => (
+            <div key={year}>
+              {showYearDividers && year !== productsByYear.currentYear && (
+                <div className="mb-5 flex items-center gap-4">
+                  <div className="h-px flex-1 bg-slate-200" />
+                  <span className="text-2xl font-extrabold tracking-tight text-[#9B1B1B] select-none">{year || 'Без года'}</span>
+                  <div className="h-px flex-1 bg-slate-200" />
+                </div>
+              )}
         <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-100">
           {/* Мобильный режим: компактные карточки вместо широкой таблицы */}
           <div className="lg:hidden divide-y divide-slate-100">
-            {products.map((product) => (
+            {yearProducts.map((product) => (
               <div key={product.id} onClick={() => viewProduct(product)} className="flex gap-3 p-4 cursor-pointer hover:bg-slate-50 transition">
                 <div
                   className="relative w-16 h-16 shrink-0 rounded-lg overflow-hidden bg-slate-100"
@@ -646,7 +663,7 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {products.map((product) => (
+                {yearProducts.map((product) => (
                   <tr key={product.id} onClick={() => viewProduct(product)} className="hover:bg-slate-100 group cursor-pointer">
                     <td className="sticky left-0 z-10 bg-white group-hover:bg-slate-100 px-6 py-4">
                       <div
@@ -699,31 +716,12 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
             </table>
           </div>
         </div>
-      )}
-
-      {totalPages > 1 && (
-        <div className="mt-6 flex justify-center items-center gap-2 flex-wrap">
-          <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-4 py-2 rounded-lg bg-white border border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 transition">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-          </button>
-          <div className="flex gap-1 flex-wrap justify-center">
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-              page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1) ? (
-                <button key={page} onClick={() => setCurrentPage(page)} className={`px-4 py-2 rounded-lg transition ${currentPage === page ? 'bg-[#9B1B1B] text-white' : 'bg-white border border-slate-200 hover:bg-slate-50'}`}>
-                  {page}
-                </button>
-              ) : page === currentPage - 2 || page === currentPage + 2 ? (
-                <span key={page} className="px-2 py-2">...</span>
-              ) : null
-            ))}
-          </div>
-          <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="px-4 py-2 rounded-lg bg-white border border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 transition">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-          </button>
+            </div>
+          ))}
         </div>
       )}
 
-      {totalCount === 0 && debouncedSearch && (
+      {products.length === 0 && debouncedSearch && (
         <div className="text-center py-16">
           <svg className="mx-auto h-12 w-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
           <p className="mt-4 text-slate-400 text-lg">Ничего не найдено по запросу "{debouncedSearch}"</p>
@@ -735,7 +733,7 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
           </button>
         </div>
       )}
-      {totalCount === 0 && !debouncedSearch && (
+      {products.length === 0 && !debouncedSearch && (
         <div className="text-center py-16">
           <svg className="mx-auto h-12 w-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" /></svg>
           <p className="mt-4 text-slate-400 text-lg">Новинок пока нет</p>
