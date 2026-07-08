@@ -89,7 +89,12 @@ export default function ExcelImport({ onSuccess }: ExcelImportProps) {
 
       // Импортированные товары попадают как черновики (архив) — публично их
       // не видно, пока админ не проверит карточки и не опубликует вручную.
-      const withImages = valid.map(p => ({ ...p, image_url: p.image_url || '', is_archived: true }))
+      const withImages = valid.map(p => ({
+        ...p,
+        attention_points: p.attention_points || '',
+        image_url: p.image_url || '',
+        is_archived: true,
+      }))
       const { error } = await apiClient.from('products').insert(withImages)
       if (error) throw error
 
