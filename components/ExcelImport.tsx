@@ -80,7 +80,7 @@ export default function ExcelImport({ onSuccess }: ExcelImportProps) {
     setLoading(true)
     try {
       const rows = await parseFile(file)
-      const valid = rows.filter(p => p.name && p.brand && p.description && p.advantages && p.attention_points)
+      const valid = rows.filter(p => p.name && p.brand && p.description && p.advantages)
 
       if (valid.length === 0) {
         showToast('Не найдено валидных товаров. Проверьте формат файла', 'error')
