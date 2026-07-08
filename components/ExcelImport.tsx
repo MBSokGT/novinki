@@ -22,8 +22,13 @@ function mapRow(row: Record<string, any>): Record<string, any> {
     else if (key.includes('описание') || key === 'description') product.description = val
     else if (key.includes('преимущества') || key === 'advantages') product.advantages = val
     else if (key.includes('внимание') || key === 'attention') product.attention_points = val
-    else if (key.includes('цена') || key === 'price') product.price = parseFloat(val) || null
-    else if (key.includes('ссылка') && key.includes('сайт')) product.website_link = val
+    else if (key.includes('год') || key === 'year') product.year = val
+    else if (key.includes('ссылка') || key === 'website_link') product.website_link = val
+    else if (key.includes('новинка поставщика') || key.includes('supplier')) product.is_supplier_novelty = val.toLowerCase() === 'да' || val === '1' || val.toLowerCase() === 'true'
+    else if (key.includes('посудомо') || key.includes('dishwasher')) product.is_dishwasher_safe = val.toLowerCase() === 'да' || val === '1' || val.toLowerCase() === 'true'
+    else if (key.includes('микроволн') || key.includes('microwave')) product.is_microwave_safe = val.toLowerCase() === 'да' || val === '1' || val.toLowerCase() === 'true'
+    else if (key.includes('температура от') || key.includes('temp_min')) product.temp_min = parseFloat(val) || null
+    else if (key.includes('температура до') || key.includes('temp_max')) product.temp_max = parseFloat(val) || null
   }
   return product
 }
@@ -101,7 +106,7 @@ export default function ExcelImport({ onSuccess }: ExcelImportProps) {
   }
 
   const downloadTemplate = () => {
-    const template = `Название,Бренд,Артикул,Категория,Описание,Преимущества,Внимание,Цена,Ссылка на сайт\nПример товара,Бренд А,ART-001,Электроника,Описание товара,Преимущества товара,На что обратить внимание,1500,https://example.com`
+    const template = `Название,Бренд,Артикул,Категория,Год,Описание,Преимущества,Внимание,Ссылка на товар,Новинка поставщика,Можно мыть в посудомоечной машине,Можно использовать в микроволновой печи,Температура от °C,Температура до °C\nПример товара,Бренд А,ART-001,Посуда,2026,Описание товара,Преимущества товара,На что обратить внимание,https://example.com/product,Нет,Да,Нет,,`
     const blob = new Blob(['\ufeff' + template], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
     link.href = URL.createObjectURL(blob)
@@ -134,9 +139,9 @@ export default function ExcelImport({ onSuccess }: ExcelImportProps) {
                 <p className="text-sm text-blue-800 mb-2">Поддерживаемые форматы: <strong>CSV</strong>, <strong>XLSX</strong>, <strong>XLS</strong></p>
                 <p className="text-xs text-blue-700 mb-1">Обязательные колонки:</p>
                 <ul className="text-xs text-blue-700 space-y-0.5 ml-4">
-                  <li>• Название, Бренд, Описание, Преимущества, Внимание</li>
+                  <li>• Название, Бренд, Описание, Преимущества</li>
                 </ul>
-                <p className="text-xs text-blue-700 mt-1">Опционально: Артикул, Категория, Цена, Ссылка на сайт</p>
+                <p className="text-xs text-blue-700 mt-1">Опционально: Артикул, Категория, Год, Ссылка на товар, Новинка поставщика, ПММ, СВЧ, Температура</p>
               </div>
 
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">

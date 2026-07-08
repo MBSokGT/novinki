@@ -467,6 +467,81 @@ export default function AdminPage() {
     )
   }
 
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return
+    if (!confirm(`Переместить выбранные товары (${selectedIds.size}) в корзину?`)) return
+    try {
+      const toDelete = products.filter((p) => selectedIds.has(p.id))
+      for (const product of toDelete) {
+        await apiClient.from('deleted_products').insert({
+          original_product_id: product.id,
+          name: product.name,
+          brand: product.brand,
+          article_number: product.article_number,
+          description: product.description,
+          image_url: product.image_url,
+          images: product.images || [],
+          flyer_url: product.flyer_url,
+          advantages: product.advantages,
+          attention_points: product.attention_points,
+          website_link: product.website_link,
+          category: (product as any).category || '',
+          year: product.year || '',
+          is_supplier_novelty: Boolean(product.is_supplier_novelty),
+          is_dishwasher_safe: Boolean(product.is_dishwasher_safe),
+          is_microwave_safe: Boolean(product.is_microwave_safe),
+          temp_min: product.temp_min ?? null,
+          temp_max: product.temp_max ?? null,
+          deleted_at: new Date().toISOString(),
+        })
+        await apiClient.from('products').delete().eq('id', product.id)
+      }
+      setProducts((prev) => prev.filter((p) => !selectedIds.has(p.id)))
+      setSelectedIds(new Set())
+      showToast(`${toDelete.length} товаров перемещено в корзину`, 'success')
+    } catch (error: any) {
+      showToast(error?.message || 'Ошибка удаления', 'error')
+    }
+  }
+
+  const handleBulkDuplicate = async () => {
+    if (selectedIds.size === 0) return
+    try {
+      const toCopy = products.filter((p) => selectedIds.has(p.id))
+      const copies: Product[] = []
+      for (const product of toCopy) {
+        const images = product.images?.length ? product.images : product.image_url ? [product.image_url] : []
+        const payload = {
+          name: `${product.name} (копия)`,
+          brand: product.brand,
+          article_number: '',
+          description: product.description,
+          images,
+          image_url: images[0] || '',
+          flyer_url: product.flyer_url || '',
+          advantages: product.advantages,
+          attention_points: product.attention_points,
+          website_link: product.website_link || '',
+          category: (product as any).category || '',
+          year: product.year || '',
+          is_archived: false,
+          is_supplier_novelty: Boolean(product.is_supplier_novelty),
+          is_dishwasher_safe: Boolean(product.is_dishwasher_safe),
+          is_microwave_safe: Boolean(product.is_microwave_safe),
+          temp_min: product.temp_min ?? null,
+          temp_max: product.temp_max ?? null,
+        }
+        const { data } = await apiClient.from('products').insert([payload]).select()
+        if (data?.[0]) copies.push(data[0] as Product)
+      }
+      setProducts((prev) => [...copies, ...prev])
+      setSelectedIds(new Set())
+      showToast(`Создано ${copies.length} копий`, 'success')
+    } catch (error: any) {
+      showToast(error?.message || 'Ошибка копирования', 'error')
+    }
+  }
+
   const handleBulkArchive = async () => {
     if (selectedIds.size === 0) return
     if (!confirm(`Архивировать выбранные товары (${selectedIds.size})?`)) return
@@ -552,6 +627,45 @@ export default function AdminPage() {
         </div>
       </nav>
 
+      {/* Sticky bulk-панель */}
+      {selectedIds.size > 0 && (() => {
+        const sel = products.filter((p) => selectedIds.has(p.id))
+        const hasArchived = sel.some((p) => Boolean(p.is_archived))
+        const hasActive = sel.some((p) => !Boolean(p.is_archived))
+        return (
+          <div className="sticky top-0 z-40 bg-[#1A1A1A] border-b border-[#333] shadow-lg">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 py-2.5 flex flex-wrap items-center gap-2 justify-between">
+              <span className="text-white text-sm font-medium shrink-0">Выбрано: {selectedIds.size}</span>
+              <div className="flex flex-wrap gap-2">
+                {hasArchived && (
+                  <button onClick={handleBulkPublish} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    Опубликовать
+                  </button>
+                )}
+                {hasActive && (
+                  <button onClick={handleBulkArchive} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-slate-600 text-white rounded-lg hover:bg-slate-500 transition">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8" /></svg>
+                    Архивировать
+                  </button>
+                )}
+                <button onClick={handleBulkDuplicate} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                  Копировать
+                </button>
+                <button onClick={handleBulkDelete} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#9B1B1B] text-white rounded-lg hover:bg-[#7A1515] transition">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                  Удалить
+                </button>
+                <button onClick={() => setSelectedIds(new Set())} className="px-3 py-1.5 text-xs font-medium bg-white/10 text-white rounded-lg hover:bg-white/20 transition">
+                  Отмена
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         {/* Меню функций */}
         <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -614,7 +728,7 @@ export default function AdminPage() {
             </div>
 
             {/* Категория + год */}
-            <div className="grid gap-4 lg:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">Категория</label>
                 <div className="relative">
@@ -724,7 +838,7 @@ export default function AdminPage() {
               <textarea placeholder="Например: Хранить при t +5…+25°C. После вскрытия — в холодильнике, использовать в течение 30 дней." value={form.attention_points} onChange={(e) => setForm({...form, attention_points: e.target.value})} onInput={autoResize} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" style={{resize: 'none', overflow: 'hidden', minHeight: '80px'}} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Ссылка на сайт поставщика <span className="text-slate-400 font-normal">(если есть)</span></label>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Ссылка на товар <span className="text-slate-400 font-normal">(если есть)</span></label>
               <input type="text" placeholder="Например: monin.com/ru или https://..." value={form.website_link} onChange={(e) => setForm({...form, website_link: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" />
             </div>
             <div className="space-y-2">

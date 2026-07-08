@@ -11,7 +11,7 @@ export function exportProductsToExcel(products: Product[], filename = 'novinki.x
     'Описание': p.description,
     'Преимущества': p.advantages,
     'На что обратить внимание': p.attention_points,
-    'Ссылка на сайт': p.website_link || '',
+    'Ссылка на товар': p.website_link || '',
     'Новинка поставщика': p.is_supplier_novelty ? 'Да' : 'Нет',
     'Можно мыть в посудомоечной машине': p.is_dishwasher_safe ? 'Да' : 'Нет',
     'Можно использовать в микроволновой печи': p.is_microwave_safe ? 'Да' : 'Нет',

@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useRef, useEffect } from 'react'
 import { Product } from '@/types/product'
 
 interface FilterBarProps {
@@ -56,23 +57,64 @@ export default function FilterBar({
   const categories = Array.from(new Set(products.map(p => p.category).filter(Boolean)))
   const years = Array.from(new Set(products.map(p => p.year).filter(Boolean))).sort().reverse()
 
+  const [catInput, setCatInput] = useState(selectedCategory || '')
+  const [showCatDrop, setShowCatDrop] = useState(false)
+  const catRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    setCatInput(selectedCategory || '')
+  }, [selectedCategory])
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (catRef.current && !catRef.current.contains(e.target as Node)) setShowCatDrop(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const filteredCats = categories.filter(c => c!.toLowerCase().includes(catInput.toLowerCase()))
+
   return (
     <div className="mb-5 bg-white px-3 py-2.5 sm:px-4 sm:py-3 rounded-xl shadow-sm border border-slate-200">
       <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 justify-between">
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
           {categories.length > 0 && (
-            <div className="relative">
-              <select
-                value={selectedCategory || ''}
-                onChange={(e) => setSelectedCategory(e.target.value || null)}
-                className="appearance-none pl-2.5 pr-7 py-1 sm:pl-3 sm:pr-8 sm:py-1.5 text-xs sm:text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] focus:border-transparent bg-white text-slate-700"
-              >
-                <option value="">Все категории</option>
-                {categories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-              <svg className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+            <div className="relative" ref={catRef}>
+              <div className="flex items-center border border-slate-200 rounded-lg bg-white overflow-hidden focus-within:ring-2 focus-within:ring-[#9B1B1B]">
+                <input
+                  type="text"
+                  value={catInput}
+                  onChange={(e) => { setCatInput(e.target.value); setShowCatDrop(true) }}
+                  onFocus={() => setShowCatDrop(true)}
+                  placeholder="Все категории"
+                  className="pl-2.5 pr-1 py-1 sm:pl-3 sm:py-1.5 text-xs sm:text-sm bg-transparent outline-none text-slate-700 w-32 sm:w-40"
+                />
+                {catInput && (
+                  <button onClick={() => { setCatInput(''); setSelectedCategory(null); setShowCatDrop(false) }} className="pr-1 text-slate-400 hover:text-slate-600">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+                )}
+                <button onClick={() => setShowCatDrop(v => !v)} className="pr-2 text-slate-400">
+                  <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                </button>
+              </div>
+              {showCatDrop && (
+                <div className="absolute top-full left-0 mt-1 z-30 bg-white border border-slate-200 rounded-xl shadow-lg max-h-56 overflow-y-auto min-w-[160px]">
+                  <button
+                    onMouseDown={() => { setSelectedCategory(null); setCatInput(''); setShowCatDrop(false) }}
+                    className="w-full text-left px-3 py-2 text-xs sm:text-sm text-slate-500 hover:bg-slate-50"
+                  >Все категории</button>
+                  {filteredCats.map(cat => (
+                    <button
+                      key={cat}
+                      onMouseDown={() => { setSelectedCategory(cat!); setCatInput(cat!); setShowCatDrop(false) }}
+                      className={`w-full text-left px-3 py-2 text-xs sm:text-sm hover:bg-slate-50 ${selectedCategory === cat ? 'font-medium text-[#9B1B1B]' : 'text-slate-700'}`}
+                    >{cat}</button>
+                  ))}
+                  {filteredCats.length === 0 && <div className="px-3 py-2 text-xs text-slate-400">Не найдено</div>}
+                </div>
+              )}
             </div>
           )}
 

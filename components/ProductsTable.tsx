@@ -162,7 +162,8 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
     const nextQuery = params.toString()
     const currentQuery = searchParams.toString()
     if (nextQuery !== currentQuery) {
-      router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false })
+      const url = nextQuery ? `${pathname}?${nextQuery}` : pathname
+      window.history.replaceState(null, '', url)
     }
   }, [
     debouncedSearch,
@@ -265,7 +266,7 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
     let query = apiClient
       .from('products')
       .select('id, name, brand, category, year, article_number, image_url, description, advantages')
-    if (!isAdmin) query = query.eq('is_archived', false)
+      .eq('is_archived', false)
     query = query.order('created_at', { ascending: false })
     const { data } = await query
     if (data) setProductsMeta(data as Product[])
@@ -281,7 +282,7 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
 
     // Публичным посетителям неопубликованные (в том числе черновики после
     // импорта из Excel) и архивные товары показывать нельзя.
-    if (!isAdmin) query = query.eq('is_archived', false)
+    query = query.eq('is_archived', false)
 
     if (debouncedSearch) {
       query = query.or(
@@ -554,7 +555,7 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
               className="relative flex flex-col bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-shadow group animate-in fade-in slide-in-from-bottom-4 cursor-pointer"
               style={{ animationDelay: `${idx * 40}ms` }}
             >
-              <div className="relative h-36 bg-slate-100" onClick={(e) => { e.stopPropagation(); product.image_url && setSelectedImage(product.image_url) }}>
+              <div className="relative h-36 bg-slate-100">
                 <Image src={product.image_url || (process.env.NEXT_PUBLIC_BASE_PATH||'')+'/placeholder.svg'} alt={product.name} fill className="object-cover" loading="lazy" />
                 {!isAdmin && (
                   <button
@@ -570,17 +571,33 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
                   <h3 className="font-semibold text-slate-900 text-sm leading-snug line-clamp-2 flex-1 mr-1">{product.name}</h3>
                 </div>
                 {product.article_number && <p className="text-[10px] text-slate-400 mb-1 font-mono">{product.article_number}</p>}
-                {product.flyer_url && (
-                  <a
-                    href={product.flyer_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => { e.stopPropagation(); e.preventDefault(); openFileInNewTab(product.flyer_url!) }}
-                    className="inline-flex items-center gap-1 text-[11px] font-medium text-[#9B1B1B] hover:text-[#7A1515] mb-2"
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                    Листовка (PDF)
-                  </a>
+                {(product.flyer_url || product.website_link) && (
+                  <div className="flex flex-wrap items-center gap-2 mb-2">
+                    {product.flyer_url && (
+                      <a
+                        href={product.flyer_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => { e.stopPropagation(); e.preventDefault(); openFileInNewTab(product.flyer_url!) }}
+                        className="inline-flex items-center gap-1 text-[11px] font-medium text-[#9B1B1B] hover:text-[#7A1515]"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                        Листовка (PDF)
+                      </a>
+                    )}
+                    {product.website_link && (
+                      <a
+                        href={product.website_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="inline-flex items-center gap-1 text-[11px] font-medium text-blue-600 hover:text-blue-800"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                        Товар на сайте
+                      </a>
+                    )}
+                  </div>
                 )}
                 <div className="flex flex-wrap items-center justify-start gap-1 mb-2">
                   <button onClick={(e) => { e.stopPropagation(); setSelectedBrand(product.brand) }} className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 transition">{product.brand}</button>
@@ -692,7 +709,7 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
                       <div className="line-clamp-2">{product.advantages}</div>
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-600 max-w-xs">
-                      <div className="line-clamp-2">{product.attention_points}</div>
+                      {product.attention_points && <div className="line-clamp-2">{product.attention_points}</div>}
                     </td>
                     <td className="px-6 py-4 text-center">
                       <div className="flex items-center justify-center gap-2">
@@ -830,7 +847,7 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
                       {selectedProduct.website_link && (
                         <a href={selectedProduct.website_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-blue-700 hover:text-blue-900 font-medium">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 21a9 9 0 100-18 9 9 0 000 18zM3.6 9h16.8M3.6 15h16.8M12 3a15 15 0 010 18 15 15 0 010-18z" /></svg>
-                          Посмотреть на сайте
+                          Посмотреть товар
                         </a>
                       )}
                     </div>
