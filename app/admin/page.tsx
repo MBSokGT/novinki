@@ -47,6 +47,8 @@ export default function AdminPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [catInput, setCatInput] = useState('')
   const [showCatDrop, setShowCatDrop] = useState(false)
+  const [yearInput, setYearInput] = useState('')
+  const [showYearDrop, setShowYearDrop] = useState(false)
   const router = useRouter()
   const formRef = useRef<HTMLFormElement>(null)
 
@@ -185,6 +187,7 @@ export default function AdminPage() {
     setFlyer(null)
     setEditId(null)
     setCatInput('')
+    setYearInput('')
     if (typeof window !== 'undefined') {
       window.localStorage.removeItem(ADMIN_DRAFT_KEY)
     }
@@ -310,6 +313,7 @@ export default function AdminPage() {
       temp_max: product.temp_max != null ? String(product.temp_max) : '',
     })
     setCatInput(cat)
+    setYearInput(product.year || '')
     setExistingImages(product.images?.length ? product.images : (product.image_url ? [product.image_url] : []))
     setNewImages([])
     setFlyer(null)
@@ -719,11 +723,11 @@ export default function AdminPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">Бренд / производитель <span className="text-red-500">*</span></label>
-                <input type="text" placeholder="Например: Monin" value={form.brand} onChange={(e) => setForm({...form, brand: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" required />
+                <input type="text" placeholder="Например: Pinch&Drop, Probar" value={form.brand} onChange={(e) => setForm({...form, brand: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" required />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">Артикул <span className="text-slate-400 font-normal">(если есть)</span></label>
-                <input type="text" placeholder="Например: MON-1234" value={form.article_number} onChange={(e) => setForm({...form, article_number: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" />
+                <input type="text" placeholder="Например: 123456" value={form.article_number} onChange={(e) => setForm({...form, article_number: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" />
               </div>
             </div>
 
@@ -787,12 +791,46 @@ export default function AdminPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">Год поставки</label>
-                <select value={form.year} onChange={(e) => setForm({...form, year: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition bg-white">
-                  <option value="">Выберите год...</option>
-                  {years.map((year) => (
-                    <option key={year.id} value={year.name}>{year.name}</option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={yearInput}
+                    onFocus={() => setShowYearDrop(true)}
+                    onChange={(e) => {
+                      setYearInput(e.target.value)
+                      setForm((prev) => ({ ...prev, year: e.target.value }))
+                      setShowYearDrop(true)
+                    }}
+                    onBlur={() => setTimeout(() => setShowYearDrop(false), 150)}
+                    placeholder="Например: 2026"
+                    className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition ${form.year ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200'}`}
+                  />
+                  {form.year && (
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-600">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    </span>
+                  )}
+                  {showYearDrop && years.length > 0 && (
+                    <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-52 overflow-y-auto">
+                      {years
+                        .filter((y) => !yearInput || y.name.includes(yearInput))
+                        .map((y) => (
+                          <button
+                            key={y.id}
+                            type="button"
+                            onMouseDown={() => {
+                              setForm((prev) => ({ ...prev, year: y.name }))
+                              setYearInput(y.name)
+                              setShowYearDrop(false)
+                            }}
+                            className={`w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 transition ${form.year === y.name ? 'text-[#9B1B1B] font-medium bg-red-50' : 'text-slate-700'}`}
+                          >
+                            {y.name}
+                          </button>
+                        ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -839,7 +877,7 @@ export default function AdminPage() {
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">Ссылка на товар <span className="text-slate-400 font-normal">(если есть)</span></label>
-              <input type="text" placeholder="Например: monin.com/ru или https://..." value={form.website_link} onChange={(e) => setForm({...form, website_link: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" />
+              <input type="text" placeholder="Например: complexbar.ru/product или https://..." value={form.website_link} onChange={(e) => setForm({...form, website_link: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" />
             </div>
             <div className="space-y-2">
               {(existingImages.length > 0 || newImages.length > 0) && (

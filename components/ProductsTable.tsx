@@ -557,14 +557,12 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
             >
               <div className="relative h-36 bg-slate-100">
                 <Image src={product.image_url || (process.env.NEXT_PUBLIC_BASE_PATH||'')+'/placeholder.svg'} alt={product.name} fill className="object-cover" loading="lazy" />
-                {!isAdmin && (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); toggleCompare(product); }}
-                    className={`absolute top-2 right-2 p-1.5 rounded-lg transition ${compareProducts.find(p => p.id === product.id) ? 'bg-[#9B1B1B] text-white' : 'bg-white/90 text-gray-600 hover:bg-white'}`}
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-                  </button>
-                )}
+                <button
+                  onClick={(e) => { e.stopPropagation(); toggleCompare(product); }}
+                  className={`absolute top-2 right-2 p-1.5 rounded-lg transition ${compareProducts.find(p => p.id === product.id) ? 'bg-[#9B1B1B] text-white' : 'bg-white/90 text-gray-600 hover:bg-white'}`}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                </button>
               </div>
               <div className="p-3 flex flex-col flex-1">
                 <div className="flex items-start justify-between mb-1.5">
@@ -641,15 +639,13 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
                   <div className="flex items-start justify-between gap-2">
                     <div className="font-semibold text-slate-900 text-sm leading-snug line-clamp-2">{product.name}</div>
                     <div className="flex items-center gap-1 shrink-0">
-                      {!isAdmin && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); toggleCompare(product); }}
-                          className={`p-1.5 rounded-lg transition ${compareProducts.find(p => p.id === product.id) ? 'bg-[#9B1B1B] text-white' : 'bg-slate-100 text-slate-400'}`}
-                          title="Сравнить"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-                        </button>
-                      )}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); toggleCompare(product); }}
+                        className={`p-1.5 rounded-lg transition ${compareProducts.find(p => p.id === product.id) ? 'bg-[#9B1B1B] text-white' : 'bg-slate-100 text-slate-400'}`}
+                        title="Сравнить"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                      </button>
                     </div>
                   </div>
                   <div className="mt-1 flex flex-wrap items-center gap-1">
@@ -713,15 +709,13 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
                     </td>
                     <td className="px-6 py-4 text-center">
                       <div className="flex items-center justify-center gap-2">
-                        {!isAdmin && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); toggleCompare(product); }}
-                            className={`p-2 rounded-lg transition ${compareProducts.find(p => p.id === product.id) ? 'bg-[#9B1B1B] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}
-                            title="Сравнить"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-                          </button>
-                        )}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); toggleCompare(product); }}
+                          className={`p-2 rounded-lg transition ${compareProducts.find(p => p.id === product.id) ? 'bg-[#9B1B1B] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}
+                          title="Сравнить"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                        </button>
                         <button onClick={(e) => { e.stopPropagation(); viewProduct(product) }} className="inline-flex items-center px-3 py-1.5 bg-[#9B1B1B] text-white text-sm font-medium rounded-lg hover:bg-[#7A1515] transition">
                           Подробнее
                         </button>
