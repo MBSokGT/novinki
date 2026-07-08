@@ -33,6 +33,31 @@ function mapRow(row: Record<string, any>): Record<string, any> {
   return product
 }
 
+// Найти строку с настоящими заголовками (та, где больше всего непустых ячеек)
+function findHeaderRow(rawRows: any[][]): { headerIdx: number; headers: string[] } {
+  let best = { idx: 0, count: 0 }
+  for (let i = 0; i < Math.min(5, rawRows.length); i++) {
+    const row = rawRows[i] || []
+    const nonEmpty = row.filter((v: any) => v !== '' && v != null).length
+    if (nonEmpty > best.count) best = { idx: i, count: nonEmpty }
+  }
+  return { headerIdx: best.idx, headers: (rawRows[best.idx] || []).map(String) }
+}
+
+function rowsFromRaw(rawRows: any[][]): Record<string, any>[] {
+  const { headerIdx, headers } = findHeaderRow(rawRows)
+  console.log('[Import] detected headers at row', headerIdx, ':', headers)
+  const result: Record<string, any>[] = []
+  for (let i = headerIdx + 1; i < rawRows.length; i++) {
+    const row = rawRows[i]
+    if (!row || row.every((v: any) => v === '' || v == null)) continue
+    const obj: Record<string, any> = {}
+    headers.forEach((h, idx) => { obj[h] = row[idx] ?? '' })
+    result.push(mapRow(obj))
+  }
+  return result
+}
+
 async function parseFile(file: File): Promise<Record<string, any>[]> {
   const isExcel = /\.(xlsx|xls)$/i.test(file.name)
 
@@ -46,8 +71,8 @@ async function parseFile(file: File): Promise<Record<string, any>[]> {
           const workbook = XLSX.read(data, { type: 'array' })
           const sheetName = workbook.SheetNames[0]
           const sheet = workbook.Sheets[sheetName]
-          const rows: Record<string, any>[] = XLSX.utils.sheet_to_json(sheet, { defval: '' })
-          resolve(rows.map(mapRow))
+          const rawRows: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' })
+          resolve(rowsFromRaw(rawRows))
         } catch (err) {
           reject(err)
         }
@@ -56,14 +81,15 @@ async function parseFile(file: File): Promise<Record<string, any>[]> {
     })
   }
 
-  // CSV via PapaParse
+  // CSV via PapaParse — читаем как массивы, сами находим заголовки
   return new Promise((resolve, reject) => {
     Papa.parse(file, {
-      header: true,
+      header: false,
       skipEmptyLines: true,
       encoding: 'UTF-8',
       complete: (results) => {
-        resolve((results.data as Record<string, any>[]).map(mapRow))
+        const rawRows = results.data as any[][]
+        resolve(rowsFromRaw(rawRows))
       },
       error: (err: Error) => reject(err),
     })
@@ -80,21 +106,25 @@ export default function ExcelImport({ onSuccess }: ExcelImportProps) {
     setLoading(true)
     try {
       const rows = await parseFile(file)
+      console.log('[Import] parsed rows:', rows.length, rows[0])
+
       const valid = rows.filter(p => p.name && p.brand && p.description && p.advantages)
+      console.log('[Import] valid rows:', valid.length)
 
       if (valid.length === 0) {
-        showToast('Не найдено валидных товаров. Проверьте формат файла', 'error')
+        const first = rows[0] || {}
+        const keys = Object.keys(first)
+        showToast(`Не найдено валидных строк (всего строк: ${rows.length}, колонки: ${keys.join(', ') || 'не определены'})`, 'error')
         return
       }
 
-      // Импортированные товары попадают как черновики (архив) — публично их
-      // не видно, пока админ не проверит карточки и не опубликует вручную.
       const withImages = valid.map(p => ({
         ...p,
         attention_points: p.attention_points || '',
         image_url: p.image_url || '',
         is_archived: true,
       }))
+      console.log('[Import] inserting:', withImages.length, 'products')
       const { error } = await apiClient.from('products').insert(withImages)
       if (error) throw error
 
@@ -102,9 +132,9 @@ export default function ExcelImport({ onSuccess }: ExcelImportProps) {
       setShowModal(false)
       setFile(null)
       onSuccess()
-    } catch (err) {
-      console.error(err)
-      showToast('Ошибка импорта. Проверьте формат файла', 'error')
+    } catch (err: any) {
+      console.error('[Import] error:', err)
+      showToast(`Ошибка импорта: ${err?.message || String(err)}`, 'error')
     } finally {
       setLoading(false)
     }
