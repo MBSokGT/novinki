@@ -505,32 +505,31 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
       />
       
       {popularBrands.length > 0 && (
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <span className="text-sm text-slate-500">Популярные бренды:</span>
+        <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1">
+          <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">Бренды:</span>
           {popularBrands.map(({ brand, count }) => (
             <button
               key={brand}
               onClick={() => setSelectedBrand(brand)}
-              className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition ${
+              className={`text-sm transition ${
                 selectedBrand === brand
-                  ? 'border-slate-300 bg-slate-100 text-slate-900'
-                  : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                  ? 'font-semibold text-slate-900 underline underline-offset-2'
+                  : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              <span>{brand}</span>
-              <span className="text-[10px] text-slate-500">({count})</span>
+              {brand} <span className="text-[11px] text-slate-400">({count})</span>
             </button>
           ))}
         </div>
       )}
-      
+
       {selectedBrand && (
         <div className="mb-4 flex items-center gap-2">
-          <span className="text-sm text-slate-600">Фильтр по бренду:</span>
-          <span className="inline-flex items-center gap-2 px-3 py-1 bg-slate-100 text-slate-900 rounded-lg text-sm font-medium">
+          <span className="text-sm text-slate-500">Бренд:</span>
+          <span className="inline-flex items-center gap-1.5 border border-slate-300 px-2 py-0.5 text-sm font-medium text-slate-800">
             {selectedBrand}
-            <button onClick={() => setSelectedBrand(null)} className="hover:text-slate-700">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            <button onClick={() => setSelectedBrand(null)} className="text-slate-400 hover:text-slate-700">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
           </span>
         </div>
@@ -614,13 +613,13 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
                   <div className="h-px flex-1 bg-slate-200" />
                 </div>
               )}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-100">
+        <div className="bg-white overflow-hidden border border-slate-200">
           {/* Мобильный режим: компактные карточки вместо широкой таблицы */}
           <div className="lg:hidden divide-y divide-slate-100">
             {yearProducts.map((product) => (
-              <div key={product.id} onClick={() => viewProduct(product)} className="flex gap-3 p-4 cursor-pointer hover:bg-slate-50 transition">
+              <div key={product.id} onClick={() => viewProduct(product)} className="flex gap-3 p-3 cursor-pointer hover:bg-slate-50 transition">
                 <div
-                  className="relative w-16 h-16 shrink-0 rounded-lg overflow-hidden bg-slate-100"
+                  className="relative w-16 h-16 shrink-0 overflow-hidden bg-slate-100"
                   onClick={(e) => { e.stopPropagation(); product.image_url && setSelectedImage(product.image_url) }}
                 >
                   <Image src={product.image_url || (process.env.NEXT_PUBLIC_BASE_PATH||'')+'/placeholder.svg'} alt={product.name} fill className="object-cover" loading="lazy" />
@@ -628,23 +627,20 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
                     <div className="font-semibold text-slate-900 text-sm leading-snug line-clamp-2">{product.name}</div>
-                    <div className="flex items-center gap-1 shrink-0">
-                      <button
-                        onClick={(e) => { e.stopPropagation(); toggleCompare(product); }}
-                        className={`p-1.5 rounded-lg transition ${compareProducts.find(p => p.id === product.id) ? 'bg-[#9B1B1B] text-white' : 'bg-slate-100 text-slate-400'}`}
-                        title="Сравнить"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-                      </button>
-                    </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); toggleCompare(product); }}
+                      className={`shrink-0 p-1.5 transition ${compareProducts.find(p => p.id === product.id) ? 'bg-[#9B1B1B] text-white' : 'text-slate-300 hover:text-slate-600'}`}
+                      title="Сравнить"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                    </button>
                   </div>
-                  <div className="mt-1 flex flex-wrap items-center gap-1">
-                    <button onClick={(e) => { e.stopPropagation(); setSelectedBrand(product.brand) }} className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700">{product.brand}</button>
-                    {product.is_dishwasher_safe && <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700">ПММ</span>}
-                    {product.is_microwave_safe && <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700">СВЧ</span>}
+                  <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                    <button onClick={(e) => { e.stopPropagation(); setSelectedBrand(product.brand) }} className="text-[11px] font-medium text-slate-500 hover:text-[#9B1B1B] hover:underline underline-offset-2 transition">{product.brand}</button>
+                    {product.is_dishwasher_safe && <span className="text-[10px] font-medium text-blue-600 border border-blue-200 px-1">ПММ</span>}
+                    {product.is_microwave_safe && <span className="text-[10px] font-medium text-blue-600 border border-blue-200 px-1">СВЧ</span>}
                   </div>
                   <p className="mt-1 text-xs text-slate-500 line-clamp-2">{product.description}</p>
-                  <button onClick={(e) => { e.stopPropagation(); viewProduct(product) }} className="mt-2 w-full px-3 py-1.5 bg-[#9B1B1B] text-white text-xs font-medium rounded-lg">Подробнее</button>
                 </div>
               </div>
             ))}
@@ -670,7 +666,7 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
                   <tr key={product.id} onClick={() => viewProduct(product)} className="hover:bg-slate-100 group cursor-pointer">
                     <td className="sticky left-0 z-10 bg-white group-hover:bg-slate-100 px-6 py-4">
                       <div
-                        className="relative w-20 h-20 rounded-lg overflow-hidden shadow-sm group-hover:shadow-md transition"
+                        className="relative w-20 h-20 overflow-hidden bg-slate-50"
                         onClick={(e) => { e.stopPropagation(); product.image_url && setSelectedImage(product.image_url) }}
                       >
                         <Image src={product.image_url || (process.env.NEXT_PUBLIC_BASE_PATH||'')+'/placeholder.svg'} alt={product.name} fill className="object-cover" loading="lazy" />
@@ -680,12 +676,12 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
                       <div className="font-semibold text-slate-900">{product.name}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <button onClick={(e) => { e.stopPropagation(); setSelectedBrand(product.brand) }} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-900 hover:bg-slate-200 transition">{product.brand}</button>
+                      <button onClick={(e) => { e.stopPropagation(); setSelectedBrand(product.brand) }} className="text-sm font-medium text-slate-600 hover:text-[#9B1B1B] hover:underline underline-offset-2 transition">{product.brand}</button>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-wrap gap-1">
-                        {product.is_dishwasher_safe && <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700">ПММ</span>}
-                        {product.is_microwave_safe && <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700">СВЧ</span>}
+                        {product.is_dishwasher_safe && <span className="text-[10px] font-medium text-blue-600 border border-blue-200 px-1.5 py-px">ПММ</span>}
+                        {product.is_microwave_safe && <span className="text-[10px] font-medium text-blue-600 border border-blue-200 px-1.5 py-px">СВЧ</span>}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-600 max-w-xs">
@@ -701,13 +697,10 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
                       <div className="flex items-center justify-center gap-2">
                         <button
                           onClick={(e) => { e.stopPropagation(); toggleCompare(product); }}
-                          className={`p-2 rounded-lg transition ${compareProducts.find(p => p.id === product.id) ? 'bg-[#9B1B1B] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}
+                          className={`p-1.5 transition ${compareProducts.find(p => p.id === product.id) ? 'bg-[#9B1B1B] text-white' : 'text-slate-300 hover:text-slate-600'}`}
                           title="Сравнить"
                         >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-                        </button>
-                        <button onClick={(e) => { e.stopPropagation(); viewProduct(product) }} className="inline-flex items-center px-3 py-1.5 bg-[#9B1B1B] text-white text-sm font-medium rounded-lg hover:bg-[#7A1515] transition">
-                          Подробнее
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
                         </button>
                       </div>
                     </td>
@@ -767,96 +760,77 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
 
       {selectedProduct && (
         <div onClick={() => setSelectedProduct(null)} className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200 cursor-pointer">
-          <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 cursor-default">
-            <div className="relative h-36 sm:h-44 bg-gradient-to-br from-slate-100 to-slate-200 shrink-0">
+          <div onClick={(e) => e.stopPropagation()} className="bg-white max-w-3xl w-full max-h-[90vh] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 cursor-default">
+            <div className="relative h-36 sm:h-44 bg-slate-100 shrink-0">
               <ImageCarousel
                 images={selectedProduct.images?.length ? selectedProduct.images : [selectedProduct.image_url]}
                 alt={selectedProduct.name}
                 className="w-full h-full"
                 onImageClick={(url) => setSelectedImage(url)}
               />
-              <button onClick={() => setSelectedProduct(null)} className="absolute top-4 right-4 z-10 bg-white/90 backdrop-blur rounded-full p-2.5 hover:bg-white transition shadow-lg">
-                <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              <button onClick={() => setSelectedProduct(null)} className="absolute top-3 right-3 z-10 bg-white/90 backdrop-blur p-2 hover:bg-white transition">
+                <svg className="w-4 h-4 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
-              <div className="p-6 sm:p-8 overflow-y-auto max-h-[calc(90vh-9rem)] sm:max-h-[calc(90vh-11rem)]">
-                <div className="flex flex-wrap items-center gap-2 mb-3">
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-900">{selectedProduct.brand}</span>
-                  {selectedProduct.is_dishwasher_safe && <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">Можно мыть в посудомоечной машине</span>}
-                  {selectedProduct.is_microwave_safe && <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">Можно использовать в микроволновой печи</span>}
-                  {(selectedProduct.temp_min != null || selectedProduct.temp_max != null) && (
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">
-                      Температура: {selectedProduct.temp_min ?? '—'}…{selectedProduct.temp_max ?? '—'}°C
-                    </span>
-                  )}
+            <div className="p-5 sm:p-7 overflow-y-auto max-h-[calc(90vh-9rem)] sm:max-h-[calc(90vh-11rem)]">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-3">
+                <button onClick={() => { setSelectedBrand(selectedProduct.brand); setSelectedProduct(null); }} className="text-xs font-semibold text-slate-500 uppercase tracking-wide hover:text-[#9B1B1B] transition">{selectedProduct.brand}</button>
+                {selectedProduct.is_dishwasher_safe && <span className="text-[10px] font-medium text-blue-600 border border-blue-200 px-1.5 py-px">Подходит для ПММ</span>}
+                {selectedProduct.is_microwave_safe && <span className="text-[10px] font-medium text-blue-600 border border-blue-200 px-1.5 py-px">Подходит для СВЧ</span>}
+                {(selectedProduct.temp_min != null || selectedProduct.temp_max != null) && (
+                  <span className="text-[10px] font-medium text-blue-600 border border-blue-200 px-1.5 py-px">
+                    {selectedProduct.temp_min ?? '—'}…{selectedProduct.temp_max ?? '—'}°C
+                  </span>
+                )}
+              </div>
+              <h2 className="text-xl sm:text-2xl font-bold mb-5 text-slate-900 leading-snug">{selectedProduct.name}</h2>
+              <div className="divide-y divide-slate-100">
+                <div className="pb-4">
+                  <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-1.5">Описание</p>
+                  <p className="text-slate-700 leading-relaxed text-sm">{selectedProduct.description}</p>
                 </div>
-                <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-slate-900">{selectedProduct.name}</h2>
-                <div className="space-y-6">
-                <div className="bg-slate-50 rounded-xl p-5">
-                  <div className="flex items-center gap-2 mb-2">
-                    <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    <h3 className="font-bold text-slate-900">Описание</h3>
-                  </div>
-                  <p className="text-slate-700 leading-relaxed">{selectedProduct.description}</p>
-                </div>
-                <div className="bg-green-50 rounded-xl p-5 border border-green-100">
-                  <div className="flex items-center gap-2 mb-2">
-                    <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    <h3 className="font-bold text-green-900">Преимущества</h3>
-                  </div>
-                  <p className="text-green-800 leading-relaxed">{selectedProduct.advantages}</p>
+                <div className="py-4">
+                  <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-1.5">Преимущества</p>
+                  <p className="text-slate-700 leading-relaxed text-sm">{selectedProduct.advantages}</p>
                 </div>
                 {selectedProduct.attention_points && (
-                <div className="bg-slate-100 rounded-xl p-5 border border-slate-200">
-                  <div className="flex items-center gap-2 mb-2">
-                    <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                    <h3 className="font-bold text-slate-900">На что обратить внимание</h3>
+                  <div className="py-4">
+                    <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-1.5">На что обратить внимание</p>
+                    <p className="text-slate-700 leading-relaxed text-sm">{selectedProduct.attention_points}</p>
                   </div>
-                  <p className="text-slate-700 leading-relaxed">{selectedProduct.attention_points}</p>
-                </div>
                 )}
                 {(selectedProduct.website_link || selectedProduct.flyer_url) && (
-                  <div className="bg-blue-50 rounded-xl p-5 border border-blue-100">
-                    <div className="flex items-center gap-2 mb-3">
-                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
-                      <h3 className="font-bold text-blue-900">Полезные ссылки</h3>
-                    </div>
-                    <div className="space-y-2">
-                      {selectedProduct.flyer_url && (
-                        <a href={selectedProduct.flyer_url} target="_blank" rel="noopener noreferrer" onClick={(e) => { e.preventDefault(); openFileInNewTab(selectedProduct.flyer_url!) }} className="flex items-center gap-2 text-[#9B1B1B] hover:text-[#7A1515] font-medium">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                          Открыть листовку (PDF)
-                        </a>
-                      )}
-                      {selectedProduct.website_link && (
-                        <a href={selectedProduct.website_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-blue-700 hover:text-blue-900 font-medium">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 21a9 9 0 100-18 9 9 0 000 18zM3.6 9h16.8M3.6 15h16.8M12 3a15 15 0 010 18 15 15 0 010-18z" /></svg>
-                          Посмотреть товар
-                        </a>
-                      )}
-                    </div>
+                  <div className="py-4 flex flex-wrap gap-4">
+                    {selectedProduct.flyer_url && (
+                      <a href={selectedProduct.flyer_url} target="_blank" rel="noopener noreferrer" onClick={(e) => { e.preventDefault(); openFileInNewTab(selectedProduct.flyer_url!) }} className="inline-flex items-center gap-1.5 text-sm font-medium text-[#9B1B1B] hover:text-[#7A1515]">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                        Листовка (PDF)
+                      </a>
+                    )}
+                    {selectedProduct.website_link && (
+                      <a href={selectedProduct.website_link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-900">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                        Посмотреть товар
+                      </a>
+                    )}
                   </div>
                 )}
-                
                 {selectedProductSimilar.length > 0 && (
-                  <div className="bg-purple-50 rounded-xl p-5 border border-purple-100">
-                    <h3 className="font-bold text-purple-900 mb-3 flex items-center gap-2">
-                      <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                      Похожие товары
-                    </h3>
-                    <div className="grid grid-cols-2 gap-3">
+                  <div className="pt-4">
+                    <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-3">Похожие товары</p>
+                    <div className="grid grid-cols-2 gap-2">
                       {selectedProductSimilar.map(similar => (
                         <button
                           key={similar.id}
                           onClick={() => viewProduct(similar)}
-                          className="flex items-center gap-2 p-2 bg-white rounded-lg hover:bg-purple-100 transition text-left"
+                          className="flex items-center gap-2 p-2 border border-slate-100 hover:border-slate-300 hover:bg-slate-50 transition text-left"
                         >
-                          <div className="relative w-12 h-12 rounded overflow-hidden flex-shrink-0">
+                          <div className="relative w-10 h-10 overflow-hidden bg-slate-100 flex-shrink-0">
                             <Image src={similar.image_url || (process.env.NEXT_PUBLIC_BASE_PATH||'')+'/placeholder.svg'} alt={similar.name} fill className="object-cover" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="text-sm font-medium text-gray-900 truncate">{similar.name}</div>
-                            <div className="text-xs text-gray-500">{similar.brand}</div>
+                            <div className="text-xs font-medium text-slate-900 line-clamp-2 leading-snug">{similar.name}</div>
+                            <div className="text-[10px] text-slate-400 mt-0.5">{similar.brand}</div>
                           </div>
                         </button>
                       ))}
@@ -872,7 +846,7 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
       {showScrollTop && (
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="fixed bottom-6 right-6 z-40 rounded-full bg-[#9B1B1B] p-3 text-white shadow-lg hover:bg-[#7A1515] transition"
+          className="fixed bottom-6 right-6 z-40 bg-[#9B1B1B] p-3 text-white shadow-lg hover:bg-[#7A1515] transition"
           aria-label="Наверх"
           title="Наверх"
         >
