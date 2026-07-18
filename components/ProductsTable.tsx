@@ -552,60 +552,50 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
             <div
               key={product.id}
               onClick={() => viewProduct(product)}
-              className="relative flex flex-col bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-shadow group animate-in fade-in slide-in-from-bottom-4 cursor-pointer"
+              className="relative flex flex-col bg-white border border-slate-200 overflow-hidden hover:border-slate-300 hover:shadow-sm transition-all duration-200 group cursor-pointer"
               style={{ animationDelay: `${idx * 40}ms` }}
             >
-              <div className="relative h-36 bg-slate-100">
-                <Image src={product.image_url || (process.env.NEXT_PUBLIC_BASE_PATH||'')+'/placeholder.svg'} alt={product.name} fill className="object-cover" loading="lazy" />
+              <div className="relative h-40 bg-slate-50 overflow-hidden">
+                <Image src={product.image_url || (process.env.NEXT_PUBLIC_BASE_PATH||'')+'/placeholder.svg'} alt={product.name} fill className="object-cover group-hover:scale-[1.02] transition-transform duration-300" loading="lazy" />
                 <button
                   onClick={(e) => { e.stopPropagation(); toggleCompare(product); }}
-                  className={`absolute top-2 right-2 p-1.5 rounded-lg transition ${compareProducts.find(p => p.id === product.id) ? 'bg-[#9B1B1B] text-white' : 'bg-white/90 text-gray-600 hover:bg-white'}`}
+                  className={`absolute top-2 right-2 p-1.5 transition opacity-0 group-hover:opacity-100 ${compareProducts.find(p => p.id === product.id) ? 'opacity-100 bg-[#9B1B1B] text-white' : 'bg-white/95 text-slate-500 hover:text-slate-800 shadow-sm'}`}
+                  title="Сравнить"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
                 </button>
               </div>
               <div className="p-3 flex flex-col flex-1">
-                <div className="flex items-start justify-between mb-1.5">
-                  <h3 className="font-semibold text-slate-900 text-sm leading-snug line-clamp-2 flex-1 mr-1">{product.name}</h3>
+                <h3 className="font-semibold text-slate-900 text-sm leading-snug line-clamp-2 mb-1">{product.name}</h3>
+                {product.article_number && <p className="text-[10px] text-slate-400 mb-1.5 font-mono tracking-wide">{product.article_number}</p>}
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-2">
+                  <button onClick={(e) => { e.stopPropagation(); setSelectedBrand(product.brand) }} className="text-[11px] font-medium text-slate-600 hover:text-[#9B1B1B] transition underline-offset-2 hover:underline">{product.brand}</button>
+                  {product.category && <span className="text-[11px] text-slate-400">{product.category}</span>}
+                  {product.year && <span className="text-[11px] text-slate-400">{product.year}</span>}
+                  {product.is_dishwasher_safe && <span className="text-[10px] font-medium text-blue-600 border border-blue-200 px-1.5 py-px">ПММ</span>}
+                  {product.is_microwave_safe && <span className="text-[10px] font-medium text-blue-600 border border-blue-200 px-1.5 py-px">СВЧ</span>}
                 </div>
-                {product.article_number && <p className="text-[10px] text-slate-400 mb-1 font-mono">{product.article_number}</p>}
+                <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed mb-2">{product.description}</p>
                 {(product.flyer_url || product.website_link) && (
-                  <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <div className="flex flex-wrap items-center gap-3 mt-auto pt-2 border-t border-slate-100">
                     {product.flyer_url && (
-                      <a
-                        href={product.flyer_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <a href={product.flyer_url} target="_blank" rel="noopener noreferrer"
                         onClick={(e) => { e.stopPropagation(); e.preventDefault(); openFileInNewTab(product.flyer_url!) }}
-                        className="inline-flex items-center gap-1 text-[11px] font-medium text-[#9B1B1B] hover:text-[#7A1515]"
-                      >
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                        Листовка (PDF)
+                        className="inline-flex items-center gap-1 text-[11px] font-medium text-[#9B1B1B] hover:text-[#7A1515]">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                        Листовка
                       </a>
                     )}
                     {product.website_link && (
-                      <a
-                        href={product.website_link}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <a href={product.website_link} target="_blank" rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
-                        className="inline-flex items-center gap-1 text-[11px] font-medium text-blue-600 hover:text-blue-800"
-                      >
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-                        Товар на сайте
+                        className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 hover:text-slate-800">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                        На сайте
                       </a>
                     )}
                   </div>
                 )}
-                <div className="flex flex-wrap items-center justify-start gap-1 mb-2">
-                  <button onClick={(e) => { e.stopPropagation(); setSelectedBrand(product.brand) }} className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 transition">{product.brand}</button>
-                  {product.category && <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700">{product.category}</span>}
-                  {product.year && <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700">{product.year}</span>}
-                  {product.is_dishwasher_safe && <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700">ПММ</span>}
-                  {product.is_microwave_safe && <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700">СВЧ</span>}
-                </div>
-                <p className="text-xs text-slate-500 line-clamp-2 mb-2">{product.description}</p>
-                <button onClick={(e) => { e.stopPropagation(); viewProduct(product) }} className="w-full px-3 py-1.5 bg-[#9B1B1B] text-white text-xs font-medium rounded-lg hover:bg-[#7A1515] transition mt-auto">Подробнее</button>
               </div>
             </div>
           ))}
