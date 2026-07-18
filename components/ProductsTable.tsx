@@ -551,14 +551,14 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
             <div
               key={product.id}
               onClick={() => viewProduct(product)}
-              className="relative flex flex-col bg-white border border-slate-200 overflow-hidden hover:border-slate-300 hover:shadow-sm transition-all duration-200 group cursor-pointer"
+              className="relative flex flex-col bg-white border border-slate-200 rounded-lg overflow-hidden hover:border-slate-300 hover:shadow-md transition-all duration-200 group cursor-pointer"
               style={{ animationDelay: `${idx * 40}ms` }}
             >
               <div className="relative h-40 bg-slate-50 overflow-hidden">
                 <Image src={product.image_url || (process.env.NEXT_PUBLIC_BASE_PATH||'')+'/placeholder.svg'} alt={product.name} fill className="object-cover group-hover:scale-[1.02] transition-transform duration-300" loading="lazy" />
                 <button
                   onClick={(e) => { e.stopPropagation(); toggleCompare(product); }}
-                  className={`absolute top-2 right-2 p-1.5 transition opacity-0 group-hover:opacity-100 ${compareProducts.find(p => p.id === product.id) ? 'opacity-100 bg-[#9B1B1B] text-white' : 'bg-white/95 text-slate-500 hover:text-slate-800 shadow-sm'}`}
+                  className={`absolute top-2 right-2 p-1.5 rounded-md transition opacity-0 group-hover:opacity-100 ${compareProducts.find(p => p.id === product.id) ? 'opacity-100 bg-[#9B1B1B] text-white' : 'bg-white/95 text-slate-500 hover:text-slate-800 shadow-sm'}`}
                   title="Сравнить"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
@@ -571,30 +571,34 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
                   <button onClick={(e) => { e.stopPropagation(); setSelectedBrand(product.brand) }} className="text-[11px] font-medium text-slate-600 hover:text-[#9B1B1B] transition underline-offset-2 hover:underline">{product.brand}</button>
                   {product.category && <span className="text-[11px] text-slate-400">{product.category}</span>}
                   {product.year && <span className="text-[11px] text-slate-400">{product.year}</span>}
-                  {product.is_dishwasher_safe && <span className="text-[10px] font-medium text-blue-600 border border-blue-200 px-1.5 py-px">ПММ</span>}
-                  {product.is_microwave_safe && <span className="text-[10px] font-medium text-blue-600 border border-blue-200 px-1.5 py-px">СВЧ</span>}
+                  {product.is_dishwasher_safe && <span className="text-[10px] font-medium text-blue-600 border border-blue-200 rounded px-1.5 py-px">ПММ</span>}
+                  {product.is_microwave_safe && <span className="text-[10px] font-medium text-blue-600 border border-blue-200 rounded px-1.5 py-px">СВЧ</span>}
                 </div>
-                <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed mb-2">{product.description}</p>
-                {(product.flyer_url || product.website_link) && (
-                  <div className="flex flex-wrap items-center gap-3 mt-auto pt-2 border-t border-slate-100">
+                <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed mb-3">{product.description}</p>
+                <div className="mt-auto flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); viewProduct(product); }}
+                    className="text-xs font-medium text-[#9B1B1B] border border-[#9B1B1B] rounded-lg px-3 py-1.5 hover:bg-[#9B1B1B] hover:text-white transition-colors"
+                  >
+                    Подробнее
+                  </button>
+                  <div className="flex items-center gap-2">
                     {product.flyer_url && (
                       <a href={product.flyer_url} target="_blank" rel="noopener noreferrer"
                         onClick={(e) => { e.stopPropagation(); e.preventDefault(); openFileInNewTab(product.flyer_url!) }}
-                        className="inline-flex items-center gap-1 text-[11px] font-medium text-[#9B1B1B] hover:text-[#7A1515]">
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                        Листовка
+                        className="text-[11px] font-medium text-slate-400 hover:text-[#9B1B1B] transition" title="Листовка PDF">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                       </a>
                     )}
                     {product.website_link && (
                       <a href={product.website_link} target="_blank" rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
-                        className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 hover:text-slate-800">
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-                        На сайте
+                        className="text-[11px] font-medium text-slate-400 hover:text-slate-700 transition" title="На сайте">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
                       </a>
                     )}
                   </div>
-                )}
+                </div>
               </div>
             </div>
           ))}
@@ -613,13 +617,13 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
                   <div className="h-px flex-1 bg-slate-200" />
                 </div>
               )}
-        <div className="bg-white overflow-hidden border border-slate-200">
+        <div className="bg-white overflow-hidden border border-slate-200 rounded-lg">
           {/* Мобильный режим: компактные карточки вместо широкой таблицы */}
           <div className="lg:hidden divide-y divide-slate-100">
             {yearProducts.map((product) => (
               <div key={product.id} onClick={() => viewProduct(product)} className="flex gap-3 p-3 cursor-pointer hover:bg-slate-50 transition">
                 <div
-                  className="relative w-16 h-16 shrink-0 overflow-hidden bg-slate-100"
+                  className="relative w-16 h-16 shrink-0 overflow-hidden bg-slate-100 rounded-lg"
                   onClick={(e) => { e.stopPropagation(); product.image_url && setSelectedImage(product.image_url) }}
                 >
                   <Image src={product.image_url || (process.env.NEXT_PUBLIC_BASE_PATH||'')+'/placeholder.svg'} alt={product.name} fill className="object-cover" loading="lazy" />
@@ -637,8 +641,8 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
                   </div>
                   <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
                     <button onClick={(e) => { e.stopPropagation(); setSelectedBrand(product.brand) }} className="text-[11px] font-medium text-slate-500 hover:text-[#9B1B1B] hover:underline underline-offset-2 transition">{product.brand}</button>
-                    {product.is_dishwasher_safe && <span className="text-[10px] font-medium text-blue-600 border border-blue-200 px-1">ПММ</span>}
-                    {product.is_microwave_safe && <span className="text-[10px] font-medium text-blue-600 border border-blue-200 px-1">СВЧ</span>}
+                    {product.is_dishwasher_safe && <span className="text-[10px] font-medium text-blue-600 border border-blue-200 rounded px-1">ПММ</span>}
+                    {product.is_microwave_safe && <span className="text-[10px] font-medium text-blue-600 border border-blue-200 rounded px-1">СВЧ</span>}
                   </div>
                   <p className="mt-1 text-xs text-slate-500 line-clamp-2">{product.description}</p>
                 </div>
@@ -666,7 +670,7 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
                   <tr key={product.id} onClick={() => viewProduct(product)} className="hover:bg-slate-100 group cursor-pointer">
                     <td className="sticky left-0 z-10 bg-white group-hover:bg-slate-100 px-6 py-4">
                       <div
-                        className="relative w-20 h-20 overflow-hidden bg-slate-50"
+                        className="relative w-20 h-20 overflow-hidden bg-slate-50 rounded-lg"
                         onClick={(e) => { e.stopPropagation(); product.image_url && setSelectedImage(product.image_url) }}
                       >
                         <Image src={product.image_url || (process.env.NEXT_PUBLIC_BASE_PATH||'')+'/placeholder.svg'} alt={product.name} fill className="object-cover" loading="lazy" />
@@ -680,8 +684,8 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-wrap gap-1">
-                        {product.is_dishwasher_safe && <span className="text-[10px] font-medium text-blue-600 border border-blue-200 px-1.5 py-px">ПММ</span>}
-                        {product.is_microwave_safe && <span className="text-[10px] font-medium text-blue-600 border border-blue-200 px-1.5 py-px">СВЧ</span>}
+                        {product.is_dishwasher_safe && <span className="text-[10px] font-medium text-blue-600 border border-blue-200 rounded px-1.5 py-px">ПММ</span>}
+                        {product.is_microwave_safe && <span className="text-[10px] font-medium text-blue-600 border border-blue-200 rounded px-1.5 py-px">СВЧ</span>}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-600 max-w-xs">
@@ -760,7 +764,7 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
 
       {selectedProduct && (
         <div onClick={() => setSelectedProduct(null)} className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200 cursor-pointer">
-          <div onClick={(e) => e.stopPropagation()} className="bg-white max-w-3xl w-full max-h-[90vh] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 cursor-default">
+          <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 cursor-default">
             <div className="relative h-36 sm:h-44 bg-slate-100 shrink-0">
               <ImageCarousel
                 images={selectedProduct.images?.length ? selectedProduct.images : [selectedProduct.image_url]}
@@ -768,17 +772,17 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
                 className="w-full h-full"
                 onImageClick={(url) => setSelectedImage(url)}
               />
-              <button onClick={() => setSelectedProduct(null)} className="absolute top-3 right-3 z-10 bg-white/90 backdrop-blur p-2 hover:bg-white transition">
+              <button onClick={() => setSelectedProduct(null)} className="absolute top-3 right-3 z-10 bg-white/90 backdrop-blur rounded-lg p-2 hover:bg-white transition shadow-sm">
                 <svg className="w-4 h-4 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
             <div className="p-5 sm:p-7 overflow-y-auto max-h-[calc(90vh-9rem)] sm:max-h-[calc(90vh-11rem)]">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-3">
                 <button onClick={() => { setSelectedBrand(selectedProduct.brand); setSelectedProduct(null); }} className="text-xs font-semibold text-slate-500 uppercase tracking-wide hover:text-[#9B1B1B] transition">{selectedProduct.brand}</button>
-                {selectedProduct.is_dishwasher_safe && <span className="text-[10px] font-medium text-blue-600 border border-blue-200 px-1.5 py-px">Подходит для ПММ</span>}
-                {selectedProduct.is_microwave_safe && <span className="text-[10px] font-medium text-blue-600 border border-blue-200 px-1.5 py-px">Подходит для СВЧ</span>}
+                {selectedProduct.is_dishwasher_safe && <span className="text-[10px] font-medium text-blue-600 border border-blue-200 rounded px-1.5 py-px">Подходит для ПММ</span>}
+                {selectedProduct.is_microwave_safe && <span className="text-[10px] font-medium text-blue-600 border border-blue-200 rounded px-1.5 py-px">Подходит для СВЧ</span>}
                 {(selectedProduct.temp_min != null || selectedProduct.temp_max != null) && (
-                  <span className="text-[10px] font-medium text-blue-600 border border-blue-200 px-1.5 py-px">
+                  <span className="text-[10px] font-medium text-blue-600 border border-blue-200 rounded px-1.5 py-px">
                     {selectedProduct.temp_min ?? '—'}…{selectedProduct.temp_max ?? '—'}°C
                   </span>
                 )}
