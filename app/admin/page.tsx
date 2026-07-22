@@ -38,6 +38,7 @@ export default function AdminPage() {
   const [existingImages, setExistingImages] = useState<string[]>([])
   const [newImages, setNewImages] = useState<File[]>([])
   const [flyer, setFlyer] = useState<File | null>(null)
+  const [priceList, setPriceList] = useState<File | null>(null)
   const [editId, setEditId] = useState<string | null>(null)
   const [user, setUser] = useState<any>(null)
   const [tableSearch, setTableSearch] = useState('')
@@ -185,6 +186,7 @@ export default function AdminPage() {
     setExistingImages([])
     setNewImages([])
     setFlyer(null)
+    setPriceList(null)
     setEditId(null)
     setCatInput('')
     setYearInput('')
@@ -234,7 +236,14 @@ export default function AdminPage() {
     return data?.path || ''
   }
 
-  const buildProductPayload = (images: string[], flyerUrl: string) => ({
+  const uploadPriceListFile = async (file: File): Promise<string> => {
+    const fileName = `${Date.now()}_${file.name}`
+    const { data, error } = await apiClient.storage.from('flyers').upload(fileName, file)
+    if (error) throw error
+    return data?.path || ''
+  }
+
+  const buildProductPayload = (images: string[], flyerUrl: string, priceListUrl: string) => ({
     name: form.name,
     brand: form.brand,
     article_number: form.article_number,
@@ -252,6 +261,7 @@ export default function AdminPage() {
     images,
     image_url: images[0] || '',
     flyer_url: flyerUrl || (editId ? products.find(p => p.id === editId)?.flyer_url : ''),
+    price_list_url: priceListUrl || (editId ? products.find(p => p.id === editId)?.price_list_url : ''),
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -263,7 +273,8 @@ export default function AdminPage() {
       const uploadedImages = await uploadProductImages(newImages)
       const images = [...existingImages, ...uploadedImages]
       const flyerUrl = flyer ? await uploadFlyerFile(flyer) : ''
-      const productData = buildProductPayload(images, flyerUrl)
+      const priceListUrl = priceList ? await uploadPriceListFile(priceList) : ''
+      const productData = buildProductPayload(images, flyerUrl, priceListUrl)
 
       if (editId) {
         const { data, error } = await apiClient.from('products').update(productData).eq('id', editId).select()
@@ -317,6 +328,7 @@ export default function AdminPage() {
     setExistingImages(product.images?.length ? product.images : (product.image_url ? [product.image_url] : []))
     setNewImages([])
     setFlyer(null)
+    setPriceList(null)
     setEditId(product.id)
     if (typeof window !== 'undefined') {
       window.localStorage.removeItem(ADMIN_DRAFT_KEY)
@@ -338,6 +350,7 @@ export default function AdminPage() {
         images,
         image_url: images[0] || '',
         flyer_url: product.flyer_url || '',
+        price_list_url: product.price_list_url || '',
         advantages: product.advantages,
         attention_points: product.attention_points,
         website_link: product.website_link || '',
@@ -383,6 +396,7 @@ export default function AdminPage() {
             image_url: product.image_url,
             images: product.images || [],
             flyer_url: product.flyer_url,
+            price_list_url: product.price_list_url,
             advantages: product.advantages,
             attention_points: product.attention_points,
             website_link: product.website_link,
@@ -486,6 +500,7 @@ export default function AdminPage() {
           image_url: product.image_url,
           images: product.images || [],
           flyer_url: product.flyer_url,
+          price_list_url: product.price_list_url,
           advantages: product.advantages,
           attention_points: product.attention_points,
           website_link: product.website_link,
@@ -523,6 +538,7 @@ export default function AdminPage() {
           images,
           image_url: images[0] || '',
           flyer_url: product.flyer_url || '',
+          price_list_url: product.price_list_url || '',
           advantages: product.advantages,
           attention_points: product.attention_points,
           website_link: product.website_link || '',
@@ -606,7 +622,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen overflow-x-hidden bg-slate-50">
       <nav className="bg-[#1A1A1A] shadow-lg border-b border-[#333]">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex min-w-0 items-center gap-3 sm:gap-4">
@@ -673,29 +689,29 @@ export default function AdminPage() {
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         {/* Меню функций */}
         <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <Link href="/admin/analytics" className="group p-3 bg-white rounded-xl shadow-lg border border-slate-200 hover:shadow-xl hover:border-slate-200 transition-all duration-300 text-center transform hover:-translate-y-1">
-            <div className="mb-1 flex justify-center text-[#9B1B1B] group-hover:scale-110 transition-transform duration-300">
+          <Link href="/admin/analytics" className="group p-3 bg-white rounded-lg border border-slate-200 hover:border-slate-300 hover:shadow-sm transition text-center">
+            <div className="mb-1 flex justify-center text-[#9B1B1B]">
               <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
             </div>
             <div className="font-bold text-slate-800 group-hover:text-slate-800 transition-colors">Аналитика</div>
             <div className="text-sm text-slate-500 mt-1">Отчеты и статистика</div>
           </Link>
-          <Link href="/admin/categories" className="group p-3 bg-white rounded-xl shadow-lg border border-slate-200 hover:shadow-xl hover:border-slate-200 transition-all duration-300 text-center transform hover:-translate-y-1">
-            <div className="mb-1 flex justify-center text-[#9B1B1B] group-hover:scale-110 transition-transform duration-300">
+          <Link href="/admin/categories" className="group p-3 bg-white rounded-lg border border-slate-200 hover:border-slate-300 hover:shadow-sm transition text-center">
+            <div className="mb-1 flex justify-center text-[#9B1B1B]">
               <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5.586a1 1 0 01.707.293l7.414 7.414a1 1 0 010 1.414l-7.586 7.586a1 1 0 01-1.414 0L4.293 12.293A1 1 0 014 11.586V6a3 3 0 013-3z" /></svg>
             </div>
             <div className="font-bold text-slate-800 group-hover:text-slate-800 transition-colors">Категории</div>
             <div className="text-sm text-slate-500 mt-1">Управление категориями</div>
           </Link>
-          <Link href="/admin/users" className="group p-3 bg-white rounded-xl shadow-lg border border-slate-200 hover:shadow-xl hover:border-slate-200 transition-all duration-300 text-center transform hover:-translate-y-1">
-            <div className="mb-1 flex justify-center text-[#9B1B1B] group-hover:scale-110 transition-transform duration-300">
+          <Link href="/admin/users" className="group p-3 bg-white rounded-lg border border-slate-200 hover:border-slate-300 hover:shadow-sm transition text-center">
+            <div className="mb-1 flex justify-center text-[#9B1B1B]">
               <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m5-3.13a4 4 0 100-8 4 4 0 000 8zm6 3.13a4 4 0 00-2.5-3.71M7 9.13a4 4 0 00-2.5 3.71" /></svg>
             </div>
             <div className="font-bold text-slate-800 group-hover:text-slate-800 transition-colors">Пользователи</div>
             <div className="text-sm text-slate-500 mt-1">Сотрудники и админы</div>
           </Link>
-          <Link href="/admin/requests" className="group p-3 bg-white rounded-xl shadow-lg border border-slate-200 hover:shadow-xl hover:border-slate-200 transition-all duration-300 text-center transform hover:-translate-y-1">
-            <div className="mb-1 flex justify-center text-[#9B1B1B] group-hover:scale-110 transition-transform duration-300">
+          <Link href="/admin/requests" className="group p-3 bg-white rounded-lg border border-slate-200 hover:border-slate-300 hover:shadow-sm transition text-center">
+            <div className="mb-1 flex justify-center text-[#9B1B1B]">
               <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
             </div>
             <div className="font-bold text-slate-800 group-hover:text-slate-800 transition-colors">Запросы новинок</div>
@@ -703,9 +719,9 @@ export default function AdminPage() {
           </Link>
         </div>
 
-        <div className="mb-8 rounded-2xl border border-slate-200 bg-white p-4 shadow-lg sm:p-6 lg:p-8">
+        <div className="mb-8 rounded-lg border border-slate-200 bg-white p-4 sm:p-6 lg:p-8">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-gradient-to-r from-[#9B1B1B] to-[#7A1515] rounded-xl flex items-center justify-center text-white">
+            <div className="w-10 h-10 bg-[#9B1B1B] rounded-lg flex items-center justify-center text-white">
               {editId ? (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
               ) : (
@@ -864,12 +880,12 @@ export default function AdminPage() {
 
             {/* Текстовые поля */}
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Описание <span className="text-red-500">*</span> <span className="text-slate-400 font-normal">— объём, упаковка, вкус, применение</span></label>
-              <textarea placeholder="Например: Сироп 1 л, пластик. Спелая клубника с ягодной кислинкой + сливочно-ванильные ноты пломбира. Подходит для горячих и холодных напитков." value={form.description} onChange={(e) => setForm({...form, description: e.target.value})} onInput={autoResize} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" style={{resize: 'none', overflow: 'hidden', minHeight: '80px'}} required />
+              <label className="block text-xs font-medium text-slate-500 mb-1">Описание <span className="text-slate-400 font-normal">— объём, упаковка, вкус, применение</span></label>
+              <textarea placeholder="Например: Сироп 1 л, пластик. Спелая клубника с ягодной кислинкой + сливочно-ванильные ноты пломбира. Подходит для горячих и холодных напитков." value={form.description} onChange={(e) => setForm({...form, description: e.target.value})} onInput={autoResize} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" style={{resize: 'none', overflow: 'hidden', minHeight: '80px'}} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Преимущества <span className="text-red-500">*</span> <span className="text-slate-400 font-normal">— почему стоит попробовать, чем выделяется</span></label>
-              <textarea placeholder="Например: Натуральные ингредиенты, без ГМО. Универсален — работает в латте, лимонадах и коктейлях." value={form.advantages} onChange={(e) => setForm({...form, advantages: e.target.value})} onInput={autoResize} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" style={{resize: 'none', overflow: 'hidden', minHeight: '80px'}} required />
+              <label className="block text-xs font-medium text-slate-500 mb-1">Преимущества <span className="text-slate-400 font-normal">— почему стоит попробовать, чем выделяется</span></label>
+              <textarea placeholder="Например: Натуральные ингредиенты, без ГМО. Универсален — работает в латте, лимонадах и коктейлях." value={form.advantages} onChange={(e) => setForm({...form, advantages: e.target.value})} onInput={autoResize} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" style={{resize: 'none', overflow: 'hidden', minHeight: '80px'}} />
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">На что обратить внимание <span className="text-slate-400 font-normal">— особенности хранения, применения, совместимости</span></label>
@@ -928,31 +944,53 @@ export default function AdminPage() {
                 </label>
               </div>
             </div>
-            <div className="relative">
-              <input
-                type="file"
-                accept="application/pdf"
-                onChange={(e) => setFlyer(e.target.files?.[0] || null)}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                id="flyer-upload"
-              />
-              <label
-                htmlFor="flyer-upload"
-                className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-slate-300 rounded-xl hover:border-slate-400 hover:bg-slate-50 transition-colors cursor-pointer"
-              >
-                <div className="text-center">
-                  <svg className="w-6 h-6 mx-auto mb-1 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                  <div className="text-sm text-slate-600">
-                    {flyer ? flyer.name : 'Добавить листовку (PDF)'}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="relative">
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  onChange={(e) => setFlyer(e.target.files?.[0] || null)}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  id="flyer-upload"
+                />
+                <label
+                  htmlFor="flyer-upload"
+                  className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-slate-300 rounded-xl hover:border-slate-400 hover:bg-slate-50 transition-colors cursor-pointer"
+                >
+                  <div className="text-center">
+                    <svg className="w-6 h-6 mx-auto mb-1 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                    <div className="text-sm text-slate-600">
+                      {flyer ? flyer.name : 'Листовка (PDF)'}
+                    </div>
                   </div>
-                </div>
-              </label>
+                </label>
+              </div>
+              <div className="relative">
+                <input
+                  type="file"
+                  accept="application/pdf,.xls,.xlsx"
+                  onChange={(e) => setPriceList(e.target.files?.[0] || null)}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  id="price-list-upload"
+                />
+                <label
+                  htmlFor="price-list-upload"
+                  className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-slate-300 rounded-xl hover:border-slate-400 hover:bg-slate-50 transition-colors cursor-pointer"
+                >
+                  <div className="text-center">
+                    <svg className="w-6 h-6 mx-auto mb-1 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18M10 4v16M14 4v16M4 4h16a1 1 0 011 1v14a1 1 0 01-1 1H4a1 1 0 01-1-1V5a1 1 0 011-1z" /></svg>
+                    <div className="text-sm text-slate-600">
+                      {priceList ? priceList.name : 'Прайс-лист (PDF / Excel)'}
+                    </div>
+                  </div>
+                </label>
+              </div>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row">
               <button
                 type="submit"
                 disabled={submitLoading}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#9B1B1B] to-[#7A1515] text-white rounded-xl hover:from-[#7A1515] hover:to-[#9B1B1B] transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-[#9B1B1B] text-white rounded-lg hover:bg-[#7A1515] transition font-medium disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {submitLoading ? (
                   <span className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
@@ -977,8 +1015,8 @@ export default function AdminPage() {
           </form>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
-          <div className="bg-gradient-to-r from-slate-50 to-slate-100 px-6 py-4 border-b border-slate-200">
+        <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+          <div className="bg-slate-50 px-6 py-4 border-b border-slate-200">
             <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
               <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
               Управление новинками
@@ -1091,12 +1129,18 @@ export default function AdminPage() {
                     {product.is_archived ? 'Архив' : 'Активный'}
                   </span>
                 </div>
-                {(product.website_link || product.flyer_url) && (
+                {(product.website_link || product.flyer_url || product.price_list_url) && (
                   <div className="flex flex-wrap gap-3 mb-3">
                     {product.flyer_url && (
                       <a href={product.flyer_url} target="_blank" rel="noopener noreferrer" onClick={(e) => { e.preventDefault(); openFileInNewTab(product.flyer_url!) }} className="inline-flex items-center gap-1 text-[#9B1B1B] text-sm">
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                         Листовка
+                      </a>
+                    )}
+                    {product.price_list_url && (
+                      <a href={product.price_list_url} target="_blank" rel="noopener noreferrer" onClick={(e) => { e.preventDefault(); openFileInNewTab(product.price_list_url!) }} className="inline-flex items-center gap-1 text-emerald-700 text-sm">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18M10 4v16M14 4v16M4 4h16a1 1 0 011 1v14a1 1 0 01-1 1H4a1 1 0 01-1-1V5a1 1 0 011-1z" /></svg>
+                        Прайс-лист
                       </a>
                     )}
                     {product.website_link && (
@@ -1189,13 +1233,19 @@ export default function AdminPage() {
                             Листовка
                           </a>
                         )}
+                        {product.price_list_url && (
+                          <a href={product.price_list_url} target="_blank" rel="noopener noreferrer" onClick={(e) => { e.preventDefault(); openFileInNewTab(product.price_list_url!) }} className="text-emerald-700 hover:text-emerald-900 text-sm flex items-center gap-1 break-all">
+                            <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18M10 4v16M14 4v16M4 4h16a1 1 0 011 1v14a1 1 0 01-1 1H4a1 1 0 01-1-1V5a1 1 0 011-1z" /></svg>
+                            Прайс-лист
+                          </a>
+                        )}
                         {product.website_link && (
                           <a href={product.website_link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1 break-all">
                             <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 21a9 9 0 100-18 9 9 0 000 18zM3.6 9h16.8M3.6 15h16.8M12 3a15 15 0 010 18 15 15 0 010-18z" /></svg>
                             Сайт
                           </a>
                         )}
-                        {!product.website_link && !product.flyer_url && (
+                        {!product.website_link && !product.flyer_url && !product.price_list_url && (
                           <span className="text-slate-400 text-sm">—</span>
                         )}
                       </div>

@@ -7,6 +7,7 @@ export interface Product {
   image_url: string
   images?: string[]
   flyer_url?: string
+  price_list_url?: string
   advantages: string
   attention_points: string
   website_link?: string
