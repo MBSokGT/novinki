@@ -7,7 +7,7 @@ import { isTemperatureCategory } from '@/lib/constants'
 import { Product } from '@/types/product'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import ExcelImport from '@/components/ExcelImport'
 import { showToast } from '@/components/Toast'
 
@@ -43,6 +43,8 @@ export default function AdminPage() {
   const [user, setUser] = useState<any>(null)
   const [tableSearch, setTableSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'archived'>('all')
+  const [categoryFilter, setCategoryFilter] = useState('')
+  const [yearFilter, setYearFilter] = useState('')
   const [submitLoading, setSubmitLoading] = useState(false)
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null) // null = загрузка, false = не админ, true = админ
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -51,6 +53,7 @@ export default function AdminPage() {
   const [yearInput, setYearInput] = useState('')
   const [showYearDrop, setShowYearDrop] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
   const formRef = useRef<HTMLFormElement>(null)
 
   const autoResize = (e: React.FormEvent<HTMLTextAreaElement>) => {
@@ -205,6 +208,8 @@ export default function AdminPage() {
       (statusFilter === 'archived' && isArchived)
 
     if (!statusMatch) return false
+    if (categoryFilter && ((product as any).category || '') !== categoryFilter) return false
+    if (yearFilter && (product.year || '') !== yearFilter) return false
 
     if (!searchText) return true
 
@@ -339,6 +344,17 @@ export default function AdminPage() {
     showToast('Товар загружен для редактирования', 'success')
   }
 
+  // Открытие карточки на редактирование по ссылке ?edit=<id> — так на неё
+  // ведёт кнопка «Редактировать» из просмотра товара на главной странице.
+  useEffect(() => {
+    const editRequestId = searchParams.get('edit')
+    if (!editRequestId || products.length === 0) return
+    const product = products.find((p) => p.id === editRequestId)
+    if (product) handleEdit(product)
+    router.replace('/admin')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [products, searchParams])
+
   const handleDuplicate = async (product: Product) => {
     try {
       const images = product.images?.length ? product.images : (product.image_url ? [product.image_url] : [])
@@ -467,6 +483,37 @@ export default function AdminPage() {
         console.error('Archive operation failed:', error)
         showToast('Ошибка операции архивирования', 'error')
       }
+    }
+  }
+
+  const handleBump = async (id: string, isBumped: boolean) => {
+    try {
+      const nextBumpedAt = isBumped ? null : new Date().toISOString()
+      const { error } = await apiClient
+        .from('products')
+        .update({ bumped_at: nextBumpedAt })
+        .eq('id', id)
+        .select()
+
+      if (error) {
+        showToast(`Ошибка продвижения: ${error.message}`, 'error')
+        return
+      }
+
+      setProducts((prev) => {
+        const next = prev.map((p) => (p.id === id ? { ...p, bumped_at: nextBumpedAt } : p))
+        // Отражаем эффект от COALESCE(bumped_at, created_at) DESC локально,
+        // чтобы список товаров сразу визуально пересортировался.
+        return next.sort((a, b) => {
+          const aKey = a.bumped_at || a.created_at
+          const bKey = b.bumped_at || b.created_at
+          return bKey.localeCompare(aKey)
+        })
+      })
+      showToast(isBumped ? 'Товар снят с продвижения' : 'Товар продвинут в начало года', 'success')
+    } catch (error) {
+      console.error('Bump operation failed:', error)
+      showToast('Ошибка операции продвижения', 'error')
     }
   }
 
@@ -1005,11 +1052,39 @@ export default function AdminPage() {
                 </select>
                 <svg className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
               </div>
-              {(tableSearch || statusFilter !== 'all') && (
+              <div className="relative">
+                <select
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  className="appearance-none pl-4 pr-9 py-2.5 border border-slate-300 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#9B1B1B]"
+                >
+                  <option value="">Все категории</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.name}>{c.name}</option>
+                  ))}
+                </select>
+                <svg className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+              </div>
+              <div className="relative">
+                <select
+                  value={yearFilter}
+                  onChange={(e) => setYearFilter(e.target.value)}
+                  className="appearance-none pl-4 pr-9 py-2.5 border border-slate-300 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#9B1B1B]"
+                >
+                  <option value="">Все годы</option>
+                  {years.map((y) => (
+                    <option key={y.id} value={y.name}>{y.name}</option>
+                  ))}
+                </select>
+                <svg className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+              </div>
+              {(tableSearch || statusFilter !== 'all' || categoryFilter || yearFilter) && (
                 <button
                   onClick={() => {
                     setTableSearch('')
                     setStatusFilter('all')
+                    setCategoryFilter('')
+                    setYearFilter('')
                   }}
                   className="px-3 py-2 text-sm font-medium text-slate-700 bg-slate-100 border border-slate-200 rounded-lg hover:bg-slate-200"
                 >
@@ -1152,6 +1227,19 @@ export default function AdminPage() {
                     Удалить
                   </button>
                 </div>
+                {!product.is_archived && (
+                  <button
+                    onClick={() => handleBump(product.id, Boolean(product.bumped_at))}
+                    className={`mt-1.5 flex w-full items-center justify-center gap-1 px-2 py-1.5 text-center text-xs font-medium leading-tight rounded-lg border ${
+                      product.bumped_at
+                        ? 'text-amber-700 bg-amber-50 border-amber-200'
+                        : 'text-slate-700 bg-slate-100 border-slate-200'
+                    }`}
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
+                    {product.bumped_at ? 'Снять с продвижения' : 'Продвинуть в начало года'}
+                  </button>
+                )}
               </div>
             ))}
             {filteredProducts.length === 0 && (
@@ -1239,39 +1327,54 @@ export default function AdminPage() {
                       </span>
                     </td>
                     <td className="px-4 py-4 text-right align-top">
-                      <div className="ml-auto grid max-w-[13rem] grid-cols-2 gap-1.5">
-                        <button
-                          onClick={() => handleEdit(product)}
-                          className="inline-flex items-center justify-center gap-1 px-2 py-1.5 text-center text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300 transition"
-                        >
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                          Изменить
-                        </button>
-                        <button
-                          onClick={() => handleDuplicate(product)}
-                          className="inline-flex items-center justify-center gap-1 px-2 py-1.5 text-center text-xs font-medium text-violet-700 bg-violet-50 border border-violet-200 rounded-lg hover:bg-violet-100 hover:border-violet-300 transition"
-                        >
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                          Копия
-                        </button>
-                        <button
-                          onClick={() => handleArchive(product.id, product.is_archived || false)}
-                          className={`inline-flex items-center justify-center gap-1 px-2 py-1.5 text-center text-xs font-medium rounded-lg border transition ${
-                            product.is_archived
-                              ? 'text-green-700 bg-green-50 border-green-200 hover:bg-green-100 hover:border-green-300'
-                              : 'text-slate-700 bg-slate-100 border-slate-200 hover:bg-slate-200 hover:border-slate-300'
-                          }`}
-                        >
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 01-2-2V4a2 2 0 012-2h14a2 2 0 012 2v2a2 2 0 01-2 2M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
-                          {product.is_archived ? 'Разархив.' : 'Архив'}
-                        </button>
-                        <button
-                          onClick={() => handleDelete(product.id)}
-                          className="inline-flex items-center justify-center gap-1 px-2 py-1.5 text-center text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 hover:border-red-300 transition"
-                        >
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                          Удалить
-                        </button>
+                      <div className="ml-auto max-w-[13rem] space-y-1.5">
+                        <div className="grid grid-cols-2 gap-1.5">
+                          <button
+                            onClick={() => handleEdit(product)}
+                            className="inline-flex items-center justify-center gap-1 px-2 py-1.5 text-center text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300 transition"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                            Изменить
+                          </button>
+                          <button
+                            onClick={() => handleDuplicate(product)}
+                            className="inline-flex items-center justify-center gap-1 px-2 py-1.5 text-center text-xs font-medium text-violet-700 bg-violet-50 border border-violet-200 rounded-lg hover:bg-violet-100 hover:border-violet-300 transition"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                            Копия
+                          </button>
+                          <button
+                            onClick={() => handleArchive(product.id, product.is_archived || false)}
+                            className={`inline-flex items-center justify-center gap-1 px-2 py-1.5 text-center text-xs font-medium rounded-lg border transition ${
+                              product.is_archived
+                                ? 'text-green-700 bg-green-50 border-green-200 hover:bg-green-100 hover:border-green-300'
+                                : 'text-slate-700 bg-slate-100 border-slate-200 hover:bg-slate-200 hover:border-slate-300'
+                            }`}
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 01-2-2V4a2 2 0 012-2h14a2 2 0 012 2v2a2 2 0 01-2 2M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
+                            {product.is_archived ? 'Разархив.' : 'Архив'}
+                          </button>
+                          <button
+                            onClick={() => handleDelete(product.id)}
+                            className="inline-flex items-center justify-center gap-1 px-2 py-1.5 text-center text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 hover:border-red-300 transition"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                            Удалить
+                          </button>
+                        </div>
+                        {!product.is_archived && (
+                          <button
+                            onClick={() => handleBump(product.id, Boolean(product.bumped_at))}
+                            className={`inline-flex w-full items-center justify-center gap-1 px-2 py-1.5 text-center text-xs font-medium rounded-lg border transition ${
+                              product.bumped_at
+                                ? 'text-amber-700 bg-amber-50 border-amber-200 hover:bg-amber-100 hover:border-amber-300'
+                                : 'text-slate-700 bg-slate-100 border-slate-200 hover:bg-slate-200 hover:border-slate-300'
+                            }`}
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
+                            {product.bumped_at ? 'Снять с продвижения' : 'Продвинуть'}
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

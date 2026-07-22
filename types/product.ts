@@ -23,5 +23,6 @@ export interface Product {
   price?: number
   created_by?: string
   updated_by?: string
+  bumped_at?: string | null
   created_at: string
 }

@@ -78,6 +78,7 @@ const PRODUCT_COLUMNS = [
   'image_url',
   'images',
   'flyer_url',
+  'price_list_url',
   'advantages',
   'attention_points',
   'website_link',
@@ -93,6 +94,7 @@ const PRODUCT_COLUMNS = [
   'price',
   'created_by',
   'updated_by',
+  'bumped_at',
   'created_at',
   'updated_at',
 ] as const
@@ -486,7 +488,14 @@ async function runSelect(payload: DataRequestPayload, user: SessionUser | null):
     if (!config.columns.includes(payload.sort.field)) {
       throw new Error(`Unsupported sort field "${payload.sort.field}" for collection "${payload.collection}"`)
     }
-    orderSql = ` ORDER BY ${quoteIdentifier(payload.sort.field)} ${payload.sort.ascending === false ? 'DESC' : 'ASC'}`
+    const direction = payload.sort.ascending === false ? 'DESC' : 'ASC'
+    // Продвинутые ("bumped") товары всплывают в начало своей группы —
+    // сортировка по дате добавления фактически сортирует по COALESCE(bumped_at, created_at).
+    if (payload.collection === 'products' && payload.sort.field === 'created_at' && config.columns.includes('bumped_at')) {
+      orderSql = ` ORDER BY COALESCE(${quoteIdentifier('bumped_at')}, ${quoteIdentifier('created_at')}) ${direction}`
+    } else {
+      orderSql = ` ORDER BY ${quoteIdentifier(payload.sort.field)} ${direction}`
+    }
   }
 
   let limitSql = ''
@@ -545,18 +554,24 @@ async function runSelect(payload: DataRequestPayload, user: SessionUser | null):
   return { data: rows, error: null, count }
 }
 
-function withDefaultFields(collection: string, item: Record<string, unknown>) {
+function withDefaultFields(collection: string, item: Record<string, unknown>, isInsert: boolean) {
   const next = { ...item }
   const now = nowIso()
   const config = ensureCollection(collection)
 
-  if (config.columns.includes('id') && !next.id) next.id = createId()
-  if (config.columns.includes('created_at') && !next.created_at) next.created_at = now
   if (config.columns.includes('updated_at')) next.updated_at = now
-  if (collection === 'deleted_products' && !next.deleted_at) next.deleted_at = now
-  if (collection === 'archived_products' && !next.deleted_at) next.deleted_at = now
-  if (collection === 'products' && next.is_archived === undefined) next.is_archived = false
-  if (collection === 'requests' && next.delivered === undefined) next.delivered = false
+
+  // Поля ниже относятся только к созданию строки — на UPDATE их подстановка
+  // по умолчанию перезаписывала бы created_at и незаметно снимала бы
+  // архивный статус у товаров, если он не передан в теле запроса.
+  if (isInsert) {
+    if (config.columns.includes('id') && !next.id) next.id = createId()
+    if (config.columns.includes('created_at') && !next.created_at) next.created_at = now
+    if (collection === 'deleted_products' && !next.deleted_at) next.deleted_at = now
+    if (collection === 'archived_products' && !next.deleted_at) next.deleted_at = now
+    if (collection === 'products' && next.is_archived === undefined) next.is_archived = false
+    if (collection === 'requests' && next.delivered === undefined) next.delivered = false
+  }
 
   return next
 }
@@ -567,7 +582,7 @@ async function insertRows(collection: string, payloads: Array<Record<string, unk
   const createdRows: Array<Record<string, unknown>> = []
 
   for (const input of payloads) {
-    const row = withDefaultFields(collection, input)
+    const row = withDefaultFields(collection, input, true)
     const columnEntries: Array<[string, unknown]> = config.columns
       .filter((column) => row[column] !== undefined)
       .map((column) => [column, prepareFieldValue(collection, column, row[column])])
@@ -634,7 +649,7 @@ async function runUpdate(payload: DataRequestPayload): Promise<QueryResult<unkno
 
   const db = await getDb()
   const config = ensureCollection(payload.collection)
-  const row = withDefaultFields(payload.collection, updateData)
+  const row = withDefaultFields(payload.collection, updateData, false)
   const assignments = config.columns
     .filter((column) => column !== 'id' && row[column] !== undefined)
     .map((column) => `${quoteIdentifier(column)} = ?`)
@@ -682,7 +697,7 @@ async function runUpsert(payload: DataRequestPayload): Promise<QueryResult<unkno
   const results: Array<Record<string, unknown>> = []
 
   for (const rawItem of items) {
-    const item = withDefaultFields(payload.collection, rawItem)
+    const item = withDefaultFields(payload.collection, rawItem, true)
     const uniqueKeySet =
       config.upsertKeys?.find((keySet) => keySet.every((key) => item[key] !== undefined)) ||
       (item.id ? ['id'] : null)
@@ -700,6 +715,7 @@ async function runUpsert(payload: DataRequestPayload): Promise<QueryResult<unkno
     if (existing?.id) {
       const updatePayload: Record<string, unknown> = { ...item }
       delete updatePayload.id
+      delete updatePayload.created_at
       const updated = await runUpdate({
         ...payload,
         filters: [{ field: 'id', op: 'eq', value: existing.id }],

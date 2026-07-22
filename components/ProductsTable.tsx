@@ -743,16 +743,19 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
           onClick={() => setSelectedImage(null)}
           className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[60] animate-in fade-in duration-200 cursor-pointer"
         >
-          <div className="relative max-w-4xl max-h-[90vh] w-full h-full">
-            <Image 
-              src={selectedImage} 
-              alt="Просмотр изображения" 
-              fill 
-              className="object-contain" 
+          {/* inline-block wrapper hugs the rendered image box, so the close
+              button (anchored to the wrapper's corner) always sits on the
+              image's actual edge instead of floating at a fixed viewport spot */}
+          <div onClick={(e) => e.stopPropagation()} className="relative inline-block cursor-default">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={selectedImage}
+              alt="Просмотр изображения"
+              className="block max-w-[85vw] max-h-[85vh] w-auto h-auto rounded-lg"
             />
             <button
               onClick={() => setSelectedImage(null)}
-              className="fixed top-4 right-4 bg-white rounded-lg p-2 hover:bg-slate-100 transition shadow-md"
+              className="absolute -top-3 -right-3 bg-white rounded-lg p-2 hover:bg-slate-100 transition shadow-md"
             >
               <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -765,9 +768,20 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
       {selectedProduct && (
         <div onClick={() => setSelectedProduct(null)} className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200 cursor-pointer">
           <div onClick={(e) => e.stopPropagation()} className="relative bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 cursor-default">
-            <button onClick={() => setSelectedProduct(null)} className="absolute top-3 right-3 z-20 bg-white rounded-lg p-1.5 hover:bg-slate-100 transition shadow-md">
-              <svg className="w-4 h-4 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
+            <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5">
+              {isAdmin && (
+                <button
+                  onClick={() => router.push(`/admin?edit=${selectedProduct.id}`)}
+                  className="bg-white rounded-lg p-1.5 text-slate-700 hover:bg-slate-100 transition shadow-md"
+                  title="Редактировать в админке"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                </button>
+              )}
+              <button onClick={() => setSelectedProduct(null)} className="bg-white rounded-lg p-1.5 text-slate-700 hover:bg-slate-100 transition shadow-md">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
             <div className="relative h-36 sm:h-44 bg-slate-100 shrink-0">
               <ImageCarousel
                 images={selectedProduct.images?.length ? selectedProduct.images : [selectedProduct.image_url]}
