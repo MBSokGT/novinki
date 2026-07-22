@@ -36,6 +36,7 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [loading, setLoading] = useState(true)
+  const [initialLoading, setInitialLoading] = useState(true)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
@@ -298,8 +299,14 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
     if (isTemperatureCategory(selectedCategory)) {
       // Пересечение диапазонов: товар подходит, если его температурный
       // диапазон хранения пересекается с диапазоном, заданным в фильтре.
-      if (tempMin) query = query.gte('temp_max', parseFloat(tempMin))
-      if (tempMax) query = query.lte('temp_min', parseFloat(tempMax))
+      // Если "от" больше "до" (человек перепутал местами), меняем их местами,
+      // а не молча возвращаем пустой список.
+      let [effMin, effMax] = [tempMin, tempMax]
+      if (effMin && effMax && parseFloat(effMin) > parseFloat(effMax)) {
+        ;[effMin, effMax] = [effMax, effMin]
+      }
+      if (effMin) query = query.gte('temp_max', parseFloat(effMin))
+      if (effMax) query = query.lte('temp_min', parseFloat(effMax))
     }
 
     if (sortBy === 'name') {
@@ -311,6 +318,7 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
     const { data } = await query
     if (data) setProducts(data)
     setLoading(false)
+    setInitialLoading(false)
   }
 
   const toggleCompare = (product: Product) => {
@@ -410,8 +418,12 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
     if (dishwasherSafeOnly) query = query.eq('is_dishwasher_safe', true)
     if (microwaveSafeOnly) query = query.eq('is_microwave_safe', true)
     if (isTemperatureCategory(selectedCategory)) {
-      if (tempMin) query = query.gte('temp_max', parseFloat(tempMin))
-      if (tempMax) query = query.lte('temp_min', parseFloat(tempMax))
+      let [effMin, effMax] = [tempMin, tempMax]
+      if (effMin && effMax && parseFloat(effMin) > parseFloat(effMax)) {
+        ;[effMin, effMax] = [effMax, effMin]
+      }
+      if (effMin) query = query.gte('temp_max', parseFloat(effMin))
+      if (effMax) query = query.lte('temp_min', parseFloat(effMax))
     }
     const { data } = await query
     if (data && data.length > 0) {
@@ -465,7 +477,7 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
   // Показывать год-разделители только когда нет фильтра по году и есть несколько лет
   const showYearDividers = !selectedYear && productsByYear.groups.length > 1
 
-  if (loading) return <ProductSkeleton viewMode={viewMode} />
+  if (initialLoading) return <ProductSkeleton viewMode={viewMode} />
 
   return (
     <div>
@@ -534,7 +546,8 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
           </span>
         </div>
       )}
-      
+
+      <div className={`transition-opacity duration-200 ${loading ? 'opacity-50' : 'opacity-100'}`}>
       {viewMode === 'cards' ? (
         <div className="space-y-10">
           {productsByYear.groups.map(([year, yearProducts]) => (
@@ -737,6 +750,7 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
           <p className="mt-4 text-slate-400 text-lg">Новинок пока нет</p>
         </div>
       )}
+      </div>
 
       {selectedImage && (
         <div

@@ -13,6 +13,7 @@ export default function ResetPasswordPage() {
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [resetToken, setResetToken] = useState<string | null>(null)
+  const [invalidLink, setInvalidLink] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -26,6 +27,7 @@ export default function ResetPasswordPage() {
     // Fallback: если нет токена, разрешаем смену только авторизованному пользователю.
     apiClient.auth.getUser().then(({ data }: { data: any }) => {
       if (!data.user) {
+        setInvalidLink(true)
         setError('Недействительная ссылка восстановления')
       }
     })
@@ -43,8 +45,8 @@ export default function ResetPasswordPage() {
       return
     }
 
-    if (password.length < 6) {
-      setError('Пароль должен содержать минимум 6 символов')
+    if (password.length < 8) {
+      setError('Пароль должен содержать минимум 8 символов')
       setLoading(false)
       return
     }
@@ -76,7 +78,7 @@ export default function ResetPasswordPage() {
           <Link href="/" aria-label="На главную" className="inline-block">
             <Image src={(process.env.NEXT_PUBLIC_BASE_PATH||"")+ "/logo.png"} alt="Logo" width={150} height={50} className="mx-auto mb-4" />
           </Link>
-          <h2 className="text-2xl font-bold text-white">Новый пароль</h2>
+          <h2 className="text-2xl font-bold text-slate-900">Новый пароль</h2>
           <p className="text-slate-600 mt-2">Введите новый пароль для вашего аккаунта</p>
         </div>
 
@@ -100,7 +102,7 @@ export default function ResetPasswordPage() {
             onChange={(e) => setPassword(e.target.value)}
             className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition"
             required
-            minLength={6}
+            minLength={8}
           />
           <input
             type="password"
@@ -109,11 +111,11 @@ export default function ResetPasswordPage() {
             onChange={(e) => setConfirmPassword(e.target.value)}
             className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition"
             required
-            minLength={6}
+            minLength={8}
           />
           <button
             type="submit"
-            disabled={loading || !!error}
+            disabled={loading || invalidLink}
             className="w-full bg-[#9B1B1B] text-white px-6 py-3 rounded-xl hover:bg-[#7A1515] transition font-medium disabled:opacity-50"
           >
             {loading ? 'Сохранение...' : 'Сохранить пароль'}

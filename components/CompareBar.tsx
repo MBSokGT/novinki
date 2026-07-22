@@ -26,7 +26,7 @@ export default function CompareBar({ compareProducts, onRemove, onClear }: Compa
           {compareProducts.map(p => (
             <div key={p.id} className="relative flex-shrink-0">
               <div className="w-14 h-14 rounded-lg overflow-hidden border border-gray-200">
-                <Image src={p.image_url} alt={p.name} width={56} height={56} className="object-cover" />
+                <Image src={p.image_url || (process.env.NEXT_PUBLIC_BASE_PATH||'')+'/placeholder.svg'} alt={p.name} width={56} height={56} className="object-cover" />
               </div>
               <button onClick={() => onRemove(p.id)} className="absolute -top-2 -right-2 bg-slate-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">×</button>
             </div>
@@ -53,7 +53,7 @@ export default function CompareBar({ compareProducts, onRemove, onClear }: Compa
                     <th className="text-left p-4 bg-gray-50">Параметр</th>
                     {compareProducts.map(p => (
                       <th key={p.id} className="p-4 bg-gray-50">
-                        <Image src={p.image_url} alt={p.name} width={100} height={100} className="object-cover rounded-lg mx-auto mb-2" />
+                        <Image src={p.image_url || (process.env.NEXT_PUBLIC_BASE_PATH||'')+'/placeholder.svg'} alt={p.name} width={100} height={100} className="object-cover rounded-lg mx-auto mb-2" />
                         <div className="font-bold text-sm">{p.name}</div>
                       </th>
                     ))}

@@ -5,6 +5,7 @@ import { apiClient } from '@/lib/api-client'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
+import { showToast } from '@/components/Toast'
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<any[]>([])
@@ -68,8 +69,13 @@ export default function CategoriesPage() {
       alert('Такая категория уже существует')
       return
     }
-    await apiClient.from('categories').insert({ name })
+    const { error } = await apiClient.from('categories').insert({ name })
+    if (error) {
+      showToast(`Ошибка добавления категории: ${error.message}`, 'error')
+      return
+    }
     setNewCategory('')
+    showToast(`Категория «${name}» добавлена`, 'success')
     fetchData()
   }
 
@@ -80,8 +86,13 @@ export default function CategoriesPage() {
       alert('Такой год уже добавлен')
       return
     }
-    await apiClient.from('years').insert({ name })
+    const { error } = await apiClient.from('years').insert({ name })
+    if (error) {
+      showToast(`Ошибка добавления года: ${error.message}`, 'error')
+      return
+    }
     setNewYear('')
+    showToast(`Год «${name}» добавлен`, 'success')
     fetchData()
   }
 
@@ -90,10 +101,13 @@ export default function CategoriesPage() {
     const warning = inUse > 0
       ? `Категория "${name}" используется в ${inUse} товар(ах). Они не потеряют категорию, но она пропадёт из списка для выбора. Удалить?`
       : 'Удалить категорию?'
-    if (confirm(warning)) {
-      await apiClient.from('categories').delete().eq('id', id)
-      fetchData()
+    if (!confirm(warning)) return
+    const { error } = await apiClient.from('categories').delete().eq('id', id)
+    if (error) {
+      showToast(`Ошибка удаления категории: ${error.message}`, 'error')
+      return
     }
+    fetchData()
   }
 
   const deleteYear = async (id: string, name: string) => {
@@ -101,10 +115,13 @@ export default function CategoriesPage() {
     const warning = inUse > 0
       ? `Год "${name}" используется в ${inUse} товар(ах). Они не потеряют год, но он пропадёт из списка для выбора. Удалить?`
       : 'Удалить год?'
-    if (confirm(warning)) {
-      await apiClient.from('years').delete().eq('id', id)
-      fetchData()
+    if (!confirm(warning)) return
+    const { error } = await apiClient.from('years').delete().eq('id', id)
+    if (error) {
+      showToast(`Ошибка удаления года: ${error.message}`, 'error')
+      return
     }
+    fetchData()
   }
 
   if (loading) {

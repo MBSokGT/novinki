@@ -5,6 +5,7 @@ import { apiClient } from '@/lib/api-client'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
+import { showToast } from '@/components/Toast'
 
 interface DeletedProduct {
   id: string
@@ -16,6 +17,7 @@ interface DeletedProduct {
   image_url: string
   images?: string[]
   flyer_url?: string
+  price_list_url?: string
   advantages: string
   attention_points: string
   website_link?: string
@@ -72,8 +74,9 @@ export default function TrashPage() {
   }
 
   const handleRestore = async (deletedProduct: DeletedProduct) => {
-    if (confirm('Восстановить этот товар?')) {
-      await apiClient.from('products').insert({
+    if (!confirm('Восстановить этот товар?')) return
+    try {
+      const { error: insertError } = await apiClient.from('products').insert({
         name: deletedProduct.name,
         brand: deletedProduct.brand,
         article_number: deletedProduct.article_number,
@@ -81,6 +84,7 @@ export default function TrashPage() {
         image_url: deletedProduct.image_url,
         images: deletedProduct.images || [],
         flyer_url: deletedProduct.flyer_url || '',
+        price_list_url: deletedProduct.price_list_url || '',
         advantages: deletedProduct.advantages,
         attention_points: deletedProduct.attention_points,
         website_link: deletedProduct.website_link,
@@ -94,23 +98,50 @@ export default function TrashPage() {
         temp_max: deletedProduct.temp_max ?? null,
         is_archived: false
       })
-      
-      await apiClient.from('deleted_products').delete().eq('id', deletedProduct.id)
+
+      if (insertError) {
+        showToast(`Ошибка восстановления: ${insertError.message}`, 'error')
+        return
+      }
+
+      const { error: deleteError } = await apiClient.from('deleted_products').delete().eq('id', deletedProduct.id)
+      if (deleteError) {
+        showToast(`Товар восстановлен, но не удалён из корзины: ${deleteError.message}`, 'error')
+      } else {
+        showToast('Товар восстановлен', 'success')
+      }
       fetchDeletedProducts()
+    } catch (error: any) {
+      showToast(error?.message || 'Ошибка восстановления товара', 'error')
     }
   }
 
   const handlePermanentDelete = async (id: string) => {
-    if (confirm('ОКОНЧАТЕЛЬНО удалить товар? Это действие нельзя отменить!')) {
-      await apiClient.from('deleted_products').delete().eq('id', id)
+    if (!confirm('ОКОНЧАТЕЛЬНО удалить товар? Это действие нельзя отменить!')) return
+    try {
+      const { error } = await apiClient.from('deleted_products').delete().eq('id', id)
+      if (error) {
+        showToast(`Ошибка удаления: ${error.message}`, 'error')
+        return
+      }
       fetchDeletedProducts()
+    } catch (error: any) {
+      showToast(error?.message || 'Ошибка удаления товара', 'error')
     }
   }
 
   const handleCleanup = async () => {
-    if (confirm('Очистить корзину от товаров старше 14 дней?')) {
-      await apiClient.rpc('cleanup_deleted_products')
+    if (!confirm('Очистить корзину от товаров старше 14 дней?')) return
+    try {
+      const { error } = await apiClient.rpc('cleanup_deleted_products')
+      if (error) {
+        showToast(`Ошибка очистки: ${error.message}`, 'error')
+        return
+      }
+      showToast('Старые товары удалены', 'success')
       fetchDeletedProducts()
+    } catch (error: any) {
+      showToast(error?.message || 'Ошибка очистки корзины', 'error')
     }
   }
 

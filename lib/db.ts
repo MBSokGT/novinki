@@ -580,34 +580,52 @@ async function insertRows(collection: string, payloads: Array<Record<string, unk
   const db = await getDb()
   const config = ensureCollection(collection)
   const createdRows: Array<Record<string, unknown>> = []
+  const insertedIds: string[] = []
 
-  for (const input of payloads) {
-    const row = withDefaultFields(collection, input, true)
-    const columnEntries: Array<[string, unknown]> = config.columns
-      .filter((column) => row[column] !== undefined)
-      .map((column) => [column, prepareFieldValue(collection, column, row[column])])
+  try {
+    for (const input of payloads) {
+      const row = withDefaultFields(collection, input, true)
+      const columnEntries: Array<[string, unknown]> = config.columns
+        .filter((column) => row[column] !== undefined)
+        .map((column) => [column, prepareFieldValue(collection, column, row[column])])
 
-    const columns = columnEntries.map(([column]) => quoteIdentifier(column))
-    const placeholders = columnEntries.map(() => '?')
-    const values = columnEntries.map(([, value]) => value)
+      const columns = columnEntries.map(([column]) => quoteIdentifier(column))
+      const placeholders = columnEntries.map(() => '?')
+      const values = columnEntries.map(([, value]) => value)
 
-    await db
-      .prepare(`INSERT INTO ${quoteIdentifier(config.table)} (${columns.join(', ')}) VALUES (${placeholders.join(', ')})`)
-      .bind(...values)
-      .run()
-
-    if (collection === 'view_history') {
       await db
-        .prepare('INSERT INTO product_views (id, user_id, product_id, created_at) VALUES (?, ?, ?, ?)')
-        .bind(createId(), row.user_id as string, row.product_id as string, row.created_at as string)
+        .prepare(`INSERT INTO ${quoteIdentifier(config.table)} (${columns.join(', ')}) VALUES (${placeholders.join(', ')})`)
+        .bind(...values)
+        .run()
+
+      if (config.columns.includes('id') && row.id) insertedIds.push(String(row.id))
+
+      if (collection === 'view_history') {
+        await db
+          .prepare('INSERT INTO product_views (id, user_id, product_id, created_at) VALUES (?, ?, ?, ?)')
+          .bind(createId(), row.user_id as string, row.product_id as string, row.created_at as string)
+          .run()
+      }
+
+      if (collection === 'product_ratings') {
+        await recalculateProductRating(db, String(row.product_id))
+      }
+
+      createdRows.push(normalizeRow(collection, row) as Record<string, unknown>)
+    }
+  } catch (error) {
+    // Батч-вставка (например, импорт из Excel) не атомарна на уровне БД — если
+    // строка N не вставилась, строки 1..N-1 уже физически в таблице. Без этой
+    // компенсации администратор получил бы сообщение об ошибке импорта, но часть
+    // товаров уже молча появилась бы в базе без предупреждения.
+    if (insertedIds.length > 0 && config.columns.includes('id')) {
+      const placeholders = insertedIds.map(() => '?').join(', ')
+      await db
+        .prepare(`DELETE FROM ${quoteIdentifier(config.table)} WHERE id IN (${placeholders})`)
+        .bind(...insertedIds)
         .run()
     }
-
-    if (collection === 'product_ratings') {
-      await recalculateProductRating(db, String(row.product_id))
-    }
-
-    createdRows.push(normalizeRow(collection, row) as Record<string, unknown>)
+    throw error
   }
 
   return createdRows

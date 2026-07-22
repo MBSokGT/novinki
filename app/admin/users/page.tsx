@@ -98,10 +98,15 @@ export default function UsersPage() {
       return
     }
 
-    await apiClient
+    const { error } = await apiClient
       .from('user_profiles')
       .update({ is_admin: !currentStatus })
       .eq('id', userId)
+
+    if (error) {
+      showToast(`Ошибка изменения роли: ${error.message}`, 'error')
+      return
+    }
 
     fetchUsers()
   }
@@ -137,7 +142,7 @@ export default function UsersPage() {
     const reason = currentStatus ? null : prompt('Причина блокировки:')
     if (!currentStatus && !reason) return
 
-    await apiClient
+    const { error } = await apiClient
       .from('user_profiles')
       .update({
         is_blocked: !currentStatus,
@@ -145,6 +150,11 @@ export default function UsersPage() {
         blocked_at: !currentStatus ? new Date().toISOString() : null
       })
       .eq('id', userId)
+
+    if (error) {
+      showToast(`Ошибка изменения статуса: ${error.message}`, 'error')
+      return
+    }
 
     fetchUsers()
   }
