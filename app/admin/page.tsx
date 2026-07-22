@@ -647,44 +647,6 @@ export default function AdminPage() {
         </div>
       </nav>
 
-      {/* Sticky bulk-панель */}
-      {selectedIds.size > 0 && (() => {
-        const sel = products.filter((p) => selectedIds.has(p.id))
-        const hasArchived = sel.some((p) => Boolean(p.is_archived))
-        const hasActive = sel.some((p) => !Boolean(p.is_archived))
-        return (
-          <div className="sticky top-0 z-40 bg-[#1A1A1A] border-b border-[#333] shadow-lg">
-            <div className="mx-auto max-w-7xl px-4 sm:px-6 py-2.5 flex flex-wrap items-center gap-2 justify-between">
-              <span className="text-white text-sm font-medium shrink-0">Выбрано: {selectedIds.size}</span>
-              <div className="flex flex-wrap gap-2">
-                {hasArchived && (
-                  <button onClick={handleBulkPublish} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition">
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                    Опубликовать
-                  </button>
-                )}
-                {hasActive && (
-                  <button onClick={handleBulkArchive} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-slate-600 text-white rounded-lg hover:bg-slate-500 transition">
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8" /></svg>
-                    Архивировать
-                  </button>
-                )}
-                <button onClick={handleBulkDuplicate} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                  Копировать
-                </button>
-                <button onClick={handleBulkDelete} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#9B1B1B] text-white rounded-lg hover:bg-[#7A1515] transition">
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                  Удалить
-                </button>
-                <button onClick={() => setSelectedIds(new Set())} className="px-3 py-1.5 text-xs font-medium bg-white/10 text-white rounded-lg hover:bg-white/20 transition">
-                  Отмена
-                </button>
-              </div>
-            </div>
-          </div>
-        )
-      })()}
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         {/* Меню функций */}
@@ -1067,34 +1029,51 @@ export default function AdminPage() {
               </span>
             </div>
             {filteredProducts.length > 0 && (
-              <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-slate-100 pt-3">
-                <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.size > 0 && selectedIds.size === filteredProducts.length}
-                    onChange={toggleSelectAll}
-                    className="w-4 h-4 accent-[#9B1B1B]"
-                  />
-                  Выбрать все
-                </label>
-                {selectedIds.size > 0 && (
-                  <>
-                    <button
-                      onClick={handleBulkPublish}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-green-700 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                      Опубликовать выбранное ({selectedIds.size})
-                    </button>
-                    <button
-                      onClick={handleBulkArchive}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 border border-slate-200 rounded-lg hover:bg-slate-200 transition"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 01-2-2V4a2 2 0 012-2h14a2 2 0 012 2v2a2 2 0 01-2 2M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
-                      Архивировать выбранное ({selectedIds.size})
-                    </button>
-                  </>
-                )}
+              <div className="mt-3 border-t border-slate-100 pt-3">
+                <div className="flex flex-wrap items-center gap-3">
+                  <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.size > 0 && selectedIds.size === filteredProducts.length}
+                      onChange={toggleSelectAll}
+                      className="w-4 h-4 accent-[#9B1B1B]"
+                    />
+                    Выбрать все
+                  </label>
+                  {selectedIds.size > 0 && (
+                    <>
+                      <span className="text-xs font-medium text-slate-500 shrink-0">Выбрано: {selectedIds.size}</span>
+                      <button
+                        onClick={handleBulkPublish}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-green-700 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                        Опубликовать
+                      </button>
+                      <button
+                        onClick={handleBulkArchive}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 border border-slate-200 rounded-lg hover:bg-slate-200 transition"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 01-2-2V4a2 2 0 012-2h14a2 2 0 012 2v2a2 2 0 01-2 2M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
+                        Архивировать
+                      </button>
+                      <button
+                        onClick={handleBulkDuplicate}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                        Копировать
+                      </button>
+                      <button
+                        onClick={handleBulkDelete}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        Удалить
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -1152,15 +1131,15 @@ export default function AdminPage() {
                   </div>
                 )}
                 <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
-                  <button onClick={() => handleEdit(product)} className="flex items-center justify-center gap-1 px-2 py-1.5 text-center text-xs font-medium leading-tight text-blue-700 bg-blue-50 border border-blue-200 rounded-md">
+                  <button onClick={() => handleEdit(product)} className="flex items-center justify-center gap-1 px-2 py-1.5 text-center text-xs font-medium leading-tight text-blue-700 bg-blue-50 border border-blue-200 rounded-lg">
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                     Изменить
                   </button>
-                  <button onClick={() => handleDuplicate(product)} className="flex items-center justify-center gap-1 px-2 py-1.5 text-center text-xs font-medium leading-tight text-violet-700 bg-violet-50 border border-violet-200 rounded-md">
+                  <button onClick={() => handleDuplicate(product)} className="flex items-center justify-center gap-1 px-2 py-1.5 text-center text-xs font-medium leading-tight text-violet-700 bg-violet-50 border border-violet-200 rounded-lg">
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
                     Копия
                   </button>
-                  <button onClick={() => handleArchive(product.id, product.is_archived || false)} className={`flex items-center justify-center gap-1 px-2 py-1.5 text-center text-xs leading-tight font-medium rounded-md border ${
+                  <button onClick={() => handleArchive(product.id, product.is_archived || false)} className={`flex items-center justify-center gap-1 px-2 py-1.5 text-center text-xs leading-tight font-medium rounded-lg border ${
                     product.is_archived
                       ? 'text-green-700 bg-green-50 border-green-200'
                       : 'text-slate-700 bg-slate-100 border-slate-200'
@@ -1168,7 +1147,7 @@ export default function AdminPage() {
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 01-2-2V4a2 2 0 012-2h14a2 2 0 012 2v2a2 2 0 01-2 2M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
                     {product.is_archived ? 'Разархив.' : 'Архив'}
                   </button>
-                  <button onClick={() => handleDelete(product.id)} className="flex items-center justify-center gap-1 px-2 py-1.5 text-center text-xs font-medium leading-tight text-red-700 bg-red-50 border border-red-200 rounded-md">
+                  <button onClick={() => handleDelete(product.id)} className="flex items-center justify-center gap-1 px-2 py-1.5 text-center text-xs font-medium leading-tight text-red-700 bg-red-50 border border-red-200 rounded-lg">
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                     Удалить
                   </button>
@@ -1263,21 +1242,21 @@ export default function AdminPage() {
                       <div className="ml-auto grid max-w-[13rem] grid-cols-2 gap-1.5">
                         <button
                           onClick={() => handleEdit(product)}
-                          className="inline-flex items-center justify-center gap-1 px-2 py-1.5 text-center text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 hover:border-blue-300 transition"
+                          className="inline-flex items-center justify-center gap-1 px-2 py-1.5 text-center text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300 transition"
                         >
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                           Изменить
                         </button>
                         <button
                           onClick={() => handleDuplicate(product)}
-                          className="inline-flex items-center justify-center gap-1 px-2 py-1.5 text-center text-xs font-medium text-violet-700 bg-violet-50 border border-violet-200 rounded-md hover:bg-violet-100 hover:border-violet-300 transition"
+                          className="inline-flex items-center justify-center gap-1 px-2 py-1.5 text-center text-xs font-medium text-violet-700 bg-violet-50 border border-violet-200 rounded-lg hover:bg-violet-100 hover:border-violet-300 transition"
                         >
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
                           Копия
                         </button>
                         <button
                           onClick={() => handleArchive(product.id, product.is_archived || false)}
-                          className={`inline-flex items-center justify-center gap-1 px-2 py-1.5 text-center text-xs font-medium rounded-md border transition ${
+                          className={`inline-flex items-center justify-center gap-1 px-2 py-1.5 text-center text-xs font-medium rounded-lg border transition ${
                             product.is_archived
                               ? 'text-green-700 bg-green-50 border-green-200 hover:bg-green-100 hover:border-green-300'
                               : 'text-slate-700 bg-slate-100 border-slate-200 hover:bg-slate-200 hover:border-slate-300'
@@ -1288,7 +1267,7 @@ export default function AdminPage() {
                         </button>
                         <button
                           onClick={() => handleDelete(product.id)}
-                          className="inline-flex items-center justify-center gap-1 px-2 py-1.5 text-center text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 hover:border-red-300 transition"
+                          className="inline-flex items-center justify-center gap-1 px-2 py-1.5 text-center text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 hover:border-red-300 transition"
                         >
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                           Удалить

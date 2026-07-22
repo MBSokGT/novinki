@@ -558,7 +558,7 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
                 <Image src={product.image_url || (process.env.NEXT_PUBLIC_BASE_PATH||'')+'/placeholder.svg'} alt={product.name} fill className="object-cover group-hover:scale-[1.02] transition-transform duration-300" loading="lazy" />
                 <button
                   onClick={(e) => { e.stopPropagation(); toggleCompare(product); }}
-                  className={`absolute top-2 right-2 p-1.5 rounded-md transition opacity-0 group-hover:opacity-100 ${compareProducts.find(p => p.id === product.id) ? 'opacity-100 bg-[#9B1B1B] text-white' : 'bg-white/95 text-slate-500 hover:text-slate-800 shadow-sm'}`}
+                  className={`absolute top-2 right-2 p-1.5 rounded-lg transition opacity-0 group-hover:opacity-100 ${compareProducts.find(p => p.id === product.id) ? 'opacity-100 bg-[#9B1B1B] text-white' : 'bg-white/95 text-slate-500 hover:text-slate-800 shadow-sm'}`}
                   title="Сравнить"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
@@ -750,9 +750,9 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
               fill 
               className="object-contain" 
             />
-            <button 
-              onClick={() => setSelectedImage(null)} 
-              className="absolute top-4 right-4 bg-white/90 backdrop-blur rounded-full p-2.5 hover:bg-white transition shadow-lg"
+            <button
+              onClick={() => setSelectedImage(null)}
+              className="fixed top-4 right-4 bg-white rounded-lg p-2 hover:bg-slate-100 transition shadow-md"
             >
               <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -764,7 +764,10 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
 
       {selectedProduct && (
         <div onClick={() => setSelectedProduct(null)} className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200 cursor-pointer">
-          <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 cursor-default">
+          <div onClick={(e) => e.stopPropagation()} className="relative bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 cursor-default">
+            <button onClick={() => setSelectedProduct(null)} className="absolute top-3 right-3 z-20 bg-white rounded-lg p-1.5 hover:bg-slate-100 transition shadow-md">
+              <svg className="w-4 h-4 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
             <div className="relative h-36 sm:h-44 bg-slate-100 shrink-0">
               <ImageCarousel
                 images={selectedProduct.images?.length ? selectedProduct.images : [selectedProduct.image_url]}
@@ -772,9 +775,6 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
                 className="w-full h-full"
                 onImageClick={(url) => setSelectedImage(url)}
               />
-              <button onClick={() => setSelectedProduct(null)} className="absolute top-3 right-3 z-10 bg-white/90 backdrop-blur rounded-lg p-2 hover:bg-white transition shadow-sm">
-                <svg className="w-4 h-4 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
             </div>
             <div className="p-5 sm:p-7 overflow-y-auto max-h-[calc(90vh-9rem)] sm:max-h-[calc(90vh-11rem)]">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-3">
@@ -827,7 +827,7 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
                         <button
                           key={similar.id}
                           onClick={() => viewProduct(similar)}
-                          className="flex items-center gap-2 p-2 border border-slate-100 hover:border-slate-300 hover:bg-slate-50 transition text-left"
+                          className="flex items-center gap-2 p-2 rounded-lg border border-slate-100 hover:border-slate-300 hover:bg-slate-50 transition text-left"
                         >
                           <div className="relative w-10 h-10 overflow-hidden bg-slate-100 flex-shrink-0">
                             <Image src={similar.image_url || (process.env.NEXT_PUBLIC_BASE_PATH||'')+'/placeholder.svg'} alt={similar.name} fill className="object-cover" />
