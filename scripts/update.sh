@@ -62,8 +62,13 @@ git fetch origin "$BRANCH"
 git checkout "$BRANCH"
 git reset --hard "origin/$BRANCH"
 
-echo "==> npm install (на случай новых зависимостей)..."
-npm install
+echo "==> npm ci (чистая установка строго по package-lock.json)..."
+# npm ci, а не npm install: ставит зависимости в точности как в лок-файле и не
+# трогает его. npm install слегка переписывает package-lock.json даже когда
+# всё "up to date", из-за чего git status переставал быть чистым и следующий
+# запуск скрипта отказывался обновлять, ругаясь на несуществующие "локальные
+# изменения".
+npm ci
 
 echo "==> Сборка (NEXT_PUBLIC_BASE_PATH=$BASE_PATH, NEXT_PUBLIC_STORAGE_DRIVER=$STORAGE_DRIVER)..."
 NEXT_PUBLIC_BASE_PATH="$BASE_PATH" NEXT_PUBLIC_STORAGE_DRIVER="$STORAGE_DRIVER" npm run build
