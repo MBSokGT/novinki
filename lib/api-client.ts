@@ -114,6 +114,13 @@ async function uploadToFilesystem(bucket: string, file: File): Promise<{ data: {
       body: formData,
       cache: 'no-store',
     })
+    // Слишком большой файл иногда режет ещё nginx (client_max_body_size),
+    // до того как запрос дойдёт до приложения — в этом случае в ответе
+    // приходит HTML-страница nginx, а не JSON от нашего API, и safeJson()
+    // упал бы на разборе, отдав в тост нечитаемое "HTTP 413".
+    if (response.status === 413) {
+      return { data: null, error: { message: 'Файл слишком большой (максимум 20 МБ). Сожмите файл и попробуйте снова.' } }
+    }
     return await safeJson(response)
   } catch (error) {
     return {

@@ -12,7 +12,7 @@ import FilterBar from './FilterBar'
 import SearchBar from './SearchBar'
 import CompareBar from './CompareBar'
 import Breadcrumbs from './Breadcrumbs'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { isTemperatureCategory } from '@/lib/constants'
 import { exportProductsToExcel } from '@/lib/export'
 
@@ -53,7 +53,6 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
   const [isUrlStateReady, setIsUrlStateReady] = useState(false)
   const [showScrollTop, setShowScrollTop] = useState(false)
   const router = useRouter()
-  const pathname = usePathname()
   const searchParams = useSearchParams()
 
   useEffect(() => {
@@ -163,13 +162,16 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
     const nextQuery = params.toString()
     const currentQuery = searchParams.toString()
     if (nextQuery !== currentQuery) {
-      const url = nextQuery ? `${pathname}?${nextQuery}` : pathname
+      // window.location.pathname, а не usePathname() — тот возвращает путь БЕЗ
+      // basePath (Next.js его сам вырезает), и replaceState с таким путём молча
+      // стирал бы "/novinki" из адресной строки при любом поиске/фильтре.
+      const base = window.location.pathname
+      const url = nextQuery ? `${base}?${nextQuery}` : base
       window.history.replaceState(null, '', url)
     }
   }, [
     debouncedSearch,
     isUrlStateReady,
-    pathname,
     router,
     searchParams,
     selectedBrand,
@@ -262,6 +264,25 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
     fetchProducts()
   }, [debouncedSearch, selectedBrand, selectedCategory, selectedYear, supplierNoveltiesOnly, dishwasherSafeOnly, microwaveSafeOnly, tempMin, tempMax, sortBy])
 
+  // Открытие карточки по прямой ссылке ?p=<id> (кнопка «Скопировать ссылку»
+  // в модалке товара). Грузим товар отдельным запросом по id, а не берём из
+  // уже отфильтрованного списка — по ссылке может прийти товар, которого нет
+  // среди текущих фильтров/поиска.
+  useEffect(() => {
+    const productId = searchParams.get('p')
+    if (!productId || selectedProduct) return
+    apiClient
+      .from('products')
+      .select('*')
+      .eq('id', productId)
+      .eq('is_archived', false)
+      .maybeSingle()
+      .then(({ data }: { data: Product | null }) => {
+        if (data) setSelectedProduct(data)
+      })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
+
   // Полный список товаров с базовыми полями — для автодополнения и похожих товаров
   const fetchProductsMeta = async () => {
     let query = apiClient
@@ -337,6 +358,28 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
 
   const viewProduct = (product: Product) => {
     setSelectedProduct(product)
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('p', product.id)
+    window.history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`)
+  }
+
+  const closeProduct = () => {
+    setSelectedProduct(null)
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete('p')
+    const query = params.toString()
+    const base = window.location.pathname
+    window.history.replaceState(null, '', query ? `${base}?${query}` : base)
+  }
+
+  const copyProductLink = (product: Product) => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('p', product.id)
+    const url = `${window.location.origin}${window.location.pathname}?${params.toString()}`
+    navigator.clipboard.writeText(url).then(
+      () => showToast('Ссылка скопирована', 'success'),
+      () => showToast('Не удалось скопировать ссылку', 'error')
+    )
   }
 
   const getSimilarProducts = (product: Product) => {
@@ -780,9 +823,16 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
       )}
 
       {selectedProduct && (
-        <div onClick={() => setSelectedProduct(null)} className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200 cursor-pointer">
+        <div onClick={closeProduct} className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200 cursor-pointer">
           <div onClick={(e) => e.stopPropagation()} className="relative bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 cursor-default">
             <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5">
+              <button
+                onClick={() => copyProductLink(selectedProduct)}
+                className="bg-white rounded-lg p-1.5 text-slate-700 hover:bg-slate-100 transition shadow-md"
+                title="Скопировать ссылку на товар"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 01-5.656-5.656l1.5-1.5M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 015.656 5.656l-1.5 1.5" /></svg>
+              </button>
               {isAdmin && (
                 <button
                   onClick={() => router.push(`/admin?edit=${selectedProduct.id}`)}
@@ -792,7 +842,7 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                 </button>
               )}
-              <button onClick={() => setSelectedProduct(null)} className="bg-white rounded-lg p-1.5 text-slate-700 hover:bg-slate-100 transition shadow-md">
+              <button onClick={closeProduct} className="bg-white rounded-lg p-1.5 text-slate-700 hover:bg-slate-100 transition shadow-md">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
@@ -806,7 +856,7 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
             </div>
             <div className="p-5 sm:p-7 overflow-y-auto max-h-[calc(90vh-9rem)] sm:max-h-[calc(90vh-11rem)]">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-3">
-                <button onClick={() => { setSelectedBrand(selectedProduct.brand); setSelectedProduct(null); }} className="text-xs font-semibold text-slate-500 uppercase tracking-wide hover:text-[#9B1B1B] transition">{selectedProduct.brand}</button>
+                <button onClick={() => { setSelectedBrand(selectedProduct.brand); closeProduct(); }} className="text-xs font-semibold text-slate-500 uppercase tracking-wide hover:text-[#9B1B1B] transition">{selectedProduct.brand}</button>
                 {selectedProduct.is_dishwasher_safe && <span className="text-[10px] font-medium text-blue-600 border border-blue-200 rounded px-1.5 py-px">Подходит для ПММ</span>}
                 {selectedProduct.is_microwave_safe && <span className="text-[10px] font-medium text-blue-600 border border-blue-200 rounded px-1.5 py-px">Подходит для СВЧ</span>}
                 {(selectedProduct.temp_min != null || selectedProduct.temp_max != null) && (
