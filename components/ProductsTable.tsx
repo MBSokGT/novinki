@@ -288,7 +288,7 @@ export default function ProductsTable({ isAdmin, onExportReady, supplierNoveltie
   const fetchProductsMeta = async () => {
     let query = apiClient
       .from('products')
-      .select('id, name, brand, category, year, article_number, image_url, description, advantages')
+      .select('id, name, brand, category, year, article_number, image_url, description, advantages, is_supplier_novelty')
       .eq('is_archived', false)
     query = query.order('created_at', { ascending: false })
     const { data } = await query
@@ -394,9 +394,12 @@ export default function ProductsTable({ isAdmin, onExportReady, supplierNoveltie
 
     const currentSizes = extractSizes((product.description || '') + ' ' + (product.advantages || ''))
 
-    // Вычисляем score похожести для каждого товара (работаем с полным мета-списком)
+    // Вычисляем score похожести для каждого товара (работаем с полным мета-списком).
+    // Похожие товары не должны пересекать границу "склад" / "поставщики" —
+    // у карточки новинки поставщика в подборке не должны всплывать складские
+    // позиции и наоборот, это разные вкладки с разным смыслом.
     const scored = productsMeta
-      .filter(p => p.id !== product.id)
+      .filter(p => p.id !== product.id && Boolean(p.is_supplier_novelty) === Boolean(product.is_supplier_novelty))
       .map(p => {
         let score = 0
         const pSizes = extractSizes(p.description + ' ' + p.advantages)
