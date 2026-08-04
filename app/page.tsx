@@ -17,6 +17,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [menuOpen, setMenuOpen] = useState(false)
   const [exportProducts, setExportProducts] = useState<(() => void) | null>(null)
+  const [supplierNoveltiesOnly, setSupplierNoveltiesOnly] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -86,6 +87,24 @@ export default function Home() {
               </Link>
             </div>
             <div className="hidden sm:flex items-center gap-2">
+              <div className="inline-flex items-center rounded-lg bg-white/10 p-0.5" role="tablist" aria-label="Раздел новинок">
+                <button
+                  role="tab"
+                  aria-selected={!supplierNoveltiesOnly}
+                  onClick={() => setSupplierNoveltiesOnly(false)}
+                  className={`whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition ${!supplierNoveltiesOnly ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-300 hover:text-white'}`}
+                >
+                  Новинки на складе
+                </button>
+                <button
+                  role="tab"
+                  aria-selected={supplierNoveltiesOnly}
+                  onClick={() => setSupplierNoveltiesOnly(true)}
+                  className={`whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition ${supplierNoveltiesOnly ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-300 hover:text-white'}`}
+                >
+                  Новинки поставщиков
+                </button>
+              </div>
               <RequestForm />
               {exportProducts && (
                 <button
@@ -125,6 +144,24 @@ export default function Home() {
           </div>
           {menuOpen && (
             <div className="sm:hidden mt-4 pb-2 space-y-2 border-t border-white/10 pt-4">
+              <div className="flex items-center rounded-lg bg-white/10 p-0.5" role="tablist" aria-label="Раздел новинок">
+                <button
+                  role="tab"
+                  aria-selected={!supplierNoveltiesOnly}
+                  onClick={() => setSupplierNoveltiesOnly(false)}
+                  className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition ${!supplierNoveltiesOnly ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-300 hover:text-white'}`}
+                >
+                  Новинки на складе
+                </button>
+                <button
+                  role="tab"
+                  aria-selected={supplierNoveltiesOnly}
+                  onClick={() => setSupplierNoveltiesOnly(true)}
+                  className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition ${supplierNoveltiesOnly ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-300 hover:text-white'}`}
+                >
+                  Новинки поставщиков
+                </button>
+              </div>
               <div className="flex items-center gap-2">
                 <div className="flex-1 [&>button]:w-full">
                   <RequestForm />
@@ -159,7 +196,12 @@ export default function Home() {
         </div>
       </nav>
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 py-6">
-        <ProductsTable isAdmin={isAdmin} onExportReady={(fn) => setExportProducts(() => fn)} />
+        <ProductsTable
+          isAdmin={isAdmin}
+          onExportReady={(fn) => setExportProducts(() => fn)}
+          supplierNoveltiesOnly={supplierNoveltiesOnly}
+          setSupplierNoveltiesOnly={setSupplierNoveltiesOnly}
+        />
       </main>
       <Footer />
       <ToastContainer />

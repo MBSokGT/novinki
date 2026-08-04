@@ -19,6 +19,8 @@ import { exportProductsToExcel } from '@/lib/export'
 interface ProductsTableProps {
   isAdmin: boolean
   onExportReady?: (exportFn: () => void) => void
+  supplierNoveltiesOnly: boolean
+  setSupplierNoveltiesOnly: (value: boolean) => void
 }
 
 const VIEW_MODE_KEY = 'novinki:viewMode'
@@ -29,7 +31,7 @@ const SUPPLIER_NOVELTIES_KEY = 'novinki:supplierNoveltiesOnly'
 const DISHWASHER_SAFE_KEY = 'novinki:dishwasherSafeOnly'
 const MICROWAVE_SAFE_KEY = 'novinki:microwaveSafeOnly'
 
-export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableProps) {
+export default function ProductsTable({ isAdmin, onExportReady, supplierNoveltiesOnly, setSupplierNoveltiesOnly }: ProductsTableProps) {
   const [products, setProducts] = useState<Product[]>([])
   // Лёгкий список всех товаров: автодополнение, категории, похожие товары
   const [productsMeta, setProductsMeta] = useState<Product[]>([])
@@ -43,7 +45,6 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('cards')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [selectedYear, setSelectedYear] = useState<string | null>(null)
-  const [supplierNoveltiesOnly, setSupplierNoveltiesOnly] = useState(false)
   const [dishwasherSafeOnly, setDishwasherSafeOnly] = useState(false)
   const [microwaveSafeOnly, setMicrowaveSafeOnly] = useState(false)
   const [tempMin, setTempMin] = useState('')
@@ -314,7 +315,9 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
     if (selectedBrand) query = query.eq('brand', selectedBrand)
     if (selectedCategory) query = query.eq('category', selectedCategory)
     if (selectedYear) query = query.eq('year', selectedYear)
-    if (supplierNoveltiesOnly) query = query.eq('is_supplier_novelty', true)
+    // Вкладка "Новинки на складе" / "Новинки поставщиков" — взаимоисключающие
+    // режимы, а не доп.фильтр: по умолчанию склад (не поставщик), иначе только поставщик.
+    query = query.eq('is_supplier_novelty', supplierNoveltiesOnly)
     if (dishwasherSafeOnly) query = query.eq('is_dishwasher_safe', true)
     if (microwaveSafeOnly) query = query.eq('is_microwave_safe', true)
     if (isTemperatureCategory(selectedCategory)) {
@@ -425,11 +428,13 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
   )
 
   const clearAllFilters = () => {
+    // supplierNoveltiesOnly сюда намеренно не входит — это вкладка
+    // "Новинки на складе" / "Новинки поставщиков" в верхней панели,
+    // а не фильтр, который логично сбрасывать кнопкой "Сбросить".
     setSearch('')
     setSelectedBrand(null)
     setSelectedCategory(null)
     setSelectedYear(null)
-    setSupplierNoveltiesOnly(false)
     setDishwasherSafeOnly(false)
     setMicrowaveSafeOnly(false)
     setTempMin('')
@@ -442,7 +447,6 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
     (selectedBrand ? 1 : 0) +
     (selectedCategory ? 1 : 0) +
     (selectedYear ? 1 : 0) +
-    (supplierNoveltiesOnly ? 1 : 0) +
     (dishwasherSafeOnly ? 1 : 0) +
     (microwaveSafeOnly ? 1 : 0) +
     (tempMin ? 1 : 0) +
@@ -457,7 +461,9 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
     if (selectedBrand) query = query.eq('brand', selectedBrand)
     if (selectedCategory) query = query.eq('category', selectedCategory)
     if (selectedYear) query = query.eq('year', selectedYear)
-    if (supplierNoveltiesOnly) query = query.eq('is_supplier_novelty', true)
+    // Вкладка "Новинки на складе" / "Новинки поставщиков" — взаимоисключающие
+    // режимы, а не доп.фильтр: по умолчанию склад (не поставщик), иначе только поставщик.
+    query = query.eq('is_supplier_novelty', supplierNoveltiesOnly)
     if (dishwasherSafeOnly) query = query.eq('is_dishwasher_safe', true)
     if (microwaveSafeOnly) query = query.eq('is_microwave_safe', true)
     if (isTemperatureCategory(selectedCategory)) {
@@ -539,8 +545,6 @@ export default function ProductsTable({ isAdmin, onExportReady }: ProductsTableP
         setSelectedCategory={setSelectedCategory}
         selectedYear={selectedYear}
         setSelectedYear={setSelectedYear}
-        supplierNoveltiesOnly={supplierNoveltiesOnly}
-        setSupplierNoveltiesOnly={setSupplierNoveltiesOnly}
         dishwasherSafeOnly={dishwasherSafeOnly}
         setDishwasherSafeOnly={setDishwasherSafeOnly}
         microwaveSafeOnly={microwaveSafeOnly}
