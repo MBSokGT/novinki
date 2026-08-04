@@ -15,6 +15,7 @@ import Breadcrumbs from './Breadcrumbs'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { isTemperatureCategory } from '@/lib/constants'
 import { exportProductsToExcel } from '@/lib/export'
+import { fuzzyMatches } from '@/lib/fuzzySearch'
 
 interface ProductsTableProps {
   isAdmin: boolean
@@ -307,14 +308,9 @@ export default function ProductsTable({ isAdmin, onExportReady, supplierNoveltie
     // импорта из Excel) и архивные товары показывать нельзя.
     query = query.eq('is_archived', false)
 
-    if (debouncedSearch) {
-      // category и tags включены, чтобы поиск по характеристике/типу товара
-      // ("сироп", "файн рим") находил всё в этой категории или с этим тегом,
-      // а не только товары, у которых слово случайно попало в описание.
-      query = query.or(
-        `name.ilike.%${debouncedSearch}%,brand.ilike.%${debouncedSearch}%,description.ilike.%${debouncedSearch}%,category.ilike.%${debouncedSearch}%,tags.ilike.%${debouncedSearch}%`
-      )
-    }
+    // Текстовый поиск теперь не в SQL (обычный ILIKE не прощает опечатки),
+    // а на клиенте, ниже — с допуском на опечатки, неверную раскладку
+    // клавиатуры и транслит. Здесь остаются только точные фильтры.
     if (selectedBrand) query = query.eq('brand', selectedBrand)
     if (selectedCategory) query = query.eq('category', selectedCategory)
     if (selectedYear) query = query.eq('year', selectedYear)
@@ -343,7 +339,14 @@ export default function ProductsTable({ isAdmin, onExportReady, supplierNoveltie
     }
 
     const { data } = await query
-    if (data) setProducts(data)
+    if (data) {
+      const filtered = debouncedSearch
+        ? (data as Product[]).filter((p) =>
+            fuzzyMatches([p.name, p.brand, p.description, p.category, p.tags, p.article_number], debouncedSearch)
+          )
+        : (data as Product[])
+      setProducts(filtered)
+    }
     setLoading(false)
     setInitialLoading(false)
   }
@@ -462,7 +465,7 @@ export default function ProductsTable({ isAdmin, onExportReady, supplierNoveltie
   const handleExport = async () => {
     let query = apiClient
       .from('products')
-      .select('name,brand,article_number,category,year,description,advantages,attention_points,website_link,is_supplier_novelty,is_dishwasher_safe,is_microwave_safe,temp_min,temp_max')
+      .select('name,brand,article_number,category,year,description,advantages,attention_points,website_link,is_supplier_novelty,is_dishwasher_safe,is_microwave_safe,temp_min,temp_max,tags')
     if (!isAdmin) query = query.eq('is_archived', false)
     if (selectedBrand) query = query.eq('brand', selectedBrand)
     if (selectedCategory) query = query.eq('category', selectedCategory)
@@ -481,8 +484,13 @@ export default function ProductsTable({ isAdmin, onExportReady, supplierNoveltie
       if (effMax) query = query.lte('temp_min', parseFloat(effMax))
     }
     const { data } = await query
-    if (data && data.length > 0) {
-      exportProductsToExcel(data as Product[])
+    const filtered = debouncedSearch
+      ? (data as Product[] | null)?.filter((p) =>
+          fuzzyMatches([p.name, p.brand, p.description, p.category, p.tags, p.article_number], debouncedSearch)
+        )
+      : data
+    if (filtered && filtered.length > 0) {
+      exportProductsToExcel(filtered as Product[])
       showToast('Файл Excel сформирован', 'success')
     } else {
       showToast('Нет товаров для выгрузки', 'info')

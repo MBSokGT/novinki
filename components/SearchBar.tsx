@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Product } from '@/types/product'
+import { fuzzyMatches } from '@/lib/fuzzySearch'
 
 interface SearchBarProps {
   products: Product[]
@@ -19,13 +20,7 @@ export default function SearchBar({ products, search, setSearch, onSelectProduct
   useEffect(() => {
     if (search.length > 1) {
       const filtered = products
-        .filter(p =>
-          p.name.toLowerCase().includes(search.toLowerCase()) ||
-          p.brand.toLowerCase().includes(search.toLowerCase()) ||
-          p.article_number?.toLowerCase().includes(search.toLowerCase()) ||
-          p.category?.toLowerCase().includes(search.toLowerCase()) ||
-          p.tags?.toLowerCase().includes(search.toLowerCase())
-        )
+        .filter(p => fuzzyMatches([p.name, p.brand, p.article_number, p.category, p.tags], search))
         .slice(0, 5)
       setSuggestions(filtered)
       setShowSuggestions(true)
