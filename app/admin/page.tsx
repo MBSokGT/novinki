@@ -968,7 +968,7 @@ export default function AdminPage() {
               <div className="relative">
                 <input
                   type="file"
-                  accept="application/pdf"
+                  accept="application/pdf,image/jpeg,image/png,.xls,.xlsx,.doc,.docx,.ppt,.pptx"
                   onChange={(e) => setFlyer(e.target.files?.[0] || null)}
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                   id="flyer-upload"
@@ -980,7 +980,7 @@ export default function AdminPage() {
                   <div className="text-center">
                     <svg className="w-6 h-6 mx-auto mb-1 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                     <div className="text-sm text-slate-600">
-                      {flyer ? flyer.name : 'Листовка (PDF)'}
+                      {flyer ? flyer.name : 'Листовка (PDF, JPG, PNG, Excel, Word, PowerPoint)'}
                     </div>
                   </div>
                 </label>
@@ -988,7 +988,7 @@ export default function AdminPage() {
               <div className="relative">
                 <input
                   type="file"
-                  accept="application/pdf,.xls,.xlsx"
+                  accept="application/pdf,image/jpeg,image/png,.xls,.xlsx,.doc,.docx,.ppt,.pptx"
                   onChange={(e) => setPriceList(e.target.files?.[0] || null)}
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                   id="price-list-upload"
@@ -1000,7 +1000,7 @@ export default function AdminPage() {
                   <div className="text-center">
                     <svg className="w-6 h-6 mx-auto mb-1 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18M10 4v16M14 4v16M4 4h16a1 1 0 011 1v14a1 1 0 01-1 1H4a1 1 0 01-1-1V5a1 1 0 011-1z" /></svg>
                     <div className="text-sm text-slate-600">
-                      {priceList ? priceList.name : 'Прайс-лист (PDF / Excel)'}
+                      {priceList ? priceList.name : 'Прайс-лист (PDF, JPG, PNG, Excel, Word, PowerPoint)'}
                     </div>
                   </div>
                 </label>

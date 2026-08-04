@@ -652,7 +652,7 @@ export default function ProductsTable({ isAdmin, onExportReady, supplierNoveltie
                     {product.flyer_url && (
                       <a href={product.flyer_url} target="_blank" rel="noopener noreferrer"
                         onClick={(e) => { e.stopPropagation(); e.preventDefault(); openFileInNewTab(product.flyer_url!) }}
-                        className="text-[11px] font-medium text-slate-400 hover:text-[#9B1B1B] transition" title="Листовка PDF">
+                        className="text-[11px] font-medium text-slate-400 hover:text-[#9B1B1B] transition" title="Листовка">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                       </a>
                     )}
@@ -908,7 +908,7 @@ export default function ProductsTable({ isAdmin, onExportReady, supplierNoveltie
                     {selectedProduct.flyer_url && (
                       <a href={selectedProduct.flyer_url} target="_blank" rel="noopener noreferrer" onClick={(e) => { e.preventDefault(); openFileInNewTab(selectedProduct.flyer_url!) }} className="inline-flex items-center gap-1.5 text-sm font-medium text-[#9B1B1B] hover:text-[#7A1515]">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                        Листовка (PDF)
+                        Листовка
                       </a>
                     )}
                     {selectedProduct.price_list_url && (
