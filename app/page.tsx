@@ -83,7 +83,7 @@ export default function Home() {
             <div className="flex min-w-0 flex-1 items-center gap-3">
               <Link href="/" aria-label="На главную" className="inline-flex min-w-0 flex-1 items-center gap-3">
                 <Image src={(process.env.NEXT_PUBLIC_BASE_PATH||"")+ "/logo.png"} alt="Logo" width={100} height={33} className="object-contain shrink-0 sm:w-[120px]" priority />
-                <span className="hidden truncate text-2xl font-bold uppercase tracking-tight text-white sm:block">Новинки Ассортимента</span>
+                <span className="hidden truncate text-2xl font-bold uppercase tracking-tight text-white sm:block">Новинки</span>
               </Link>
             </div>
             <div className="hidden shrink-0 items-center gap-1.5 sm:flex lg:gap-2">
