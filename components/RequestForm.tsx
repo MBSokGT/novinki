@@ -55,7 +55,8 @@ export default function RequestForm() {
         className="inline-flex items-center gap-1.5 whitespace-nowrap px-3 py-1.5 text-sm bg-[#9B1B1B] text-white font-medium rounded-lg hover:bg-[#7A1515] transition shadow-sm"
       >
         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-        Сообщить о новинке
+        <span className="hidden lg:inline">Сообщить о новинке</span>
+        <span className="lg:hidden">Сообщить</span>
       </button>
 
       {isOpen && (

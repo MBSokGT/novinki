@@ -79,30 +79,32 @@ export default function Home() {
     <div className="min-h-screen flex flex-col">
       <nav className="bg-[#1A1A1A] shadow-lg border-b border-[#333] sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <Link href="/" aria-label="На главную" className="inline-flex items-center gap-3">
-                <Image src={(process.env.NEXT_PUBLIC_BASE_PATH||"")+ "/logo.png"} alt="Logo" width={100} height={33} className="object-contain sm:w-[120px]" priority />
-                <span className="hidden sm:block text-white font-bold text-2xl uppercase tracking-tight">Новинки Ассортимента</span>
+          <div className="flex justify-between items-center gap-4">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              <Link href="/" aria-label="На главную" className="inline-flex min-w-0 flex-1 items-center gap-3">
+                <Image src={(process.env.NEXT_PUBLIC_BASE_PATH||"")+ "/logo.png"} alt="Logo" width={100} height={33} className="object-contain shrink-0 sm:w-[120px]" priority />
+                <span className="hidden truncate text-2xl font-bold uppercase tracking-tight text-white sm:block">Новинки Ассортимента</span>
               </Link>
             </div>
-            <div className="hidden sm:flex items-center gap-2">
-              <div className="inline-flex items-center rounded-lg bg-white/10 p-0.5" role="tablist" aria-label="Раздел новинок">
+            <div className="hidden shrink-0 items-center gap-1.5 sm:flex lg:gap-2">
+              <div className="inline-flex shrink-0 items-center rounded-lg bg-white/10 p-0.5" role="tablist" aria-label="Раздел новинок">
                 <button
                   role="tab"
                   aria-selected={!supplierNoveltiesOnly}
                   onClick={() => setSupplierNoveltiesOnly(false)}
-                  className={`whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition ${!supplierNoveltiesOnly ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-300 hover:text-white'}`}
+                  className={`whitespace-nowrap rounded-md px-2 lg:px-3 py-1.5 text-sm font-medium transition ${!supplierNoveltiesOnly ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-300 hover:text-white'}`}
                 >
-                  Новинки на складе
+                  <span className="hidden lg:inline">Новинки на складе</span>
+                  <span className="lg:hidden">Склад</span>
                 </button>
                 <button
                   role="tab"
                   aria-selected={supplierNoveltiesOnly}
                   onClick={() => setSupplierNoveltiesOnly(true)}
-                  className={`whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition ${supplierNoveltiesOnly ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-300 hover:text-white'}`}
+                  className={`whitespace-nowrap rounded-md px-2 lg:px-3 py-1.5 text-sm font-medium transition ${supplierNoveltiesOnly ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-300 hover:text-white'}`}
                 >
-                  Новинки поставщиков
+                  <span className="hidden lg:inline">Новинки поставщиков</span>
+                  <span className="lg:hidden">Поставщики</span>
                 </button>
               </div>
               <RequestForm />
