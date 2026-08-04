@@ -288,7 +288,7 @@ export default function ProductsTable({ isAdmin, onExportReady, supplierNoveltie
   const fetchProductsMeta = async () => {
     let query = apiClient
       .from('products')
-      .select('id, name, brand, category, year, article_number, image_url, description, advantages, is_supplier_novelty')
+      .select('id, name, brand, category, year, article_number, image_url, description, advantages, is_supplier_novelty, tags')
       .eq('is_archived', false)
     query = query.order('created_at', { ascending: false })
     const { data } = await query
@@ -308,8 +308,11 @@ export default function ProductsTable({ isAdmin, onExportReady, supplierNoveltie
     query = query.eq('is_archived', false)
 
     if (debouncedSearch) {
+      // category и tags включены, чтобы поиск по характеристике/типу товара
+      // ("сироп", "файн рим") находил всё в этой категории или с этим тегом,
+      // а не только товары, у которых слово случайно попало в описание.
       query = query.or(
-        `name.ilike.%${debouncedSearch}%,brand.ilike.%${debouncedSearch}%,description.ilike.%${debouncedSearch}%`
+        `name.ilike.%${debouncedSearch}%,brand.ilike.%${debouncedSearch}%,description.ilike.%${debouncedSearch}%,category.ilike.%${debouncedSearch}%,tags.ilike.%${debouncedSearch}%`
       )
     }
     if (selectedBrand) query = query.eq('brand', selectedBrand)
@@ -888,6 +891,16 @@ export default function ProductsTable({ isAdmin, onExportReady, supplierNoveltie
                   <div className="py-4">
                     <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-1.5">На что обратить внимание</p>
                     <p className="text-slate-700 leading-relaxed text-sm">{selectedProduct.attention_points}</p>
+                  </div>
+                )}
+                {selectedProduct.tags && (
+                  <div className="py-4">
+                    <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-1.5">Теги</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {selectedProduct.tags.split(',').map(t => t.trim()).filter(Boolean).map((tag, idx) => (
+                        <span key={idx} className="text-xs font-medium text-slate-600 bg-slate-100 rounded px-2 py-0.5">{tag}</span>
+                      ))}
+                    </div>
                   </div>
                 )}
                 {(selectedProduct.website_link || selectedProduct.flyer_url || selectedProduct.price_list_url) && (

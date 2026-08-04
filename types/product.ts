@@ -19,6 +19,7 @@ export interface Product {
   temp_max?: number
   category?: string
   year?: string
+  tags?: string
   rating?: number
   price?: number
   created_by?: string

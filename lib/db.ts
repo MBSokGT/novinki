@@ -90,6 +90,7 @@ const PRODUCT_COLUMNS = [
   'temp_max',
   'category',
   'year',
+  'tags',
   'rating',
   'price',
   'created_by',

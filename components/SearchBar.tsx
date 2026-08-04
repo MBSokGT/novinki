@@ -19,10 +19,12 @@ export default function SearchBar({ products, search, setSearch, onSelectProduct
   useEffect(() => {
     if (search.length > 1) {
       const filtered = products
-        .filter(p => 
+        .filter(p =>
           p.name.toLowerCase().includes(search.toLowerCase()) ||
           p.brand.toLowerCase().includes(search.toLowerCase()) ||
-          p.article_number?.toLowerCase().includes(search.toLowerCase())
+          p.article_number?.toLowerCase().includes(search.toLowerCase()) ||
+          p.category?.toLowerCase().includes(search.toLowerCase()) ||
+          p.tags?.toLowerCase().includes(search.toLowerCase())
         )
         .slice(0, 5)
       setSuggestions(filtered)

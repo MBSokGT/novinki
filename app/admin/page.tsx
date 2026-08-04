@@ -21,6 +21,7 @@ const EMPTY_FORM = {
   website_link: '',
   category: '',
   year: '',
+  tags: '',
   is_supplier_novelty: false,
   is_dishwasher_safe: false,
   is_microwave_safe: false,
@@ -258,6 +259,7 @@ export default function AdminPage() {
     website_link: normalizeLink(form.website_link),
     category: form.category,
     year: form.year,
+    tags: form.tags,
     is_supplier_novelty: form.is_supplier_novelty,
     is_dishwasher_safe: form.is_dishwasher_safe,
     is_microwave_safe: form.is_microwave_safe,
@@ -322,6 +324,7 @@ export default function AdminPage() {
       website_link: product.website_link || '',
       category: cat,
       year: product.year || '',
+      tags: product.tags || '',
       is_supplier_novelty: Boolean(product.is_supplier_novelty),
       is_dishwasher_safe: Boolean(product.is_dishwasher_safe),
       is_microwave_safe: Boolean(product.is_microwave_safe),
@@ -372,6 +375,7 @@ export default function AdminPage() {
         website_link: product.website_link || '',
         category: (product as any).category || '',
         year: product.year || '',
+        tags: product.tags || '',
         is_archived: false,
         is_supplier_novelty: Boolean(product.is_supplier_novelty),
         is_dishwasher_safe: Boolean(product.is_dishwasher_safe),
@@ -418,6 +422,7 @@ export default function AdminPage() {
             website_link: product.website_link,
             category: (product as any).category || '',
             year: product.year || '',
+            tags: product.tags || '',
             price: product.price ?? null,
             is_supplier_novelty: Boolean(product.is_supplier_novelty),
             is_dishwasher_safe: Boolean(product.is_dishwasher_safe),
@@ -553,6 +558,7 @@ export default function AdminPage() {
           website_link: product.website_link,
           category: (product as any).category || '',
           year: product.year || '',
+          tags: product.tags || '',
           is_supplier_novelty: Boolean(product.is_supplier_novelty),
           is_dishwasher_safe: Boolean(product.is_dishwasher_safe),
           is_microwave_safe: Boolean(product.is_microwave_safe),
@@ -591,6 +597,7 @@ export default function AdminPage() {
           website_link: product.website_link || '',
           category: (product as any).category || '',
           year: product.year || '',
+          tags: product.tags || '',
           is_archived: false,
           is_supplier_novelty: Boolean(product.is_supplier_novelty),
           is_dishwasher_safe: Boolean(product.is_dishwasher_safe),
@@ -903,6 +910,10 @@ export default function AdminPage() {
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">Ссылка на товар <span className="text-slate-400 font-normal">(если есть)</span></label>
               <input type="text" placeholder="Например: complexbar.ru/product или https://..." value={form.website_link} onChange={(e) => setForm({...form, website_link: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Теги <span className="text-slate-400 font-normal">— характеристики для поиска, через запятую</span></label>
+              <input type="text" placeholder="Например: файн рим, тонкое стекло, серия Elegance" value={form.tags} onChange={(e) => setForm({...form, tags: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" />
             </div>
             <div className="space-y-2">
               {(existingImages.length > 0 || newImages.length > 0) && (
