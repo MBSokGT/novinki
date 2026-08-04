@@ -18,7 +18,38 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [menuOpen, setMenuOpen] = useState(false)
   const [exportProducts, setExportProducts] = useState<(() => void) | null>(null)
-  const [activeSection, setActiveSection] = useState<'stock' | 'supplier' | 'vendors'>('stock')
+  // Читаем вкладку из URL сразу при инициализации (не в useEffect), чтобы открытая
+  // по ссылке "?tab=vendors" страница не успевала на первом кадре смонтировать
+  // ProductsTable, который иначе увидит там же "?supplier=1" (если он остался в
+  // ссылке от предыдущей вкладки) и перекинет обратно на "Новинки поставщиков".
+  const [activeSection, setActiveSection] = useState<'stock' | 'supplier' | 'vendors'>(() => {
+    if (typeof window === 'undefined') return 'stock'
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('tab') === 'vendors') return 'vendors'
+    if (params.get('supplier') === '1') return 'supplier'
+    return 'stock'
+  })
+
+  // Переключение вкладки по клику пользователя — в отличие от setActiveSection
+  // (которым ProductsTable сама восстанавливает supplier-фильтр из URL), эта
+  // обёртка ещё и сама пишет в адресную строку, чтобы скопированная ссылка
+  // открывала именно ту вкладку, на которой её скопировали.
+  const selectSection = (section: 'stock' | 'supplier' | 'vendors') => {
+    if (typeof window !== 'undefined') {
+      if (section === 'vendors') {
+        window.history.replaceState(null, '', `${window.location.pathname}?tab=vendors`)
+      } else {
+        const params = new URLSearchParams(window.location.search)
+        params.delete('tab')
+        if (section === 'supplier') params.set('supplier', '1')
+        else params.delete('supplier')
+        const query = params.toString()
+        const base = window.location.pathname
+        window.history.replaceState(null, '', query ? `${base}?${query}` : base)
+      }
+    }
+    setActiveSection(section)
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -92,7 +123,7 @@ export default function Home() {
                 <button
                   role="tab"
                   aria-selected={activeSection === 'stock'}
-                  onClick={() => setActiveSection('stock')}
+                  onClick={() => selectSection('stock')}
                   className={`whitespace-nowrap rounded-md px-2 lg:px-3 py-1.5 text-sm font-medium transition ${activeSection === 'stock' ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-300 hover:text-white'}`}
                 >
                   <span className="hidden lg:inline">Новинки на складе</span>
@@ -101,7 +132,7 @@ export default function Home() {
                 <button
                   role="tab"
                   aria-selected={activeSection === 'supplier'}
-                  onClick={() => setActiveSection('supplier')}
+                  onClick={() => selectSection('supplier')}
                   className={`whitespace-nowrap rounded-md px-2 lg:px-3 py-1.5 text-sm font-medium transition ${activeSection === 'supplier' ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-300 hover:text-white'}`}
                 >
                   <span className="hidden lg:inline">Новинки поставщиков</span>
@@ -110,7 +141,7 @@ export default function Home() {
                 <button
                   role="tab"
                   aria-selected={activeSection === 'vendors'}
-                  onClick={() => setActiveSection('vendors')}
+                  onClick={() => selectSection('vendors')}
                   className={`whitespace-nowrap rounded-md px-2 lg:px-3 py-1.5 text-sm font-medium transition ${activeSection === 'vendors' ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-300 hover:text-white'}`}
                 >
                   Вендоры
@@ -148,7 +179,7 @@ export default function Home() {
                 <button
                   role="tab"
                   aria-selected={activeSection === 'stock'}
-                  onClick={() => setActiveSection('stock')}
+                  onClick={() => selectSection('stock')}
                   className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition ${activeSection === 'stock' ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-300 hover:text-white'}`}
                 >
                   Склад
@@ -156,7 +187,7 @@ export default function Home() {
                 <button
                   role="tab"
                   aria-selected={activeSection === 'supplier'}
-                  onClick={() => setActiveSection('supplier')}
+                  onClick={() => selectSection('supplier')}
                   className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition ${activeSection === 'supplier' ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-300 hover:text-white'}`}
                 >
                   Поставщики
@@ -164,7 +195,7 @@ export default function Home() {
                 <button
                   role="tab"
                   aria-selected={activeSection === 'vendors'}
-                  onClick={() => setActiveSection('vendors')}
+                  onClick={() => selectSection('vendors')}
                   className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition ${activeSection === 'vendors' ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-300 hover:text-white'}`}
                 >
                   Вендоры
@@ -206,7 +237,7 @@ export default function Home() {
           />
         )}
       </main>
-      <Footer onExport={activeSection !== 'vendors' ? exportProducts : null} />
+      <Footer onExport={exportProducts} />
       <ToastContainer />
     </div>
   )
