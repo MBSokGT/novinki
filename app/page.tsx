@@ -1,6 +1,7 @@
 'use client'
 
 import ProductsTable from '@/components/ProductsTable'
+import VendorsList from '@/components/VendorsList'
 import RequestForm from '@/components/RequestForm'
 import Footer from '@/components/Footer'
 import ToastContainer from '@/components/Toast'
@@ -17,7 +18,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [menuOpen, setMenuOpen] = useState(false)
   const [exportProducts, setExportProducts] = useState<(() => void) | null>(null)
-  const [supplierNoveltiesOnly, setSupplierNoveltiesOnly] = useState(false)
+  const [activeSection, setActiveSection] = useState<'stock' | 'supplier' | 'vendors'>('stock')
 
   useEffect(() => {
     let cancelled = false
@@ -90,35 +91,32 @@ export default function Home() {
               <div className="inline-flex shrink-0 items-center rounded-lg bg-white/10 p-0.5" role="tablist" aria-label="Раздел новинок">
                 <button
                   role="tab"
-                  aria-selected={!supplierNoveltiesOnly}
-                  onClick={() => setSupplierNoveltiesOnly(false)}
-                  className={`whitespace-nowrap rounded-md px-2 lg:px-3 py-1.5 text-sm font-medium transition ${!supplierNoveltiesOnly ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-300 hover:text-white'}`}
+                  aria-selected={activeSection === 'stock'}
+                  onClick={() => setActiveSection('stock')}
+                  className={`whitespace-nowrap rounded-md px-2 lg:px-3 py-1.5 text-sm font-medium transition ${activeSection === 'stock' ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-300 hover:text-white'}`}
                 >
                   <span className="hidden lg:inline">Новинки на складе</span>
                   <span className="lg:hidden">Склад</span>
                 </button>
                 <button
                   role="tab"
-                  aria-selected={supplierNoveltiesOnly}
-                  onClick={() => setSupplierNoveltiesOnly(true)}
-                  className={`whitespace-nowrap rounded-md px-2 lg:px-3 py-1.5 text-sm font-medium transition ${supplierNoveltiesOnly ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-300 hover:text-white'}`}
+                  aria-selected={activeSection === 'supplier'}
+                  onClick={() => setActiveSection('supplier')}
+                  className={`whitespace-nowrap rounded-md px-2 lg:px-3 py-1.5 text-sm font-medium transition ${activeSection === 'supplier' ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-300 hover:text-white'}`}
                 >
                   <span className="hidden lg:inline">Новинки поставщиков</span>
                   <span className="lg:hidden">Поставщики</span>
                 </button>
+                <button
+                  role="tab"
+                  aria-selected={activeSection === 'vendors'}
+                  onClick={() => setActiveSection('vendors')}
+                  className={`whitespace-nowrap rounded-md px-2 lg:px-3 py-1.5 text-sm font-medium transition ${activeSection === 'vendors' ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-300 hover:text-white'}`}
+                >
+                  Вендоры
+                </button>
               </div>
               <RequestForm />
-              {exportProducts && (
-                <button
-                  onClick={exportProducts}
-                  className="inline-flex items-center gap-1.5 whitespace-nowrap px-3 py-1.5 text-sm bg-[#9B1B1B] text-white font-medium rounded-lg hover:bg-[#7A1515] transition shadow-sm"
-                  title="Выгрузить в Excel"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H8a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                  <span className="hidden lg:inline">Выгрузить в Excel</span>
-                  <span className="lg:hidden">Excel</span>
-                </button>
-              )}
               {isAdmin && (
                 <Link href="/admin" className="inline-flex items-center gap-1.5 whitespace-nowrap px-3 py-1.5 text-sm bg-[#9B1B1B] text-white font-medium rounded-lg hover:bg-[#7A1515] transition shadow-sm" title="Панель администратора">
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
@@ -149,19 +147,27 @@ export default function Home() {
               <div className="flex items-center rounded-lg bg-white/10 p-0.5" role="tablist" aria-label="Раздел новинок">
                 <button
                   role="tab"
-                  aria-selected={!supplierNoveltiesOnly}
-                  onClick={() => setSupplierNoveltiesOnly(false)}
-                  className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition ${!supplierNoveltiesOnly ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-300 hover:text-white'}`}
+                  aria-selected={activeSection === 'stock'}
+                  onClick={() => setActiveSection('stock')}
+                  className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition ${activeSection === 'stock' ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-300 hover:text-white'}`}
                 >
-                  Новинки на складе
+                  Склад
                 </button>
                 <button
                   role="tab"
-                  aria-selected={supplierNoveltiesOnly}
-                  onClick={() => setSupplierNoveltiesOnly(true)}
-                  className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition ${supplierNoveltiesOnly ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-300 hover:text-white'}`}
+                  aria-selected={activeSection === 'supplier'}
+                  onClick={() => setActiveSection('supplier')}
+                  className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition ${activeSection === 'supplier' ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-300 hover:text-white'}`}
                 >
-                  Новинки поставщиков
+                  Поставщики
+                </button>
+                <button
+                  role="tab"
+                  aria-selected={activeSection === 'vendors'}
+                  onClick={() => setActiveSection('vendors')}
+                  className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition ${activeSection === 'vendors' ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-300 hover:text-white'}`}
+                >
+                  Вендоры
                 </button>
               </div>
               <div className="flex items-center gap-2">
@@ -174,15 +180,6 @@ export default function Home() {
                   </Link>
                 )}
               </div>
-              {exportProducts && (
-                <button
-                  onClick={exportProducts}
-                  className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#9B1B1B] text-white rounded-lg hover:bg-[#7A1515] transition font-medium"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H8a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                  Выгрузить в Excel
-                </button>
-              )}
               {isAdmin && (
                 <Link href="/admin" className="flex items-center gap-2 w-full px-4 py-3 bg-[#9B1B1B] text-white rounded-lg hover:bg-[#7A1515] transition text-center font-medium">
                   Панель администратора
@@ -198,14 +195,18 @@ export default function Home() {
         </div>
       </nav>
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 py-6">
-        <ProductsTable
-          isAdmin={isAdmin}
-          onExportReady={(fn) => setExportProducts(() => fn)}
-          supplierNoveltiesOnly={supplierNoveltiesOnly}
-          setSupplierNoveltiesOnly={setSupplierNoveltiesOnly}
-        />
+        {activeSection === 'vendors' ? (
+          <VendorsList />
+        ) : (
+          <ProductsTable
+            isAdmin={isAdmin}
+            onExportReady={(fn) => setExportProducts(() => fn)}
+            supplierNoveltiesOnly={activeSection === 'supplier'}
+            setSupplierNoveltiesOnly={(value) => setActiveSection(value ? 'supplier' : 'stock')}
+          />
+        )}
       </main>
-      <Footer />
+      <Footer onExport={activeSection !== 'vendors' ? exportProducts : null} />
       <ToastContainer />
     </div>
   )

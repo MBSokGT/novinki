@@ -2,7 +2,7 @@ import fs from 'fs/promises'
 import path from 'path'
 import crypto from 'crypto'
 
-const ALLOWED_BUCKETS = new Set(['products', 'flyers'])
+const ALLOWED_BUCKETS = new Set(['products', 'flyers', 'vendors'])
 
 function getUploadDir() {
   return process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads')
@@ -17,7 +17,7 @@ export function isFilesystemStorageEnabled() {
   return process.env.NEXT_PUBLIC_STORAGE_DRIVER === 'filesystem'
 }
 
-export function isAllowedBucket(bucket: string): bucket is 'products' | 'flyers' {
+export function isAllowedBucket(bucket: string): bucket is 'products' | 'flyers' | 'vendors' {
   return ALLOWED_BUCKETS.has(bucket)
 }
 

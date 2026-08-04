@@ -100,7 +100,7 @@ const PRODUCT_COLUMNS = [
   'updated_at',
 ] as const
 
-const JSON_FIELDS = new Set(['images'])
+const JSON_FIELDS = new Set(['images', 'files'])
 
 const COLLECTIONS: Record<string, CollectionConfig> = {
   products: {
@@ -182,6 +182,25 @@ const COLLECTIONS: Record<string, CollectionConfig> = {
     columns: ['id', 'name', 'brand', 'view_count', 'bookmark_count'],
     requiresAdmin: true,
     readOnly: true,
+  },
+  vendors: {
+    table: 'vendors',
+    columns: [
+      'id',
+      'name',
+      'image_url',
+      'product',
+      'website_link',
+      'max_discount',
+      'delivery_time',
+      'files',
+      'created_by',
+      'updated_by',
+      'created_at',
+      'updated_at',
+    ],
+    publicRead: true,
+    requiresAdmin: true,
   },
 }
 
@@ -779,7 +798,7 @@ export async function executeDataRequest(request: NextRequest, payload: DataRequ
   try {
     assertAccess(payload.collection, payload.operation, user, payload)
 
-    if (payload.collection === 'products' && (payload.operation === 'insert' || payload.operation === 'update')) {
+    if ((payload.collection === 'products' || payload.collection === 'vendors') && (payload.operation === 'insert' || payload.operation === 'update')) {
       payload = { ...payload, writePayload: withProductAttribution(payload.operation, user, payload.writePayload) }
     }
 

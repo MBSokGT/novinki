@@ -704,7 +704,7 @@ export default function AdminPage() {
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         {/* Меню функций */}
-        <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
           <Link href="/admin/analytics" className="group p-3 bg-white rounded-lg border border-slate-200 hover:border-slate-300 hover:shadow-sm transition text-center">
             <div className="mb-1 flex justify-center text-[#9B1B1B]">
               <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
@@ -732,6 +732,13 @@ export default function AdminPage() {
             </div>
             <div className="font-bold text-slate-800 group-hover:text-slate-800 transition-colors">Запросы новинок</div>
             <div className="text-sm text-slate-500 mt-1">Заявки от сотрудников</div>
+          </Link>
+          <Link href="/admin/vendors" className="group p-3 bg-white rounded-lg border border-slate-200 hover:border-slate-300 hover:shadow-sm transition text-center">
+            <div className="mb-1 flex justify-center text-[#9B1B1B]">
+              <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4M9 9h.01M9 12h.01M9 15h.01" /></svg>
+            </div>
+            <div className="font-bold text-slate-800 group-hover:text-slate-800 transition-colors">Вендоры</div>
+            <div className="text-sm text-slate-500 mt-1">Товары не со склада</div>
           </Link>
         </div>
 
