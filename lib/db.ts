@@ -193,6 +193,7 @@ const COLLECTIONS: Record<string, CollectionConfig> = {
       'website_link',
       'max_discount',
       'delivery_time',
+      'onec_products',
       'files',
       'created_by',
       'updated_by',

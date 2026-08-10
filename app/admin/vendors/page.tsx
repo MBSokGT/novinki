@@ -5,7 +5,7 @@ import { apiClient } from '@/lib/api-client'
 import { openFileInNewTab } from '@/lib/openFile'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { showToast } from '@/components/Toast'
 import { Vendor } from '@/types/vendor'
 
@@ -15,6 +15,7 @@ const EMPTY_FORM = {
   website_link: '',
   max_discount: '',
   delivery_time: '',
+  onec_products: '',
 }
 
 export default function VendorsPage() {
@@ -29,6 +30,7 @@ export default function VendorsPage() {
   const [editId, setEditId] = useState<string | null>(null)
   const [submitLoading, setSubmitLoading] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
   const formRef = useRef<HTMLFormElement>(null)
 
   useEffect(() => {
@@ -74,6 +76,7 @@ export default function VendorsPage() {
       website_link: vendor.website_link || '',
       max_discount: vendor.max_discount || '',
       delivery_time: vendor.delivery_time || '',
+      onec_products: vendor.onec_products || '',
     })
     setExistingPhoto(vendor.image_url || '')
     setNewPhoto(null)
@@ -82,6 +85,17 @@ export default function VendorsPage() {
     setEditId(vendor.id)
     if (formRef.current) formRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
+
+  // Открытие формы на редактирование по ссылке ?edit=<id> — так на неё ведёт
+  // кнопка-карандаш в карточке вендора на главной странице.
+  useEffect(() => {
+    const editRequestId = searchParams.get('edit')
+    if (!editRequestId || vendors.length === 0) return
+    const vendor = vendors.find((v) => v.id === editRequestId)
+    if (vendor) handleEdit(vendor)
+    router.replace('/admin/vendors')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vendors, searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -111,6 +125,7 @@ export default function VendorsPage() {
         website_link: form.website_link,
         max_discount: form.max_discount,
         delivery_time: form.delivery_time,
+        onec_products: form.onec_products,
         image_url: imageUrl,
         files: [...existingFiles, ...uploadedFiles],
       }
@@ -194,7 +209,7 @@ export default function VendorsPage() {
                 <input type="text" placeholder="Например: ILSA" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" required />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Товар <span className="text-slate-400 font-normal">— что поставляет</span></label>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Описание <span className="text-slate-400 font-normal">— что поставляет вендор</span></label>
                 <input type="text" placeholder="Например: профессиональный инвентарь для бара и кухни" value={form.product} onChange={(e) => setForm({ ...form, product: e.target.value })} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" />
               </div>
             </div>
@@ -212,6 +227,11 @@ export default function VendorsPage() {
                 <label className="block text-xs font-medium text-slate-500 mb-1">Срок поставки</label>
                 <input type="text" placeholder="Например: 2-3 недели" value={form.delivery_time} onChange={(e) => setForm({ ...form, delivery_time: e.target.value })} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" />
               </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Товары в 1С <span className="text-slate-400 font-normal">— какие позиции этого вендора есть в 1С, чтобы сотрудник знал, что искать при заказе</span></label>
+              <textarea placeholder="Например: артикулы или названия позиций, как они значатся в 1С" value={form.onec_products} onChange={(e) => setForm({ ...form, onec_products: e.target.value })} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" style={{ resize: 'vertical', minHeight: '70px' }} />
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">

@@ -227,7 +227,7 @@ export default function Home() {
       </nav>
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 py-6">
         {activeSection === 'vendors' ? (
-          <VendorsList />
+          <VendorsList isAdmin={isAdmin} />
         ) : (
           <ProductsTable
             isAdmin={isAdmin}
