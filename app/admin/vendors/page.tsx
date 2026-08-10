@@ -30,6 +30,7 @@ export default function VendorsPage() {
   const [newFiles, setNewFiles] = useState<File[]>([])
   const [editId, setEditId] = useState<string | null>(null)
   const [submitLoading, setSubmitLoading] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const router = useRouter()
   const searchParams = useSearchParams()
   const formRef = useRef<HTMLFormElement>(null)
@@ -173,10 +174,46 @@ export default function VendorsPage() {
       const { error } = await apiClient.from('vendors').delete().eq('id', id)
       if (error) throw error
       setVendors((prev) => prev.filter((v) => v.id !== id))
+      setSelectedIds((prev) => {
+        if (!prev.has(id)) return prev
+        const next = new Set(prev)
+        next.delete(id)
+        return next
+      })
       if (editId === id) resetForm()
       showToast('Вендор удалён', 'success')
     } catch (error: any) {
       showToast(error?.message || 'Ошибка при удалении вендора', 'error')
+    }
+  }
+
+  const toggleSelected = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    setSelectedIds((prev) =>
+      prev.size === vendors.length ? new Set() : new Set(vendors.map((v) => v.id))
+    )
+  }
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return
+    if (!confirm(`Удалить выбранных вендоров (${selectedIds.size})?`)) return
+    const ids = Array.from(selectedIds)
+    try {
+      await Promise.all(ids.map((id) => apiClient.from('vendors').delete().eq('id', id)))
+      setVendors((prev) => prev.filter((v) => !selectedIds.has(v.id)))
+      if (editId && selectedIds.has(editId)) resetForm()
+      setSelectedIds(new Set())
+      showToast(`Удалено вендоров: ${ids.length}`, 'success')
+    } catch (error: any) {
+      showToast(error?.message || 'Ошибка при удалении вендоров', 'error')
     }
   }
 
@@ -349,8 +386,28 @@ export default function VendorsPage() {
         </div>
 
         <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-          <div className="bg-slate-50 px-6 py-4 border-b border-slate-200">
-            <h3 className="text-lg font-semibold text-slate-800">Все вендоры ({vendors.length})</h3>
+          <div className="flex flex-col gap-3 bg-slate-50 px-6 py-4 border-b border-slate-200 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              {vendors.length > 0 && (
+                <input
+                  type="checkbox"
+                  checked={selectedIds.size > 0 && selectedIds.size === vendors.length}
+                  onChange={toggleSelectAll}
+                  className="w-4 h-4 accent-[#9B1B1B]"
+                  title="Выбрать всех"
+                />
+              )}
+              <h3 className="text-lg font-semibold text-slate-800">Все вендоры ({vendors.length})</h3>
+            </div>
+            {selectedIds.size > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-slate-500 shrink-0">Выбрано: {selectedIds.size}</span>
+                <button onClick={handleBulkDelete} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                  Удалить выбранное
+                </button>
+              </div>
+            )}
           </div>
           {vendors.length === 0 ? (
             <div className="p-12 text-center text-slate-500">Вендоров пока нет</div>
@@ -359,6 +416,12 @@ export default function VendorsPage() {
               {vendors.map((vendor) => (
                 <div key={vendor.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-3 min-w-0">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(vendor.id)}
+                      onChange={() => toggleSelected(vendor.id)}
+                      className="w-4 h-4 shrink-0 accent-[#9B1B1B]"
+                    />
                     <div className="relative w-14 h-14 shrink-0 rounded-lg overflow-hidden bg-slate-100 border border-slate-200">
                       <Image src={vendor.image_url || (process.env.NEXT_PUBLIC_BASE_PATH || '') + '/placeholder.svg'} alt={vendor.name} fill className="object-cover" />
                     </div>
