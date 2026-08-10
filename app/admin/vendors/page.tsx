@@ -200,9 +200,12 @@ export default function VendorsPage() {
             </Link>
             <h1 className="truncate text-xl font-bold text-white sm:text-2xl">Вендоры</h1>
           </div>
-          <Link href="/admin" className="px-4 py-2 bg-white/10 text-gray-200 rounded-lg hover:bg-white/20 transition w-fit">
-            Назад
-          </Link>
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <VendorsExcelImport onSuccess={fetchVendors} />
+            <Link href="/admin" className="px-4 py-2 bg-white/10 text-gray-200 rounded-lg hover:bg-white/20 transition w-fit">
+              Назад
+            </Link>
+          </div>
         </div>
       </nav>
 
@@ -346,9 +349,8 @@ export default function VendorsPage() {
         </div>
 
         <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-          <div className="flex flex-col gap-3 bg-slate-50 px-6 py-4 border-b border-slate-200 sm:flex-row sm:items-center sm:justify-between">
+          <div className="bg-slate-50 px-6 py-4 border-b border-slate-200">
             <h3 className="text-lg font-semibold text-slate-800">Все вендоры ({vendors.length})</h3>
-            <VendorsExcelImport onSuccess={fetchVendors} />
           </div>
           {vendors.length === 0 ? (
             <div className="p-12 text-center text-slate-500">Вендоров пока нет</div>
