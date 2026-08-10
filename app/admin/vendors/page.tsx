@@ -7,6 +7,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { showToast } from '@/components/Toast'
+import VendorsExcelImport from '@/components/VendorsExcelImport'
 import { Vendor } from '@/types/vendor'
 
 const EMPTY_FORM = {
@@ -32,6 +33,22 @@ export default function VendorsPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const formRef = useRef<HTMLFormElement>(null)
+
+  const autoResize = (e: React.FormEvent<HTMLTextAreaElement>) => {
+    const el = e.currentTarget
+    el.style.height = 'auto'
+    el.style.height = el.scrollHeight + 'px'
+  }
+
+  useEffect(() => {
+    // Подставленный программно текст (например, при открытии карточки на
+    // редактирование) не проходит через onInput — пересчитываем высоту сами.
+    if (!formRef.current) return
+    formRef.current.querySelectorAll('textarea').forEach((el) => {
+      el.style.height = 'auto'
+      el.style.height = el.scrollHeight + 'px'
+    })
+  }, [editId])
 
   useEffect(() => {
     checkAdmin()
@@ -216,7 +233,7 @@ export default function VendorsPage() {
 
             <div className="grid gap-4 sm:grid-cols-3">
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Ссылка на сайт <span className="text-slate-400 font-normal">для заказа</span></label>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Ссылка на сайт</label>
                 <input type="text" placeholder="https://..." value={form.website_link} onChange={(e) => setForm({ ...form, website_link: e.target.value })} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" />
               </div>
               <div>
@@ -231,7 +248,7 @@ export default function VendorsPage() {
 
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">Товары в 1С <span className="text-slate-400 font-normal">— какие позиции этого вендора есть в 1С, чтобы сотрудник знал, что искать при заказе</span></label>
-              <textarea placeholder="Например: артикулы или названия позиций, как они значатся в 1С" value={form.onec_products} onChange={(e) => setForm({ ...form, onec_products: e.target.value })} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" style={{ resize: 'vertical', minHeight: '70px' }} />
+              <textarea placeholder="Например: артикулы или названия позиций, как они значатся в 1С" value={form.onec_products} onChange={(e) => setForm({ ...form, onec_products: e.target.value })} onInput={autoResize} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" style={{ resize: 'none', overflow: 'hidden', minHeight: '70px' }} />
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -329,8 +346,9 @@ export default function VendorsPage() {
         </div>
 
         <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-          <div className="bg-slate-50 px-6 py-4 border-b border-slate-200">
+          <div className="flex flex-col gap-3 bg-slate-50 px-6 py-4 border-b border-slate-200 sm:flex-row sm:items-center sm:justify-between">
             <h3 className="text-lg font-semibold text-slate-800">Все вендоры ({vendors.length})</h3>
+            <VendorsExcelImport onSuccess={fetchVendors} />
           </div>
           {vendors.length === 0 ? (
             <div className="p-12 text-center text-slate-500">Вендоров пока нет</div>

@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { apiClient } from '@/lib/api-client'
 import { openFileInNewTab } from '@/lib/openFile'
+import { showToast } from './Toast'
 import { Vendor } from '@/types/vendor'
 
 interface VendorsListProps {
@@ -22,6 +23,7 @@ export default function VendorsList({ isAdmin }: VendorsListProps) {
   const [loading, setLoading] = useState(true)
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null)
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   useEffect(() => {
     let cancelled = false
@@ -33,6 +35,42 @@ export default function VendorsList({ isAdmin }: VendorsListProps) {
     fetchVendors()
     return () => { cancelled = true }
   }, [])
+
+  // Открытие карточки по прямой ссылке ?tab=vendors&vendor=<id> (кнопка
+  // «Скопировать ссылку» в модалке вендора).
+  useEffect(() => {
+    const vendorId = searchParams.get('vendor')
+    if (!vendorId || selectedVendor || vendors.length === 0) return
+    const vendor = vendors.find((v) => v.id === vendorId)
+    if (vendor) setSelectedVendor(vendor)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vendors, searchParams])
+
+  const openVendor = (vendor: Vendor) => {
+    setSelectedVendor(vendor)
+    const params = new URLSearchParams(window.location.search)
+    params.set('vendor', vendor.id)
+    window.history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`)
+  }
+
+  const closeVendor = () => {
+    setSelectedVendor(null)
+    const params = new URLSearchParams(window.location.search)
+    params.delete('vendor')
+    const query = params.toString()
+    const base = window.location.pathname
+    window.history.replaceState(null, '', query ? `${base}?${query}` : base)
+  }
+
+  const copyVendorLink = (vendor: Vendor) => {
+    const params = new URLSearchParams(window.location.search)
+    params.set('vendor', vendor.id)
+    const url = `${window.location.origin}${window.location.pathname}?${params.toString()}`
+    navigator.clipboard.writeText(url).then(
+      () => showToast('Ссылка скопирована', 'success'),
+      () => showToast('Не удалось скопировать ссылку', 'error')
+    )
+  }
 
   if (loading) {
     return (
@@ -60,7 +98,7 @@ export default function VendorsList({ isAdmin }: VendorsListProps) {
         {vendors.map((vendor) => (
           <div
             key={vendor.id}
-            onClick={() => setSelectedVendor(vendor)}
+            onClick={() => openVendor(vendor)}
             className="relative flex flex-col bg-white border border-slate-200 rounded-lg overflow-hidden hover:border-slate-300 hover:shadow-md transition-all duration-200 cursor-pointer"
           >
             <div className="relative h-40 bg-slate-50 overflow-hidden shrink-0">
@@ -85,7 +123,7 @@ export default function VendorsList({ isAdmin }: VendorsListProps) {
               </div>
               <div className="mt-auto pt-3 border-t border-slate-100 mt-3">
                 <button
-                  onClick={(e) => { e.stopPropagation(); setSelectedVendor(vendor) }}
+                  onClick={(e) => { e.stopPropagation(); openVendor(vendor) }}
                   className="text-xs font-medium text-[#9B1B1B] border border-[#9B1B1B] rounded-lg px-3 py-1.5 hover:bg-[#9B1B1B] hover:text-white transition-colors"
                 >
                   Подробнее
@@ -97,9 +135,16 @@ export default function VendorsList({ isAdmin }: VendorsListProps) {
       </div>
 
       {selectedVendor && (
-        <div onClick={() => setSelectedVendor(null)} className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200 cursor-pointer">
+        <div onClick={closeVendor} className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200 cursor-pointer">
           <div onClick={(e) => e.stopPropagation()} className="relative bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 cursor-default">
             <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5">
+              <button
+                onClick={() => copyVendorLink(selectedVendor)}
+                className="bg-white rounded-lg p-1.5 text-slate-700 hover:bg-slate-100 transition shadow-md"
+                title="Скопировать ссылку на вендора"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 01-5.656-5.656l1.5-1.5M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 015.656 5.656l-1.5 1.5" /></svg>
+              </button>
               {isAdmin && (
                 <button
                   onClick={() => router.push(`/admin/vendors?edit=${selectedVendor.id}`)}
@@ -109,7 +154,7 @@ export default function VendorsList({ isAdmin }: VendorsListProps) {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                 </button>
               )}
-              <button onClick={() => setSelectedVendor(null)} className="bg-white rounded-lg p-1.5 text-slate-700 hover:bg-slate-100 transition shadow-md">
+              <button onClick={closeVendor} className="bg-white rounded-lg p-1.5 text-slate-700 hover:bg-slate-100 transition shadow-md">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
