@@ -15,4 +15,10 @@ if (!fs.existsSync(standaloneDir)) {
 fs.cpSync(path.join(root, 'public'), path.join(standaloneDir, 'public'), { recursive: true })
 fs.cpSync(path.join(root, '.next', 'static'), path.join(standaloneDir, '.next', 'static'), { recursive: true })
 
-console.log('Copied public/ and .next/static into .next/standalone')
+// lib/sqlite.ts resolves migrations relative to process.cwd(), and PM2/Docker
+// run the server with cwd = .next/standalone — without this copy, any
+// migration added after the first deploy silently never runs (its table/
+// column just doesn't exist, e.g. "no such table: vendors").
+fs.cpSync(path.join(root, 'migrations'), path.join(standaloneDir, 'migrations'), { recursive: true })
+
+console.log('Copied public/, .next/static and migrations/ into .next/standalone')
