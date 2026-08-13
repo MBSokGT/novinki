@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { apiClient } from '@/lib/api-client'
 import { openFileInNewTab } from '@/lib/openFile'
 import { isTemperatureCategory } from '@/lib/constants'
+import { normalizeLink, safeHref } from '@/lib/url'
 import { Product } from '@/types/product'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -176,13 +177,6 @@ export default function AdminPage() {
       showToast(`Категория «${data[0].name}» добавлена`, 'success')
     }
     setShowCatDrop(false)
-  }
-
-  const normalizeLink = (link?: string) => {
-    const trimmed = (link || '').trim()
-    if (!trimmed) return ''
-    if (/^https?:\/\//i.test(trimmed)) return trimmed
-    return `https://${trimmed}`
   }
 
   const resetForm = () => {
@@ -404,8 +398,6 @@ export default function AdminPage() {
       try {
         const product = products.find(p => p.id === id)
         if (product) {
-          console.log('Deleting product:', product)
-
           // Перемещаем в корзину
           const { error: insertError } = await apiClient.from('deleted_products').insert({
             original_product_id: product.id,
@@ -447,7 +439,6 @@ export default function AdminPage() {
             return
           }
           
-          console.log('Product moved to trash successfully')
           setProducts((prev) => prev.filter((p) => p.id !== id))
           setSelectedIds((prev) => {
             if (!prev.has(id)) return prev
@@ -467,22 +458,19 @@ export default function AdminPage() {
     const action = isArchived ? 'разархивировать' : 'архивировать'
     if (confirm(`${action.charAt(0).toUpperCase() + action.slice(1)} этот товар?`)) {
       try {
-        console.log('Archiving product:', { id, isArchived, newStatus: !isArchived })
-        
         // Используем service role для обхода RLS
-        const { data, error } = await apiClient
+        const { error } = await apiClient
           .from('products')
           .update({ is_archived: !isArchived })
           .eq('id', id)
           .select()
-        
+
         if (error) {
           console.error('Archive error:', error)
           showToast(`Ошибка архивирования: ${error.message}`, 'error')
           return
         }
-        
-        console.log('Archive result:', data)
+
         setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, is_archived: !isArchived } : p)))
       } catch (error) {
         console.error('Archive operation failed:', error)
@@ -540,10 +528,12 @@ export default function AdminPage() {
   const handleBulkDelete = async () => {
     if (selectedIds.size === 0) return
     if (!confirm(`Переместить выбранные товары (${selectedIds.size}) в корзину?`)) return
-    try {
-      const toDelete = products.filter((p) => selectedIds.has(p.id))
-      for (const product of toDelete) {
-        await apiClient.from('deleted_products').insert({
+    const toDelete = products.filter((p) => selectedIds.has(p.id))
+    const succeededIds = new Set<string>()
+    let failedCount = 0
+    for (const product of toDelete) {
+      try {
+        const { error: insertError } = await apiClient.from('deleted_products').insert({
           original_product_id: product.id,
           name: product.name,
           brand: product.brand,
@@ -566,14 +556,24 @@ export default function AdminPage() {
           temp_max: product.temp_max ?? null,
           deleted_at: new Date().toISOString(),
         })
-        await apiClient.from('products').delete().eq('id', product.id)
+        if (insertError) throw insertError
+        const { error: deleteError } = await apiClient.from('products').delete().eq('id', product.id)
+        if (deleteError) throw deleteError
+        succeededIds.add(product.id)
+      } catch (error) {
+        console.error('Bulk delete failed for product', product.id, error)
+        failedCount++
       }
-      setProducts((prev) => prev.filter((p) => !selectedIds.has(p.id)))
-      setSelectedIds(new Set())
-      showToast(`${toDelete.length} товаров перемещено в корзину`, 'success')
-    } catch (error: any) {
-      showToast(error?.message || 'Ошибка удаления', 'error')
     }
+    setProducts((prev) => prev.filter((p) => !succeededIds.has(p.id)))
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      succeededIds.forEach((id) => next.delete(id))
+      return next
+    })
+    if (failedCount === 0) showToast(`${succeededIds.size} товаров перемещено в корзину`, 'success')
+    else if (succeededIds.size === 0) showToast(`Не удалось удалить ни один товар (${failedCount})`, 'error')
+    else showToast(`Перемещено в корзину: ${succeededIds.size}, не удалось: ${failedCount}`, 'error')
   }
 
   const handleBulkDuplicate = async () => {
@@ -620,36 +620,42 @@ export default function AdminPage() {
     if (selectedIds.size === 0) return
     if (!confirm(`Архивировать выбранные товары (${selectedIds.size})?`)) return
 
-    try {
-      const ids = Array.from(selectedIds)
-      await Promise.all(
-        ids.map((id) => apiClient.from('products').update({ is_archived: true }).eq('id', id))
-      )
-      setProducts((prev) => prev.map((p) => (selectedIds.has(p.id) ? { ...p, is_archived: true } : p)))
-      setSelectedIds(new Set())
-      showToast('Товары архивированы', 'success')
-    } catch (error) {
-      console.error('Bulk archive failed:', error)
-      showToast('Ошибка массового архивирования', 'error')
-    }
+    const ids = Array.from(selectedIds)
+    const results = await Promise.all(
+      ids.map(async (id) => ({ id, error: (await apiClient.from('products').update({ is_archived: true }).eq('id', id)).error }))
+    )
+    const succeededIds = new Set(results.filter((r) => !r.error).map((r) => r.id))
+    const failedCount = results.length - succeededIds.size
+    setProducts((prev) => prev.map((p) => (succeededIds.has(p.id) ? { ...p, is_archived: true } : p)))
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      succeededIds.forEach((id) => next.delete(id))
+      return next
+    })
+    if (failedCount === 0) showToast('Товары архивированы', 'success')
+    else if (succeededIds.size === 0) showToast(`Не удалось архивировать ни один товар (${failedCount})`, 'error')
+    else showToast(`Архивировано: ${succeededIds.size}, не удалось: ${failedCount}`, 'error')
   }
 
   const handleBulkPublish = async () => {
     if (selectedIds.size === 0) return
     if (!confirm(`Опубликовать выбранные товары (${selectedIds.size})? Они станут видны на сайте.`)) return
 
-    try {
-      const ids = Array.from(selectedIds)
-      await Promise.all(
-        ids.map((id) => apiClient.from('products').update({ is_archived: false }).eq('id', id))
-      )
-      setProducts((prev) => prev.map((p) => (selectedIds.has(p.id) ? { ...p, is_archived: false } : p)))
-      setSelectedIds(new Set())
-      showToast('Товары опубликованы', 'success')
-    } catch (error) {
-      console.error('Bulk publish failed:', error)
-      showToast('Ошибка массовой публикации', 'error')
-    }
+    const ids = Array.from(selectedIds)
+    const results = await Promise.all(
+      ids.map(async (id) => ({ id, error: (await apiClient.from('products').update({ is_archived: false }).eq('id', id)).error }))
+    )
+    const succeededIds = new Set(results.filter((r) => !r.error).map((r) => r.id))
+    const failedCount = results.length - succeededIds.size
+    setProducts((prev) => prev.map((p) => (succeededIds.has(p.id) ? { ...p, is_archived: false } : p)))
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      succeededIds.forEach((id) => next.delete(id))
+      return next
+    })
+    if (failedCount === 0) showToast('Товары опубликованы', 'success')
+    else if (succeededIds.size === 0) showToast(`Не удалось опубликовать ни один товар (${failedCount})`, 'error')
+    else showToast(`Опубликовано: ${succeededIds.size}, не удалось: ${failedCount}`, 'error')
   }
 
   const handleImportSuccess = async () => {
@@ -1201,7 +1207,7 @@ export default function AdminPage() {
                     {product.is_archived ? 'Архив' : 'Активный'}
                   </span>
                 </div>
-                {(product.website_link || product.flyer_url || product.price_list_url) && (
+                {(safeHref(product.website_link) || product.flyer_url || product.price_list_url) && (
                   <div className="flex flex-wrap gap-3 mb-3">
                     {product.flyer_url && (
                       <a href={product.flyer_url} target="_blank" rel="noopener noreferrer" onClick={(e) => { e.preventDefault(); openFileInNewTab(product.flyer_url!) }} className="inline-flex items-center gap-1 text-[#9B1B1B] text-sm">
@@ -1215,8 +1221,8 @@ export default function AdminPage() {
                         Прайс-лист
                       </a>
                     )}
-                    {product.website_link && (
-                      <a href={product.website_link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-blue-600 text-sm">
+                    {safeHref(product.website_link) && (
+                      <a href={safeHref(product.website_link)!} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-blue-600 text-sm">
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 21a9 9 0 100-18 9 9 0 000 18zM3.6 9h16.8M3.6 15h16.8M12 3a15 15 0 010 18 15 15 0 010-18z" /></svg>
                         Сайт
                       </a>
@@ -1324,8 +1330,8 @@ export default function AdminPage() {
                             Прайс-лист
                           </a>
                         )}
-                        {product.website_link && (
-                          <a href={product.website_link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1 break-all">
+                        {safeHref(product.website_link) && (
+                          <a href={safeHref(product.website_link)!} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1 break-all">
                             <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 21a9 9 0 100-18 9 9 0 000 18zM3.6 9h16.8M3.6 15h16.8M12 3a15 15 0 010 18 15 15 0 010-18z" /></svg>
                             Сайт
                           </a>

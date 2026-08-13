@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Papa from 'papaparse'
 import * as XLSX from 'xlsx'
 import { apiClient } from '@/lib/api-client'
+import { normalizeLink } from '@/lib/url'
 import { showToast } from './Toast'
 
 interface VendorsExcelImportProps {
@@ -17,7 +18,7 @@ function mapRow(row: Record<string, any>): Record<string, any> {
     const val = String(rawVal ?? '').trim()
     if (key.includes('название') || key === 'name') vendor.name = val
     else if (key.includes('описание') || key === 'product' || key === 'description') vendor.product = val
-    else if (key.includes('ссылка') || key === 'website_link') vendor.website_link = val
+    else if (key.includes('ссылка') || key === 'website_link') vendor.website_link = normalizeLink(val)
     else if (key.includes('скидка') || key === 'max_discount') vendor.max_discount = val
     else if (key.includes('срок') || key === 'delivery_time') vendor.delivery_time = val
     else if (key.includes('1с') || key.includes('товары в') || key === 'onec_products') vendor.onec_products = val

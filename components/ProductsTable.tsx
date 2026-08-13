@@ -16,6 +16,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { isTemperatureCategory } from '@/lib/constants'
 import { exportProductsToExcel } from '@/lib/export'
 import { fuzzyMatches } from '@/lib/fuzzySearch'
+import { safeHref } from '@/lib/url'
 
 interface ProductsTableProps {
   isAdmin: boolean
@@ -664,8 +665,8 @@ export default function ProductsTable({ isAdmin, onExportReady, supplierNoveltie
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                       </a>
                     )}
-                    {product.website_link && (
-                      <a href={product.website_link} target="_blank" rel="noopener noreferrer"
+                    {safeHref(product.website_link) && (
+                      <a href={safeHref(product.website_link)!} target="_blank" rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
                         className="text-[11px] font-medium text-slate-400 hover:text-slate-700 transition" title="На сайте">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
@@ -911,7 +912,7 @@ export default function ProductsTable({ isAdmin, onExportReady, supplierNoveltie
                     </div>
                   </div>
                 )}
-                {(selectedProduct.website_link || selectedProduct.flyer_url || selectedProduct.price_list_url) && (
+                {(safeHref(selectedProduct.website_link) || selectedProduct.flyer_url || selectedProduct.price_list_url) && (
                   <div className="py-4 flex flex-wrap gap-4">
                     {selectedProduct.flyer_url && (
                       <a href={selectedProduct.flyer_url} target="_blank" rel="noopener noreferrer" onClick={(e) => { e.preventDefault(); openFileInNewTab(selectedProduct.flyer_url!) }} className="inline-flex items-center gap-1.5 text-sm font-medium text-[#9B1B1B] hover:text-[#7A1515]">
@@ -925,8 +926,8 @@ export default function ProductsTable({ isAdmin, onExportReady, supplierNoveltie
                         Прайс-лист
                       </a>
                     )}
-                    {selectedProduct.website_link && (
-                      <a href={selectedProduct.website_link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-900">
+                    {safeHref(selectedProduct.website_link) && (
+                      <a href={safeHref(selectedProduct.website_link)!} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-900">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
                         Посмотреть товар
                       </a>

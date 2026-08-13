@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { apiClient } from '@/lib/api-client'
 import { openFileInNewTab } from '@/lib/openFile'
+import { safeHref } from '@/lib/url'
 import { showToast } from './Toast'
 import { Vendor } from '@/types/vendor'
 
@@ -193,11 +194,11 @@ export default function VendorsList({ isAdmin }: VendorsListProps) {
                     <p className="text-slate-700 leading-relaxed text-sm whitespace-pre-line">{selectedVendor.onec_products}</p>
                   </div>
                 )}
-                {(selectedVendor.website_link || (selectedVendor.files && selectedVendor.files.length > 0)) && (
+                {(safeHref(selectedVendor.website_link) || (selectedVendor.files && selectedVendor.files.length > 0)) && (
                   <div className="py-4 flex flex-wrap items-center gap-4">
-                    {selectedVendor.website_link && (
+                    {safeHref(selectedVendor.website_link) && (
                       <a
-                        href={selectedVendor.website_link}
+                        href={safeHref(selectedVendor.website_link)!}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-900"

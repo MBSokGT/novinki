@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Papa from 'papaparse'
 import * as XLSX from 'xlsx'
 import { apiClient } from '@/lib/api-client'
+import { normalizeLink } from '@/lib/url'
 import { showToast } from './Toast'
 
 interface ExcelImportProps {
@@ -23,7 +24,7 @@ function mapRow(row: Record<string, any>): Record<string, any> {
     else if (key.includes('преимущества') || key === 'advantages') product.advantages = val
     else if (key.includes('внимание') || key === 'attention') product.attention_points = val
     else if (key.includes('год') || key === 'year') product.year = val
-    else if (key.includes('ссылка') || key === 'website_link') product.website_link = val
+    else if (key.includes('ссылка') || key === 'website_link') product.website_link = normalizeLink(val)
     else if (key.includes('тег') || key.includes('tag')) product.tags = val
     else if (key.includes('новинка поставщика') || key.includes('supplier')) product.is_supplier_novelty = val.toLowerCase() === 'да' || val === '1' || val.toLowerCase() === 'true'
     else if (key.includes('посудомо') || key.includes('dishwasher')) product.is_dishwasher_safe = val.toLowerCase() === 'да' || val === '1' || val.toLowerCase() === 'true'
@@ -47,7 +48,6 @@ function findHeaderRow(rawRows: any[][]): { headerIdx: number; headers: string[]
 
 function rowsFromRaw(rawRows: any[][]): Record<string, any>[] {
   const { headerIdx, headers } = findHeaderRow(rawRows)
-  console.log('[Import] detected headers at row', headerIdx, ':', headers)
   const result: Record<string, any>[] = []
   for (let i = headerIdx + 1; i < rawRows.length; i++) {
     const row = rawRows[i]
@@ -107,10 +107,7 @@ export default function ExcelImport({ onSuccess }: ExcelImportProps) {
     setLoading(true)
     try {
       const rows = await parseFile(file)
-      console.log('[Import] parsed rows:', rows.length, rows[0])
-
       const valid = rows.filter(p => p.name && p.brand && p.description && p.advantages)
-      console.log('[Import] valid rows:', valid.length)
 
       if (valid.length === 0) {
         const first = rows[0] || {}
@@ -125,7 +122,6 @@ export default function ExcelImport({ onSuccess }: ExcelImportProps) {
         image_url: p.image_url || '',
         is_archived: true,
       }))
-      console.log('[Import] inserting:', withImages.length, 'products')
       const { error } = await apiClient.from('products').insert(withImages)
       if (error) throw error
 
