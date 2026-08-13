@@ -32,8 +32,24 @@ interface DeletedProduct {
   deleted_at: string
 }
 
+interface DeletedVendor {
+  id: string
+  original_vendor_id: string
+  name: string
+  image_url?: string
+  product?: string
+  website_link?: string
+  max_discount?: string
+  delivery_time?: string
+  onec_products?: string
+  files?: string[]
+  deleted_at: string
+}
+
 export default function TrashPage() {
+  const [activeTab, setActiveTab] = useState<'products' | 'vendors'>('products')
   const [deletedProducts, setDeletedProducts] = useState<DeletedProduct[]>([])
+  const [deletedVendors, setDeletedVendors] = useState<DeletedVendor[]>([])
   const [user, setUser] = useState<any>(null)
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null)
   const router = useRouter()
@@ -49,12 +65,13 @@ export default function TrashPage() {
       return
     }
     setUser(user)
-    
+
     try {
       const { data: isAdmin } = await apiClient.rpc('check_admin_status', { user_id: user.id })
       if (isAdmin === true) {
         setIsAdmin(true)
         fetchDeletedProducts()
+        fetchDeletedVendors()
       } else {
         setIsAdmin(false)
         setTimeout(() => router.push('/'), 500)
@@ -71,6 +88,14 @@ export default function TrashPage() {
       .select('*')
       .order('deleted_at', { ascending: false })
     if (data) setDeletedProducts(data)
+  }
+
+  const fetchDeletedVendors = async () => {
+    const { data } = await apiClient
+      .from('deleted_vendors')
+      .select('*')
+      .order('deleted_at', { ascending: false })
+    if (data) setDeletedVendors(data)
   }
 
   const handleRestore = async (deletedProduct: DeletedProduct) => {
@@ -145,6 +170,66 @@ export default function TrashPage() {
     }
   }
 
+  const handleRestoreVendor = async (deletedVendor: DeletedVendor) => {
+    if (!confirm('Восстановить этого вендора?')) return
+    try {
+      const { error: insertError } = await apiClient.from('vendors').insert({
+        name: deletedVendor.name,
+        image_url: deletedVendor.image_url || '',
+        product: deletedVendor.product || '',
+        website_link: deletedVendor.website_link || '',
+        max_discount: deletedVendor.max_discount || '',
+        delivery_time: deletedVendor.delivery_time || '',
+        onec_products: deletedVendor.onec_products || '',
+        files: deletedVendor.files || [],
+      })
+
+      if (insertError) {
+        showToast(`Ошибка восстановления: ${insertError.message}`, 'error')
+        return
+      }
+
+      const { error: deleteError } = await apiClient.from('deleted_vendors').delete().eq('id', deletedVendor.id)
+      if (deleteError) {
+        showToast(`Вендор восстановлен, но не удалён из корзины: ${deleteError.message}`, 'error')
+      } else {
+        showToast('Вендор восстановлен', 'success')
+      }
+      fetchDeletedVendors()
+    } catch (error: any) {
+      showToast(error?.message || 'Ошибка восстановления вендора', 'error')
+    }
+  }
+
+  const handlePermanentDeleteVendor = async (id: string) => {
+    if (!confirm('ОКОНЧАТЕЛЬНО удалить вендора? Это действие нельзя отменить!')) return
+    try {
+      const { error } = await apiClient.from('deleted_vendors').delete().eq('id', id)
+      if (error) {
+        showToast(`Ошибка удаления: ${error.message}`, 'error')
+        return
+      }
+      fetchDeletedVendors()
+    } catch (error: any) {
+      showToast(error?.message || 'Ошибка удаления вендора', 'error')
+    }
+  }
+
+  const handleCleanupVendors = async () => {
+    if (!confirm('Очистить корзину от вендоров старше 14 дней?')) return
+    try {
+      const { error } = await apiClient.rpc('cleanup_deleted_vendors')
+      if (error) {
+        showToast(`Ошибка очистки: ${error.message}`, 'error')
+        return
+      }
+      showToast('Старые вендоры удалены', 'success')
+      fetchDeletedVendors()
+    } catch (error: any) {
+      showToast(error?.message || 'Ошибка очистки корзины', 'error')
+    }
+  }
+
   if (!user || isAdmin === null) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -177,6 +262,26 @@ export default function TrashPage() {
       </nav>
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+        <div className="mb-4 inline-flex items-center rounded-lg bg-slate-200/70 p-1" role="tablist" aria-label="Раздел корзины">
+          <button
+            role="tab"
+            aria-selected={activeTab === 'products'}
+            onClick={() => setActiveTab('products')}
+            className={`rounded-md px-4 py-2 text-sm font-medium transition ${activeTab === 'products' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+          >
+            Товары ({deletedProducts.length})
+          </button>
+          <button
+            role="tab"
+            aria-selected={activeTab === 'vendors'}
+            onClick={() => setActiveTab('vendors')}
+            className={`rounded-md px-4 py-2 text-sm font-medium transition ${activeTab === 'vendors' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+          >
+            Вендоры ({deletedVendors.length})
+          </button>
+        </div>
+
+        {activeTab === 'products' ? (
         <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
           <div className="flex flex-col gap-3 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
             <h3 className="text-lg font-semibold text-slate-700 flex items-center gap-2">
@@ -272,6 +377,103 @@ export default function TrashPage() {
             </>
           )}
         </div>
+        ) : (
+        <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
+          <div className="flex flex-col gap-3 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+            <h3 className="text-lg font-semibold text-slate-700 flex items-center gap-2">
+              <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+              Удаленные вендоры ({deletedVendors.length})
+            </h3>
+            <button
+              onClick={handleCleanupVendors}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#9B1B1B] px-4 py-2 text-sm text-white transition hover:bg-[#7A1515] sm:w-auto"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+              Очистить старые (14+ дней)
+            </button>
+          </div>
+
+          {deletedVendors.length === 0 ? (
+            <div className="p-12 text-center text-slate-500">
+              <svg className="w-14 h-14 mx-auto mb-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+              <p className="text-lg">Корзина пуста</p>
+            </div>
+          ) : (
+            <>
+              <div className="lg:hidden divide-y divide-slate-100">
+                {deletedVendors.map((vendor) => (
+                  <div key={vendor.id} className="space-y-3 p-4">
+                    <div className="space-y-1">
+                      <div className="break-words font-medium text-slate-900">{vendor.name}</div>
+                      {vendor.product && <div className="break-words text-sm text-slate-600">{vendor.product}</div>}
+                      <div className="text-sm text-slate-500">
+                        Удален: {new Date(vendor.deleted_at).toLocaleDateString('ru-RU')}
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      <button
+                        onClick={() => handleRestoreVendor(vendor)}
+                        className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm font-medium text-green-700"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a4 4 0 010 8h-4M3 10l4-4M3 10l4 4" /></svg>
+                        Восстановить
+                      </button>
+                      <button
+                        onClick={() => handlePermanentDeleteVendor(vendor.id)}
+                        className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm font-medium text-slate-700"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        Удалить навсегда
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="hidden lg:block">
+                <table className="w-full table-fixed">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="w-[34%] px-4 py-4 text-left text-sm font-semibold text-slate-700">Название</th>
+                    <th className="w-[20%] px-4 py-4 text-left text-sm font-semibold text-slate-700">Описание</th>
+                    <th className="w-[18%] px-4 py-4 text-left text-sm font-semibold text-slate-700">Удален</th>
+                    <th className="w-[28%] px-4 py-4 text-right text-sm font-semibold text-slate-700">Действия</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {deletedVendors.map((vendor) => (
+                    <tr key={vendor.id} className="hover:bg-slate-50 transition">
+                      <td className="break-words px-4 py-4 font-medium text-slate-900">{vendor.name}</td>
+                      <td className="break-words px-4 py-4 text-slate-600">{vendor.product}</td>
+                      <td className="px-4 py-4 text-slate-500 text-sm">
+                        {new Date(vendor.deleted_at).toLocaleDateString('ru-RU')}
+                      </td>
+                      <td className="px-4 py-4 text-right">
+                        <div className="flex flex-wrap justify-end gap-2">
+                          <button
+                            onClick={() => handleRestoreVendor(vendor)}
+                            className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 hover:border-green-300 transition-all"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a4 4 0 010 8h-4M3 10l4-4M3 10l4 4" /></svg>
+                            Восстановить
+                          </button>
+                          <button
+                            onClick={() => handlePermanentDeleteVendor(vendor.id)}
+                            className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-700 bg-slate-100 border border-slate-200 rounded-lg hover:bg-slate-100 hover:border-slate-300 transition-all"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                            Удалить навсегда
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </div>
+        )}
       </main>
     </div>
   )

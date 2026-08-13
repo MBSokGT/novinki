@@ -32,9 +32,16 @@ export default function VendorsPage() {
   const [editId, setEditId] = useState<string | null>(null)
   const [submitLoading, setSubmitLoading] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [searchQuery, setSearchQuery] = useState('')
   const router = useRouter()
   const searchParams = useSearchParams()
   const formRef = useRef<HTMLFormElement>(null)
+
+  const filteredVendors = (() => {
+    const q = searchQuery.trim().toLowerCase()
+    if (!q) return vendors
+    return vendors.filter((v) => v.name.toLowerCase().includes(q) || (v.product || '').toLowerCase().includes(q))
+  })()
 
   const autoResize = (e: React.FormEvent<HTMLTextAreaElement>) => {
     const el = e.currentTarget
@@ -169,11 +176,31 @@ export default function VendorsPage() {
     }
   }
 
+  const moveVendorToTrash = async (vendor: Vendor) => {
+    const { error: insertError } = await apiClient.from('deleted_vendors').insert({
+      original_vendor_id: vendor.id,
+      name: vendor.name,
+      image_url: vendor.image_url,
+      product: vendor.product,
+      website_link: vendor.website_link,
+      max_discount: vendor.max_discount,
+      delivery_time: vendor.delivery_time,
+      onec_products: vendor.onec_products,
+      files: vendor.files || [],
+      created_at: vendor.created_at,
+      deleted_at: new Date().toISOString(),
+    })
+    if (insertError) throw insertError
+    const { error: deleteError } = await apiClient.from('vendors').delete().eq('id', vendor.id)
+    if (deleteError) throw deleteError
+  }
+
   const handleDelete = async (id: string) => {
-    if (!confirm('Удалить этого вендора?')) return
+    const vendor = vendors.find((v) => v.id === id)
+    if (!vendor) return
+    if (!confirm(`Переместить вендора «${vendor.name}» в корзину? (автоочистка через 14 дней)`)) return
     try {
-      const { error } = await apiClient.from('vendors').delete().eq('id', id)
-      if (error) throw error
+      await moveVendorToTrash(vendor)
       setVendors((prev) => prev.filter((v) => v.id !== id))
       setSelectedIds((prev) => {
         if (!prev.has(id)) return prev
@@ -182,7 +209,7 @@ export default function VendorsPage() {
         return next
       })
       if (editId === id) resetForm()
-      showToast('Вендор удалён', 'success')
+      showToast('Вендор перемещён в корзину', 'success')
     } catch (error: any) {
       showToast(error?.message || 'Ошибка при удалении вендора', 'error')
     }
@@ -193,7 +220,7 @@ export default function VendorsPage() {
       const payload = {
         name: `${vendor.name} (копия)`,
         product: vendor.product || '',
-        website_link: vendor.website_link || '',
+        website_link: normalizeLink(vendor.website_link),
         max_discount: vendor.max_discount || '',
         delivery_time: vendor.delivery_time || '',
         onec_products: vendor.onec_products || '',
@@ -224,19 +251,25 @@ export default function VendorsPage() {
 
   const toggleSelectAll = () => {
     setSelectedIds((prev) =>
-      prev.size === vendors.length ? new Set() : new Set(vendors.map((v) => v.id))
+      prev.size === filteredVendors.length ? new Set() : new Set(filteredVendors.map((v) => v.id))
     )
   }
 
   const handleBulkDelete = async () => {
     if (selectedIds.size === 0) return
-    if (!confirm(`Удалить выбранных вендоров (${selectedIds.size})?`)) return
-    const ids = Array.from(selectedIds)
-    const results = await Promise.all(
-      ids.map(async (id) => ({ id, error: (await apiClient.from('vendors').delete().eq('id', id)).error }))
-    )
-    const succeededIds = new Set(results.filter((r) => !r.error).map((r) => r.id))
-    const failedCount = results.length - succeededIds.size
+    if (!confirm(`Переместить выбранных вендоров (${selectedIds.size}) в корзину?`)) return
+    const toDelete = vendors.filter((v) => selectedIds.has(v.id))
+    const succeededIds = new Set<string>()
+    let failedCount = 0
+    for (const vendor of toDelete) {
+      try {
+        await moveVendorToTrash(vendor)
+        succeededIds.add(vendor.id)
+      } catch (error) {
+        console.error('Bulk delete failed for vendor', vendor.id, error)
+        failedCount++
+      }
+    }
     setVendors((prev) => prev.filter((v) => !succeededIds.has(v.id)))
     if (editId && succeededIds.has(editId)) resetForm()
     // Оставляем неудачные id отмеченными, чтобы админ мог сразу повторить попытку.
@@ -245,9 +278,9 @@ export default function VendorsPage() {
       succeededIds.forEach((id) => next.delete(id))
       return next
     })
-    if (failedCount === 0) showToast(`Удалено вендоров: ${succeededIds.size}`, 'success')
+    if (failedCount === 0) showToast(`Перемещено в корзину: ${succeededIds.size}`, 'success')
     else if (succeededIds.size === 0) showToast(`Не удалось удалить ни одного вендора (${failedCount})`, 'error')
-    else showToast(`Удалено: ${succeededIds.size}, не удалось: ${failedCount}`, 'error')
+    else showToast(`Перемещено: ${succeededIds.size}, не удалось: ${failedCount}`, 'error')
   }
 
   if (loading) {
@@ -421,32 +454,48 @@ export default function VendorsPage() {
         <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
           <div className="flex flex-col gap-3 bg-slate-50 px-6 py-4 border-b border-slate-200 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
-              {vendors.length > 0 && (
+              {filteredVendors.length > 0 && (
                 <input
                   type="checkbox"
-                  checked={selectedIds.size > 0 && selectedIds.size === vendors.length}
+                  checked={selectedIds.size > 0 && selectedIds.size === filteredVendors.length}
                   onChange={toggleSelectAll}
                   className="w-4 h-4 accent-[#9B1B1B]"
                   title="Выбрать всех"
                 />
               )}
-              <h3 className="text-lg font-semibold text-slate-800">Все вендоры ({vendors.length})</h3>
+              <h3 className="text-lg font-semibold text-slate-800">
+                {searchQuery.trim() ? `Найдено: ${filteredVendors.length} из ${vendors.length}` : `Все вендоры (${vendors.length})`}
+              </h3>
             </div>
-            {selectedIds.size > 0 && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-medium text-slate-500 shrink-0">Выбрано: {selectedIds.size}</span>
-                <button onClick={handleBulkDelete} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition">
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                  Удалить выбранное
-                </button>
+            <div className="flex flex-1 items-center gap-2 sm:justify-end">
+              {selectedIds.size > 0 && (
+                <>
+                  <span className="text-xs font-medium text-slate-500 shrink-0">Выбрано: {selectedIds.size}</span>
+                  <button onClick={handleBulkDelete} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition shrink-0">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    Удалить выбранное
+                  </button>
+                </>
+              )}
+              <div className="relative w-full max-w-xs sm:w-56">
+                <svg className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" /></svg>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Поиск по названию..."
+                  className="w-full rounded-lg border border-slate-200 py-1.5 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition"
+                />
               </div>
-            )}
+            </div>
           </div>
           {vendors.length === 0 ? (
             <div className="p-12 text-center text-slate-500">Вендоров пока нет</div>
+          ) : filteredVendors.length === 0 ? (
+            <div className="p-12 text-center text-slate-500">Ничего не найдено по запросу «{searchQuery}»</div>
           ) : (
             <div className="divide-y divide-slate-100">
-              {vendors.map((vendor) => (
+              {filteredVendors.map((vendor) => (
                 <div key={vendor.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-3 min-w-0">
                     <input

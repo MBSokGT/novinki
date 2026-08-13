@@ -100,6 +100,22 @@ const PRODUCT_COLUMNS = [
   'updated_at',
 ] as const
 
+const VENDOR_COLUMNS = [
+  'id',
+  'name',
+  'image_url',
+  'product',
+  'website_link',
+  'max_discount',
+  'delivery_time',
+  'onec_products',
+  'files',
+  'created_by',
+  'updated_by',
+  'created_at',
+  'updated_at',
+] as const
+
 const JSON_FIELDS = new Set(['images', 'files'])
 
 const COLLECTIONS: Record<string, CollectionConfig> = {
@@ -185,22 +201,18 @@ const COLLECTIONS: Record<string, CollectionConfig> = {
   },
   vendors: {
     table: 'vendors',
+    columns: [...VENDOR_COLUMNS],
+    publicRead: true,
+    requiresAdmin: true,
+  },
+  deleted_vendors: {
+    table: 'deleted_vendors',
     columns: [
       'id',
-      'name',
-      'image_url',
-      'product',
-      'website_link',
-      'max_discount',
-      'delivery_time',
-      'onec_products',
-      'files',
-      'created_by',
-      'updated_by',
-      'created_at',
-      'updated_at',
+      'original_vendor_id',
+      ...VENDOR_COLUMNS.filter((column) => column !== 'id' && column !== 'updated_at'),
+      'deleted_at',
     ],
-    publicRead: true,
     requiresAdmin: true,
   },
 }
@@ -589,6 +601,7 @@ function withDefaultFields(collection: string, item: Record<string, unknown>, is
     if (config.columns.includes('id') && !next.id) next.id = createId()
     if (config.columns.includes('created_at') && !next.created_at) next.created_at = now
     if (collection === 'deleted_products' && !next.deleted_at) next.deleted_at = now
+    if (collection === 'deleted_vendors' && !next.deleted_at) next.deleted_at = now
     if (collection === 'archived_products' && !next.deleted_at) next.deleted_at = now
     if (collection === 'products' && next.is_archived === undefined) next.is_archived = false
     if (collection === 'requests' && next.delivered === undefined) next.delivered = false
@@ -851,6 +864,16 @@ export async function executeRpc(request: NextRequest, functionName: string, par
 
       const threshold = new Date(Date.now() - 1000 * 60 * 60 * 24 * 14).toISOString()
       await db.prepare('DELETE FROM deleted_products WHERE deleted_at <= ?').bind(threshold).run()
+      return { data: true, error: null }
+    }
+
+    if (functionName === 'cleanup_deleted_vendors') {
+      if (!user || !user.is_admin) {
+        return { data: null, error: { message: 'Forbidden' } }
+      }
+
+      const threshold = new Date(Date.now() - 1000 * 60 * 60 * 24 * 14).toISOString()
+      await db.prepare('DELETE FROM deleted_vendors WHERE deleted_at <= ?').bind(threshold).run()
       return { data: true, error: null }
     }
 
