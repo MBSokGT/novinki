@@ -20,6 +20,7 @@ export interface Product {
   category?: string
   year?: string
   tags?: string
+  order_multiple?: string
   rating?: number
   price?: number
   created_by?: string

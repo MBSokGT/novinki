@@ -912,6 +912,12 @@ export default function ProductsTable({ isAdmin, onExportReady, supplierNoveltie
                     </div>
                   </div>
                 )}
+                {selectedProduct.order_multiple && (
+                  <div className="py-4">
+                    <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-1.5">Кратность</p>
+                    <p className="text-slate-700 text-sm font-medium">{selectedProduct.order_multiple}</p>
+                  </div>
+                )}
                 {(safeHref(selectedProduct.website_link) || selectedProduct.flyer_url || selectedProduct.price_list_url) && (
                   <div className="py-4 flex flex-wrap gap-4">
                     {selectedProduct.flyer_url && (

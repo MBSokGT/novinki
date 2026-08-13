@@ -23,6 +23,8 @@ interface DeletedProduct {
   website_link?: string
   category?: string
   year?: string
+  tags?: string
+  order_multiple?: string
   price?: number
   is_supplier_novelty?: boolean
   is_dishwasher_safe?: boolean
@@ -115,6 +117,8 @@ export default function TrashPage() {
         website_link: deletedProduct.website_link,
         category: deletedProduct.category || '',
         year: deletedProduct.year || '',
+        tags: deletedProduct.tags || '',
+        order_multiple: deletedProduct.order_multiple || '',
         price: deletedProduct.price ?? null,
         is_supplier_novelty: Boolean(deletedProduct.is_supplier_novelty),
         is_dishwasher_safe: Boolean(deletedProduct.is_dishwasher_safe),

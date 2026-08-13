@@ -126,6 +126,7 @@ const PRODUCT_COLUMNS = [
   'category',
   'year',
   'tags',
+  'order_multiple',
   'rating',
   'price',
   'created_by',

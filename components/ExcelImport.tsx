@@ -27,6 +27,7 @@ function mapRow(row: Record<string, any>): Record<string, any> {
     else if (key.includes('год') || key === 'year') product.year = val
     else if (key.includes('ссылка') || key === 'website_link') product.website_link = normalizeLink(val)
     else if (key.includes('тег') || key.includes('tag')) product.tags = val
+    else if (key.includes('кратност') || key.includes('multiple')) product.order_multiple = val
     else if (key.includes('новинка поставщика') || key.includes('supplier')) product.is_supplier_novelty = val.toLowerCase() === 'да' || val === '1' || val.toLowerCase() === 'true'
     else if (key.includes('посудомо') || key.includes('dishwasher')) product.is_dishwasher_safe = val.toLowerCase() === 'да' || val === '1' || val.toLowerCase() === 'true'
     else if (key.includes('микроволн') || key.includes('microwave')) product.is_microwave_safe = val.toLowerCase() === 'да' || val === '1' || val.toLowerCase() === 'true'
@@ -143,7 +144,7 @@ export default function ExcelImport({ onSuccess }: ExcelImportProps) {
   }
 
   const downloadTemplate = () => {
-    const template = `Название,Бренд,Артикул,Категория,Год,Описание,Преимущества,Внимание,Ссылка на товар,Теги,Новинка поставщика,Можно мыть в посудомоечной машине,Можно использовать в микроволновой печи,Температура от °C,Температура до °C\nПример товара,Бренд А,ART-001,Посуда,2026,Описание товара,Преимущества товара,На что обратить внимание,https://example.com/product,"файн рим, тонкое стекло",Нет,Да,Нет,,`
+    const template = `Название,Бренд,Артикул,Категория,Год,Описание,Преимущества,Внимание,Ссылка на товар,Теги,Кратность,Новинка поставщика,Можно мыть в посудомоечной машине,Можно использовать в микроволновой печи,Температура от °C,Температура до °C\nПример товара,Бренд А,ART-001,Посуда,2026,Описание товара,Преимущества товара,На что обратить внимание,https://example.com/product,"файн рим, тонкое стекло",уп. 12 шт,Нет,Да,Нет,,`
     const blob = new Blob(['\ufeff' + template], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
     link.href = URL.createObjectURL(blob)

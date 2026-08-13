@@ -23,6 +23,7 @@ const EMPTY_FORM = {
   category: '',
   year: '',
   tags: '',
+  order_multiple: '',
   is_supplier_novelty: false,
   is_dishwasher_safe: false,
   is_microwave_safe: false,
@@ -254,6 +255,7 @@ export default function AdminPage() {
     category: form.category,
     year: form.year,
     tags: form.tags,
+    order_multiple: form.order_multiple,
     is_supplier_novelty: form.is_supplier_novelty,
     is_dishwasher_safe: form.is_dishwasher_safe,
     is_microwave_safe: form.is_microwave_safe,
@@ -319,6 +321,7 @@ export default function AdminPage() {
       category: cat,
       year: product.year || '',
       tags: product.tags || '',
+      order_multiple: product.order_multiple || '',
       is_supplier_novelty: Boolean(product.is_supplier_novelty),
       is_dishwasher_safe: Boolean(product.is_dishwasher_safe),
       is_microwave_safe: Boolean(product.is_microwave_safe),
@@ -370,6 +373,7 @@ export default function AdminPage() {
         category: (product as any).category || '',
         year: product.year || '',
         tags: product.tags || '',
+        order_multiple: product.order_multiple || '',
         is_archived: false,
         is_supplier_novelty: Boolean(product.is_supplier_novelty),
         is_dishwasher_safe: Boolean(product.is_dishwasher_safe),
@@ -415,6 +419,7 @@ export default function AdminPage() {
             category: (product as any).category || '',
             year: product.year || '',
             tags: product.tags || '',
+            order_multiple: product.order_multiple || '',
             price: product.price ?? null,
             is_supplier_novelty: Boolean(product.is_supplier_novelty),
             is_dishwasher_safe: Boolean(product.is_dishwasher_safe),
@@ -549,6 +554,7 @@ export default function AdminPage() {
           category: (product as any).category || '',
           year: product.year || '',
           tags: product.tags || '',
+          order_multiple: product.order_multiple || '',
           is_supplier_novelty: Boolean(product.is_supplier_novelty),
           is_dishwasher_safe: Boolean(product.is_dishwasher_safe),
           is_microwave_safe: Boolean(product.is_microwave_safe),
@@ -710,7 +716,7 @@ export default function AdminPage() {
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         {/* Меню функций */}
-        <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
           <Link href="/admin/analytics" className="group p-3 bg-white rounded-lg border border-slate-200 hover:border-slate-300 hover:shadow-sm transition text-center">
             <div className="mb-1 flex justify-center text-[#9B1B1B]">
               <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
@@ -745,6 +751,13 @@ export default function AdminPage() {
             </div>
             <div className="font-bold text-slate-800 group-hover:text-slate-800 transition-colors">Вендоры</div>
             <div className="text-sm text-slate-500 mt-1">Товары не со склада</div>
+          </Link>
+          <Link href="/admin/flyers" className="group p-3 bg-white rounded-lg border border-slate-200 hover:border-slate-300 hover:shadow-sm transition text-center">
+            <div className="mb-1 flex justify-center text-[#9B1B1B]">
+              <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+            </div>
+            <div className="font-bold text-slate-800 group-hover:text-slate-800 transition-colors">Листовки</div>
+            <div className="text-sm text-slate-500 mt-1">Библиотека всех листовок</div>
           </Link>
         </div>
 
@@ -927,6 +940,10 @@ export default function AdminPage() {
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">Теги <span className="text-slate-400 font-normal">— характеристики для поиска, через запятую</span></label>
               <input type="text" placeholder="Например: файн рим, тонкое стекло, серия Elegance" value={form.tags} onChange={(e) => setForm({...form, tags: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Кратность <span className="text-slate-400 font-normal">— кратность заказа / размер упаковки</span></label>
+              <input type="text" placeholder="Например: уп. 12 шт или кратно 6" value={form.order_multiple} onChange={(e) => setForm({...form, order_multiple: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" />
             </div>
             <div className="space-y-2">
               {(existingImages.length > 0 || newImages.length > 0) && (
