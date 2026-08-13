@@ -11,6 +11,41 @@ function isSingleAdminModeEnabled() {
   return process.env.SINGLE_ADMIN_MODE !== 'false'
 }
 
+// Простой лимит попыток входа в памяти процесса — этого достаточно для
+// одного PM2/Docker-инстанса (не переживает рестарт, но и не нужно: цель —
+// притормозить перебор пароля, а не вести долгую историю).
+const LOGIN_ATTEMPT_LIMIT = 5
+const LOGIN_ATTEMPT_WINDOW_MS = 1000 * 60 * 15
+const loginAttempts = new Map<string, { count: number; firstAttemptAt: number }>()
+
+function checkLoginRateLimit(email: string) {
+  const now = Date.now()
+  const entry = loginAttempts.get(email)
+  if (!entry) return
+  if (now - entry.firstAttemptAt > LOGIN_ATTEMPT_WINDOW_MS) {
+    loginAttempts.delete(email)
+    return
+  }
+  if (entry.count >= LOGIN_ATTEMPT_LIMIT) {
+    const minutesLeft = Math.ceil((LOGIN_ATTEMPT_WINDOW_MS - (now - entry.firstAttemptAt)) / 60000)
+    throw new Error(`Слишком много попыток входа. Попробуйте снова через ${minutesLeft} мин.`)
+  }
+}
+
+function recordFailedLogin(email: string) {
+  const now = Date.now()
+  const entry = loginAttempts.get(email)
+  if (!entry || now - entry.firstAttemptAt > LOGIN_ATTEMPT_WINDOW_MS) {
+    loginAttempts.set(email, { count: 1, firstAttemptAt: now })
+  } else {
+    entry.count += 1
+  }
+}
+
+function clearLoginAttempts(email: string) {
+  loginAttempts.delete(email)
+}
+
 type DataOperation = 'select' | 'insert' | 'update' | 'upsert' | 'delete'
 type FilterOperator = 'eq' | 'ilike' | 'gte' | 'lte'
 
@@ -931,6 +966,7 @@ export async function adminCreateUser(
 
 export async function signInUser(emailInput: string, password: string) {
   const email = normalizeEmail(emailInput)
+  checkLoginRateLimit(email)
   const db = await getDb()
 
   const userRow = await db
@@ -954,6 +990,7 @@ export async function signInUser(emailInput: string, password: string) {
     .first<Record<string, unknown>>()
 
   if (!userRow || !verifyPassword(password, String(userRow.password_hash || ''))) {
+    recordFailedLogin(email)
     throw new Error('Неверный email или пароль')
   }
 
@@ -965,6 +1002,7 @@ export async function signInUser(emailInput: string, password: string) {
     throw new Error(String(userRow.blocked_reason || 'Пользователь заблокирован'))
   }
 
+  clearLoginAttempts(email)
   const sessionToken = crypto.randomBytes(32).toString('hex')
   const tokenHash = sha256Hex(sessionToken)
   const now = nowIso()

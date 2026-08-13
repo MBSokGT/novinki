@@ -4,7 +4,7 @@ import { getCurrentUser } from '@/lib/db'
 import { isAllowedBucket, isFilesystemStorageEnabled, saveUploadedFile } from '@/lib/storage'
 
 // Keep in sync with nginx client_max_body_size on the target server.
-const MAX_FILE_SIZE = 20 * 1024 * 1024
+const MAX_FILE_SIZE = 150 * 1024 * 1024
 
 export async function POST(request: NextRequest) {
   if (!isFilesystemStorageEnabled()) {
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ data: null, error: { message: 'Missing file' } }, { status: 400 })
     }
     if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json({ data: null, error: { message: 'Файл слишком большой (максимум 20 МБ)' } }, { status: 413 })
+      return NextResponse.json({ data: null, error: { message: 'Файл слишком большой (максимум 150 МБ)' } }, { status: 413 })
     }
 
     const buffer = Buffer.from(await file.arrayBuffer())

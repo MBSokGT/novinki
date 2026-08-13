@@ -20,7 +20,7 @@ export default function SearchBar({ products, search, setSearch, onSelectProduct
   useEffect(() => {
     if (search.length > 1) {
       const filtered = products
-        .filter(p => fuzzyMatches([p.name, p.brand, p.article_number, p.category, p.tags], search))
+        .filter(p => fuzzyMatches([p.name, p.brand, p.article_number, p.tags], search))
         .slice(0, 5)
       setSuggestions(filtered)
       setShowSuggestions(true)

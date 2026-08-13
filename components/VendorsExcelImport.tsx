@@ -5,6 +5,7 @@ import Papa from 'papaparse'
 import * as XLSX from 'xlsx'
 import { apiClient } from '@/lib/api-client'
 import { normalizeLink } from '@/lib/url'
+import { decodeCsvBuffer } from '@/lib/csv'
 import { showToast } from './Toast'
 
 interface VendorsExcelImportProps {
@@ -74,16 +75,18 @@ async function parseFile(file: File): Promise<Record<string, any>[]> {
   }
 
   return new Promise((resolve, reject) => {
-    Papa.parse(file, {
-      header: false,
-      skipEmptyLines: true,
-      encoding: 'UTF-8',
-      complete: (results) => {
-        const rawRows = results.data as any[][]
-        resolve(rowsFromRaw(rawRows))
-      },
-      error: (err: Error) => reject(err),
-    })
+    const reader = new FileReader()
+    reader.onerror = () => reject(new Error('Failed to read file'))
+    reader.onload = (e) => {
+      try {
+        const text = decodeCsvBuffer(e.target?.result as ArrayBuffer)
+        const results = Papa.parse(text, { header: false, skipEmptyLines: true })
+        resolve(rowsFromRaw(results.data as any[][]))
+      } catch (err) {
+        reject(err)
+      }
+    }
+    reader.readAsArrayBuffer(file)
   })
 }
 

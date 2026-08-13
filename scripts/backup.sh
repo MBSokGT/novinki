@@ -20,7 +20,19 @@ STAMP="$(date +%Y%m%d_%H%M%S)"
 mkdir -p "$BACKUP_DIR"
 
 if [ -f "$SRC_DB" ]; then
-  cp "$SRC_DB" "$BACKUP_DIR/novinki_${STAMP}.db"
+  # A plain `cp` doesn't checkpoint the WAL file, so a backup taken mid-write
+  # can miss just-committed rows or need the -wal/-shm files (never copied
+  # here) to be consistent. better-sqlite3's own online .backup() API — the
+  # same one the app already depends on — does a proper consistent snapshot
+  # in one file, no extra tooling required on the server.
+  node -e "
+    const path = require('path');
+    const Database = require(path.join('$APP_DIR', 'node_modules', 'better-sqlite3'));
+    const db = new Database('$SRC_DB', { readonly: true });
+    db.backup('$BACKUP_DIR/novinki_${STAMP}.db')
+      .then(() => { db.close(); })
+      .catch((err) => { console.error('DB backup failed:', err.message); process.exit(1); });
+  "
 fi
 
 if [ -d "$SRC_UPLOADS" ]; then

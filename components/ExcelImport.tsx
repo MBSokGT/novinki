@@ -5,6 +5,7 @@ import Papa from 'papaparse'
 import * as XLSX from 'xlsx'
 import { apiClient } from '@/lib/api-client'
 import { normalizeLink } from '@/lib/url'
+import { decodeCsvBuffer } from '@/lib/csv'
 import { showToast } from './Toast'
 
 interface ExcelImportProps {
@@ -82,18 +83,22 @@ async function parseFile(file: File): Promise<Record<string, any>[]> {
     })
   }
 
-  // CSV via PapaParse — читаем как массивы, сами находим заголовки
+  // CSV — сами читаем байты и определяем кодировку (Excel на русской Windows
+  // часто сохраняет CSV в Windows-1251, а не в UTF-8), потом отдаём готовую
+  // строку PapaParse — сами находим заголовки среди распарсенных строк.
   return new Promise((resolve, reject) => {
-    Papa.parse(file, {
-      header: false,
-      skipEmptyLines: true,
-      encoding: 'UTF-8',
-      complete: (results) => {
-        const rawRows = results.data as any[][]
-        resolve(rowsFromRaw(rawRows))
-      },
-      error: (err: Error) => reject(err),
-    })
+    const reader = new FileReader()
+    reader.onerror = () => reject(new Error('Failed to read file'))
+    reader.onload = (e) => {
+      try {
+        const text = decodeCsvBuffer(e.target?.result as ArrayBuffer)
+        const results = Papa.parse(text, { header: false, skipEmptyLines: true })
+        resolve(rowsFromRaw(results.data as any[][]))
+      } catch (err) {
+        reject(err)
+      }
+    }
+    reader.readAsArrayBuffer(file)
   })
 }
 

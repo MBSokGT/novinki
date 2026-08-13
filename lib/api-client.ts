@@ -119,7 +119,7 @@ async function uploadToFilesystem(bucket: string, file: File): Promise<{ data: {
     // приходит HTML-страница nginx, а не JSON от нашего API, и safeJson()
     // упал бы на разборе, отдав в тост нечитаемое "HTTP 413".
     if (response.status === 413) {
-      return { data: null, error: { message: 'Файл слишком большой (максимум 20 МБ). Сожмите файл и попробуйте снова.' } }
+      return { data: null, error: { message: 'Файл слишком большой (максимум 150 МБ). Сожмите файл и попробуйте снова.' } }
     }
     return await safeJson(response)
   } catch (error) {

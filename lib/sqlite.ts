@@ -27,6 +27,10 @@ function getRawDb(): Database.Database {
   fs.mkdirSync(path.dirname(DB_PATH), { recursive: true })
   db = new Database(DB_PATH)
   db.pragma('journal_mode = WAL')
+  // better-sqlite3 defaults busy_timeout to 0 — without this, two staff
+  // saving at the same instant means the second write throws SQLITE_BUSY
+  // immediately instead of waiting a moment for the first to finish.
+  db.pragma('busy_timeout = 5000')
   applyMigrations(db)
   return db
 }

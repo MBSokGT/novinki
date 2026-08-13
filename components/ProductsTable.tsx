@@ -343,7 +343,7 @@ export default function ProductsTable({ isAdmin, onExportReady, supplierNoveltie
     if (data) {
       const filtered = debouncedSearch
         ? (data as Product[]).filter((p) =>
-            fuzzyMatches([p.name, p.brand, p.description, p.category, p.tags, p.article_number], debouncedSearch)
+            fuzzyMatches([p.name, p.brand, p.description, p.tags, p.article_number], debouncedSearch)
           )
         : (data as Product[])
       setProducts(filtered)
@@ -487,7 +487,7 @@ export default function ProductsTable({ isAdmin, onExportReady, supplierNoveltie
     const { data } = await query
     const filtered = debouncedSearch
       ? (data as Product[] | null)?.filter((p) =>
-          fuzzyMatches([p.name, p.brand, p.description, p.category, p.tags, p.article_number], debouncedSearch)
+          fuzzyMatches([p.name, p.brand, p.description, p.tags, p.article_number], debouncedSearch)
         )
       : data
     if (filtered && filtered.length > 0) {
