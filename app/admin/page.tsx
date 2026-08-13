@@ -42,6 +42,8 @@ export default function AdminPage() {
   const [newImages, setNewImages] = useState<File[]>([])
   const [flyer, setFlyer] = useState<File | null>(null)
   const [priceList, setPriceList] = useState<File | null>(null)
+  const [existingFlyer, setExistingFlyer] = useState('')
+  const [existingPriceList, setExistingPriceList] = useState('')
   const [editId, setEditId] = useState<string | null>(null)
   const [user, setUser] = useState<any>(null)
   const [tableSearch, setTableSearch] = useState('')
@@ -186,6 +188,8 @@ export default function AdminPage() {
     setNewImages([])
     setFlyer(null)
     setPriceList(null)
+    setExistingFlyer('')
+    setExistingPriceList('')
     setEditId(null)
     setCatInput('')
     setYearInput('')
@@ -263,8 +267,8 @@ export default function AdminPage() {
     temp_max: form.temp_max ? parseFloat(form.temp_max) : null,
     images,
     image_url: images[0] || '',
-    flyer_url: flyerUrl || (editId ? products.find(p => p.id === editId)?.flyer_url : ''),
-    price_list_url: priceListUrl || (editId ? products.find(p => p.id === editId)?.price_list_url : ''),
+    flyer_url: flyerUrl || existingFlyer,
+    price_list_url: priceListUrl || existingPriceList,
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -334,6 +338,8 @@ export default function AdminPage() {
     setNewImages([])
     setFlyer(null)
     setPriceList(null)
+    setExistingFlyer(product.flyer_url || '')
+    setExistingPriceList(product.price_list_url || '')
     setEditId(product.id)
     if (typeof window !== 'undefined') {
       window.localStorage.removeItem(ADMIN_DRAFT_KEY)
@@ -995,27 +1001,50 @@ export default function AdminPage() {
               </div>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="relative">
-                <input
-                  type="file"
-                  accept="application/pdf,image/jpeg,image/png,.xls,.xlsx,.doc,.docx,.ppt,.pptx"
-                  onChange={(e) => setFlyer(e.target.files?.[0] || null)}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  id="flyer-upload"
-                />
-                <label
-                  htmlFor="flyer-upload"
-                  className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-slate-300 rounded-xl hover:border-slate-400 hover:bg-slate-50 transition-colors cursor-pointer"
-                >
-                  <div className="text-center">
-                    <svg className="w-6 h-6 mx-auto mb-1 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                    <div className="text-sm text-slate-600">
-                      {flyer ? flyer.name : 'Листовка (PDF, JPG, PNG, Excel, Word, PowerPoint)'}
-                    </div>
+              <div>
+                {existingFlyer && !flyer && (
+                  <div className="mb-2 inline-flex items-center gap-2 text-xs bg-slate-100 border border-slate-200 rounded px-2 py-1">
+                    <button type="button" onClick={() => openFileInNewTab(existingFlyer)} className="text-[#9B1B1B] hover:underline underline-offset-2 font-medium">
+                      Текущая листовка прикреплена — открыть
+                    </button>
+                    <button type="button" onClick={() => setExistingFlyer('')} className="text-slate-400 hover:text-slate-700">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
                   </div>
-                </label>
+                )}
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept="application/pdf,image/jpeg,image/png,.xls,.xlsx,.doc,.docx,.ppt,.pptx"
+                    onChange={(e) => setFlyer(e.target.files?.[0] || null)}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    id="flyer-upload"
+                  />
+                  <label
+                    htmlFor="flyer-upload"
+                    className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-slate-300 rounded-xl hover:border-slate-400 hover:bg-slate-50 transition-colors cursor-pointer"
+                  >
+                    <div className="text-center">
+                      <svg className="w-6 h-6 mx-auto mb-1 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                      <div className="text-sm text-slate-600">
+                        {flyer ? flyer.name : existingFlyer ? 'Заменить листовку' : 'Листовка (PDF, JPG, PNG, Excel, Word, PowerPoint)'}
+                      </div>
+                    </div>
+                  </label>
+                </div>
               </div>
-              <div className="relative">
+              <div>
+                {existingPriceList && !priceList && (
+                  <div className="mb-2 inline-flex items-center gap-2 text-xs bg-slate-100 border border-slate-200 rounded px-2 py-1">
+                    <button type="button" onClick={() => openFileInNewTab(existingPriceList)} className="text-emerald-700 hover:underline underline-offset-2 font-medium">
+                      Текущий прайс-лист прикреплён — открыть
+                    </button>
+                    <button type="button" onClick={() => setExistingPriceList('')} className="text-slate-400 hover:text-slate-700">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                  </div>
+                )}
+                <div className="relative">
                 <input
                   type="file"
                   accept="application/pdf,image/jpeg,image/png,.xls,.xlsx,.doc,.docx,.ppt,.pptx"
@@ -1030,10 +1059,11 @@ export default function AdminPage() {
                   <div className="text-center">
                     <svg className="w-6 h-6 mx-auto mb-1 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18M10 4v16M14 4v16M4 4h16a1 1 0 011 1v14a1 1 0 01-1 1H4a1 1 0 01-1-1V5a1 1 0 011-1z" /></svg>
                     <div className="text-sm text-slate-600">
-                      {priceList ? priceList.name : 'Прайс-лист (PDF, JPG, PNG, Excel, Word, PowerPoint)'}
+                      {priceList ? priceList.name : existingPriceList ? 'Заменить прайс-лист' : 'Прайс-лист (PDF, JPG, PNG, Excel, Word, PowerPoint)'}
                     </div>
                   </div>
                 </label>
+                </div>
               </div>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row">
