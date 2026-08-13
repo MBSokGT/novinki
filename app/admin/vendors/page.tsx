@@ -267,7 +267,7 @@ export default function VendorsPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">Описание <span className="text-slate-400 font-normal">— что поставляет вендор</span></label>
-                <input type="text" placeholder="Например: профессиональный инвентарь для бара и кухни" value={form.product} onChange={(e) => setForm({ ...form, product: e.target.value })} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" />
+                <textarea placeholder="Например: профессиональный инвентарь для бара и кухни" value={form.product} onChange={(e) => setForm({ ...form, product: e.target.value })} onInput={autoResize} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" style={{ resize: 'none', overflow: 'hidden', minHeight: '48px' }} />
               </div>
             </div>
 
