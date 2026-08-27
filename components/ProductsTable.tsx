@@ -29,7 +29,6 @@ const VIEW_MODE_KEY = 'novinki:viewMode'
 const SORT_BY_KEY = 'novinki:sortBy'
 const CATEGORY_KEY = 'novinki:selectedCategory'
 const YEAR_KEY = 'novinki:selectedYear'
-const SUPPLIER_NOVELTIES_KEY = 'novinki:supplierNoveltiesOnly'
 const DISHWASHER_SAFE_KEY = 'novinki:dishwasherSafeOnly'
 const MICROWAVE_SAFE_KEY = 'novinki:microwaveSafeOnly'
 
@@ -81,11 +80,6 @@ export default function ProductsTable({ isAdmin, onExportReady, supplierNoveltie
       setSelectedYear(savedYear)
     }
 
-    const savedSupplierNovelties = window.localStorage.getItem(SUPPLIER_NOVELTIES_KEY)
-    if (savedSupplierNovelties === '1') {
-      setSupplierNoveltiesOnly(true)
-    }
-
     const savedDishwasherSafe = window.localStorage.getItem(DISHWASHER_SAFE_KEY)
     if (savedDishwasherSafe === '1') {
       setDishwasherSafeOnly(true)
@@ -98,12 +92,16 @@ export default function ProductsTable({ isAdmin, onExportReady, supplierNoveltie
   }, [])
 
   useEffect(() => {
+    // "supplier" сюда намеренно не входит — этой вкладкой полностью владеет
+    // родитель (app/page.tsx, через проп supplierNoveltiesOnly), а не этот
+    // компонент. Раньше этот эффект ещё и сам переопределял её при каждом
+    // изменении searchParams (например, при возврате из админки), из-за
+    // чего вкладка "Поставщики" иногда сама переключалась на "Склад".
     const hasAnyQueryParam =
       searchParams.has('q') ||
       searchParams.has('brand') ||
       searchParams.has('category') ||
       searchParams.has('year') ||
-      searchParams.has('supplier') ||
       searchParams.has('sort') ||
       searchParams.has('view') ||
       searchParams.has('page')
@@ -117,7 +115,6 @@ export default function ProductsTable({ isAdmin, onExportReady, supplierNoveltie
     const brand = searchParams.get('brand')
     const category = searchParams.get('category')
     const year = searchParams.get('year')
-    const supplier = searchParams.get('supplier')
     const sort = searchParams.get('sort')
     const view = searchParams.get('view')
     setSearch(q)
@@ -125,7 +122,6 @@ export default function ProductsTable({ isAdmin, onExportReady, supplierNoveltie
     setSelectedBrand(brand || null)
     setSelectedCategory(category || null)
     setSelectedYear(year || null)
-    setSupplierNoveltiesOnly(supplier === '1')
     setSortBy(sort === 'name' ? sort : 'date')
     setViewMode(view === 'table' ? 'table' : 'cards')
     setIsUrlStateReady(true)
@@ -139,7 +135,14 @@ export default function ProductsTable({ isAdmin, onExportReady, supplierNoveltie
   useEffect(() => {
     if (!isUrlStateReady) return
 
-    const params = new URLSearchParams(searchParams.toString())
+    // Берём за основу реальную адресную строку (window.location.search), а не
+    // Next-овский searchParams — родитель (app/page.tsx) пишет "supplier"/"tab"
+    // напрямую через window.history.replaceState в обход роутера Next, и
+    // searchParams из useSearchParams() может этого не увидеть. Если строить
+    // параметры от searchParams, можно молча стереть то, что только что
+    // выставил родитель. Этот эффект ниже трогает только "свои" ключи
+    // (q/brand/category/year/sort/view) — "supplier"/"tab" не его забота.
+    const params = new URLSearchParams(window.location.search)
 
     if (debouncedSearch.trim()) params.set('q', debouncedSearch.trim())
     else params.delete('q')
@@ -153,9 +156,6 @@ export default function ProductsTable({ isAdmin, onExportReady, supplierNoveltie
     if (selectedYear) params.set('year', selectedYear)
     else params.delete('year')
 
-    if (supplierNoveltiesOnly) params.set('supplier', '1')
-    else params.delete('supplier')
-
     if (sortBy !== 'date') params.set('sort', sortBy)
     else params.delete('sort')
 
@@ -163,7 +163,7 @@ export default function ProductsTable({ isAdmin, onExportReady, supplierNoveltie
     else params.delete('view')
 
     const nextQuery = params.toString()
-    const currentQuery = searchParams.toString()
+    const currentQuery = window.location.search.replace(/^\?/, '')
     if (nextQuery !== currentQuery) {
       // window.location.pathname, а не usePathname() — тот возвращает путь БЕЗ
       // basePath (Next.js его сам вырезает), и replaceState с таким путём молча
@@ -175,12 +175,9 @@ export default function ProductsTable({ isAdmin, onExportReady, supplierNoveltie
   }, [
     debouncedSearch,
     isUrlStateReady,
-    router,
-    searchParams,
     selectedBrand,
     selectedCategory,
     selectedYear,
-    supplierNoveltiesOnly,
     sortBy,
     viewMode,
   ])
@@ -212,15 +209,6 @@ export default function ProductsTable({ isAdmin, onExportReady, supplierNoveltie
       window.localStorage.removeItem(YEAR_KEY)
     }
   }, [selectedYear])
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    if (supplierNoveltiesOnly) {
-      window.localStorage.setItem(SUPPLIER_NOVELTIES_KEY, '1')
-    } else {
-      window.localStorage.removeItem(SUPPLIER_NOVELTIES_KEY)
-    }
-  }, [supplierNoveltiesOnly])
 
   useEffect(() => {
     if (typeof window === 'undefined') return

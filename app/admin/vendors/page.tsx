@@ -51,13 +51,17 @@ export default function VendorsPage() {
 
   useEffect(() => {
     // Подставленный программно текст (например, при открытии карточки на
-    // редактирование) не проходит через onInput — пересчитываем высоту сами.
+    // редактирование, или очистка формы после сохранения) не проходит через
+    // onInput — пересчитываем высоту сами. Раньше это было завязано только
+    // на editId, а при добавлении нового вендора (не редактировании) editId
+    // как был null, так и остаётся null после сброса формы — эффект не
+    // перезапускался, и поле оставалось растянутым даже после очистки.
     if (!formRef.current) return
     formRef.current.querySelectorAll('textarea').forEach((el) => {
       el.style.height = 'auto'
       el.style.height = el.scrollHeight + 'px'
     })
-  }, [editId])
+  }, [editId, form.product, form.onec_products])
 
   useEffect(() => {
     checkAdmin()

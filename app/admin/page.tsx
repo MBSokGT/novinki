@@ -68,12 +68,16 @@ export default function AdminPage() {
   }
 
   useEffect(() => {
+    // Завязано не только на editId — при добавлении нового товара (не
+    // редактировании) editId как был null, так и остаётся null после
+    // сброса формы, и без полей формы в зависимостях поле оставалось бы
+    // растянутым даже после того, как текст в нём очистился.
     if (!formRef.current) return
     formRef.current.querySelectorAll('textarea').forEach((el) => {
       el.style.height = 'auto'
       el.style.height = el.scrollHeight + 'px'
     })
-  }, [editId])
+  }, [editId, form.description, form.advantages, form.attention_points])
 
   useEffect(() => {
     let cancelled = false
