@@ -119,7 +119,7 @@ export default function Home() {
               </Link>
             </div>
             <div className="hidden shrink-0 items-center gap-1.5 sm:flex lg:gap-2">
-              <div className="inline-flex shrink-0 items-center rounded-lg bg-white/10 p-0.5" role="tablist" aria-label="Раздел новинок">
+              <div className="inline-flex shrink-0 items-center rounded-lg border border-white/30 bg-white/10 p-0.5" role="tablist" aria-label="Раздел новинок">
                 <button
                   role="tab"
                   aria-selected={activeSection === 'stock'}
@@ -175,7 +175,7 @@ export default function Home() {
           </div>
           {menuOpen && (
             <div className="sm:hidden mt-4 pb-2 space-y-2 border-t border-white/10 pt-4">
-              <div className="flex items-center rounded-lg bg-white/10 p-0.5" role="tablist" aria-label="Раздел новинок">
+              <div className="flex items-center rounded-lg border border-white/30 bg-white/10 p-0.5" role="tablist" aria-label="Раздел новинок">
                 <button
                   role="tab"
                   aria-selected={activeSection === 'stock'}
