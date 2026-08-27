@@ -577,7 +577,7 @@ export default function ProductsTable({ isAdmin, onExportReady, supplierNoveltie
         onClearFilters={clearAllFilters}
       />
       
-      {popularBrands.length > 0 && (
+      {!supplierNoveltiesOnly && popularBrands.length > 0 && (
         <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1">
           <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">Бренды:</span>
           {popularBrands.map(({ brand, count }) => (
