@@ -418,9 +418,12 @@ export default function ProductsTable({ isAdmin, onExportReady, supplierNoveltie
     return scored.slice(0, 4).map(item => item.product)
   }
 
-  // Compute once to avoid double-calling getSimilarProducts in the modal
+  // Compute once to avoid double-calling getSimilarProducts in the modal.
+  // Не показываем блок вовсе для новинок поставщика — их слишком мало,
+  // чтобы подбор по категории/бренду/размерам давал осмысленный результат,
+  // получается случайный шум, а не реально похожий товар.
   const selectedProductSimilar = useMemo(
-    () => (selectedProduct ? getSimilarProducts(selectedProduct) : []),
+    () => (selectedProduct && !selectedProduct.is_supplier_novelty ? getSimilarProducts(selectedProduct) : []),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [selectedProduct, productsMeta]
   )
@@ -494,9 +497,17 @@ export default function ProductsTable({ isAdmin, onExportReady, supplierNoveltie
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // productsMeta смешивает склад и поставщиков — без этого фильтра полоса
+  // брендов, автодополнение поиска и списки категорий/годов на вкладке
+  // "Новинки поставщиков" показывали данные со склада и наоборот.
+  const productsMetaForTab = useMemo(
+    () => productsMeta.filter((product) => Boolean(product.is_supplier_novelty) === supplierNoveltiesOnly),
+    [productsMeta, supplierNoveltiesOnly]
+  )
+
   const popularBrands = useMemo(() => {
     const counts = new Map<string, number>()
-    productsMeta.forEach((product) => {
+    productsMetaForTab.forEach((product) => {
       counts.set(product.brand, (counts.get(product.brand) || 0) + 1)
     })
 
@@ -504,7 +515,7 @@ export default function ProductsTable({ isAdmin, onExportReady, supplierNoveltie
       .sort((a, b) => b[1] - a[1])
       .slice(0, 6)
       .map(([brand, count]) => ({ brand, count }))
-  }, [productsMeta])
+  }, [productsMetaForTab])
 
   // Группировка по годам: текущий год — первым без заголовка, остальные — с красным заголовком
   const productsByYear = useMemo(() => {
@@ -536,14 +547,14 @@ export default function ProductsTable({ isAdmin, onExportReady, supplierNoveltie
       <Breadcrumbs />
       <div className="mb-4">
         <SearchBar
-          products={productsMeta}
+          products={productsMetaForTab}
           search={search}
           setSearch={setSearch}
           onSelectProduct={viewProduct}
         />
       </div>
       <FilterBar
-        products={productsMeta}
+        products={productsMetaForTab}
         selectedCategory={selectedCategory}
         setSelectedCategory={setSelectedCategory}
         selectedYear={selectedYear}
