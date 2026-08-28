@@ -179,7 +179,7 @@ export default function Home() {
                 <button
                   role="tab"
                   aria-selected={activeSection === 'stock'}
-                  onClick={() => selectSection('stock')}
+                  onClick={() => { selectSection('stock'); setMenuOpen(false) }}
                   className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition ${activeSection === 'stock' ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-300 hover:text-white'}`}
                 >
                   Склад
@@ -187,7 +187,7 @@ export default function Home() {
                 <button
                   role="tab"
                   aria-selected={activeSection === 'supplier'}
-                  onClick={() => selectSection('supplier')}
+                  onClick={() => { selectSection('supplier'); setMenuOpen(false) }}
                   className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition ${activeSection === 'supplier' ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-300 hover:text-white'}`}
                 >
                   Поставщики
@@ -195,7 +195,7 @@ export default function Home() {
                 <button
                   role="tab"
                   aria-selected={activeSection === 'vendors'}
-                  onClick={() => selectSection('vendors')}
+                  onClick={() => { selectSection('vendors'); setMenuOpen(false) }}
                   className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition ${activeSection === 'vendors' ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-300 hover:text-white'}`}
                 >
                   Вендоры
@@ -237,7 +237,7 @@ export default function Home() {
           />
         )}
       </main>
-      <Footer onExport={exportProducts} />
+      <Footer onExport={activeSection === 'vendors' ? null : exportProducts} />
       <ToastContainer />
     </div>
   )

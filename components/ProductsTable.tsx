@@ -866,7 +866,7 @@ export default function ProductsTable({ isAdmin, onExportReady, supplierNoveltie
             </div>
             <div className="relative h-36 sm:h-44 bg-slate-100 shrink-0">
               <ImageCarousel
-                images={selectedProduct.images?.length ? selectedProduct.images : [selectedProduct.image_url]}
+                images={selectedProduct.images?.length ? selectedProduct.images : (selectedProduct.image_url ? [selectedProduct.image_url] : [])}
                 alt={selectedProduct.name}
                 className="w-full h-full"
                 onImageClick={(url) => setSelectedImage(url)}
