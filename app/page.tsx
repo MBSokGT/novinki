@@ -17,7 +17,6 @@ export default function Home() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [menuOpen, setMenuOpen] = useState(false)
-  const [exportProducts, setExportProducts] = useState<(() => void) | null>(null)
   // Читаем вкладку из URL сразу при инициализации (не в useEffect), чтобы открытая
   // по ссылке "?tab=vendors" страница не успевала на первом кадре смонтировать
   // ProductsTable, который иначе увидит там же "?supplier=1" (если он остался в
@@ -231,13 +230,12 @@ export default function Home() {
         ) : (
           <ProductsTable
             isAdmin={isAdmin}
-            onExportReady={(fn) => setExportProducts(() => fn)}
             supplierNoveltiesOnly={activeSection === 'supplier'}
             setSupplierNoveltiesOnly={(value) => setActiveSection(value ? 'supplier' : 'stock')}
           />
         )}
       </main>
-      <Footer onExport={activeSection === 'vendors' ? null : exportProducts} />
+      <Footer />
       <ToastContainer />
     </div>
   )

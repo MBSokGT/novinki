@@ -14,13 +14,11 @@ import CompareBar from './CompareBar'
 import Breadcrumbs from './Breadcrumbs'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { isTemperatureCategory } from '@/lib/constants'
-import { exportProductsToExcel } from '@/lib/export'
 import { fuzzyMatches } from '@/lib/fuzzySearch'
 import { safeHref } from '@/lib/url'
 
 interface ProductsTableProps {
   isAdmin: boolean
-  onExportReady?: (exportFn: () => void) => void
   supplierNoveltiesOnly: boolean
   setSupplierNoveltiesOnly: (value: boolean) => void
 }
@@ -32,7 +30,7 @@ const YEAR_KEY = 'novinki:selectedYear'
 const DISHWASHER_SAFE_KEY = 'novinki:dishwasherSafeOnly'
 const MICROWAVE_SAFE_KEY = 'novinki:microwaveSafeOnly'
 
-export default function ProductsTable({ isAdmin, onExportReady, supplierNoveltiesOnly, setSupplierNoveltiesOnly }: ProductsTableProps) {
+export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSupplierNoveltiesOnly }: ProductsTableProps) {
   const [products, setProducts] = useState<Product[]>([])
   // Лёгкий список всех товаров: автодополнение, категории, похожие товары
   const [productsMeta, setProductsMeta] = useState<Product[]>([])
@@ -453,49 +451,6 @@ export default function ProductsTable({ isAdmin, onExportReady, supplierNoveltie
     (tempMin ? 1 : 0) +
     (tempMax ? 1 : 0) +
     (sortBy !== 'date' ? 1 : 0)
-
-  const handleExport = async () => {
-    let query = apiClient
-      .from('products')
-      .select('name,brand,article_number,category,year,description,advantages,attention_points,website_link,is_supplier_novelty,is_dishwasher_safe,is_microwave_safe,temp_min,temp_max,tags')
-    if (!isAdmin) query = query.eq('is_archived', false)
-    if (selectedBrand) query = query.eq('brand', selectedBrand)
-    if (selectedCategory) query = query.eq('category', selectedCategory)
-    if (selectedYear) query = query.eq('year', selectedYear)
-    // Вкладка "Новинки на складе" / "Новинки поставщиков" — взаимоисключающие
-    // режимы, а не доп.фильтр: по умолчанию склад (не поставщик), иначе только поставщик.
-    query = query.eq('is_supplier_novelty', supplierNoveltiesOnly)
-    if (dishwasherSafeOnly) query = query.eq('is_dishwasher_safe', true)
-    if (microwaveSafeOnly) query = query.eq('is_microwave_safe', true)
-    if (isTemperatureCategory(selectedCategory)) {
-      let [effMin, effMax] = [tempMin, tempMax]
-      if (effMin && effMax && parseFloat(effMin) > parseFloat(effMax)) {
-        ;[effMin, effMax] = [effMax, effMin]
-      }
-      if (effMin) query = query.gte('temp_max', parseFloat(effMin))
-      if (effMax) query = query.lte('temp_min', parseFloat(effMax))
-    }
-    const { data } = await query
-    const filtered = debouncedSearch
-      ? (data as Product[] | null)?.filter((p) =>
-          fuzzyMatches([p.name, p.brand, p.description, p.tags, p.article_number], debouncedSearch)
-        )
-      : data
-    if (filtered && filtered.length > 0) {
-      exportProductsToExcel(filtered as Product[])
-      showToast('Файл Excel сформирован', 'success')
-    } else {
-      showToast('Нет товаров для выгрузки', 'info')
-    }
-  }
-
-  const handleExportRef = useRef(handleExport)
-  handleExportRef.current = handleExport
-
-  useEffect(() => {
-    onExportReady?.(() => handleExportRef.current())
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
 
   // productsMeta смешивает склад и поставщиков — без этого фильтра полоса
   // брендов, автодополнение поиска и списки категорий/годов на вкладке

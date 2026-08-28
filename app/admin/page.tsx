@@ -10,6 +10,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import ExcelImport from '@/components/ExcelImport'
+import ExportCatalogButton from '@/components/ExportCatalogButton'
 import { showToast } from '@/components/Toast'
 
 const EMPTY_FORM = {
@@ -707,16 +708,17 @@ export default function AdminPage() {
             </Link>
             <h1 className="truncate text-xl font-bold text-white sm:text-2xl">Панель администратора</h1>
           </div>
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:gap-3 [&_a]:w-full [&_a]:justify-center [&_button]:w-full [&_button]:justify-center sm:[&_a]:w-auto sm:[&_button]:w-auto">
             <ExcelImport onSuccess={handleImportSuccess} />
+            <ExportCatalogButton variant="toolbar" />
             <Link href="/admin/trash" className="inline-flex items-center gap-2 px-4 py-2 bg-[#9B1B1B] text-white rounded-lg hover:bg-[#7A1515] transition">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
               Корзина
             </Link>
-            <Link href="/" className="px-4 py-2 bg-white/10 text-gray-200 rounded-lg hover:bg-white/20 transition">
+            <Link href="/" className="inline-flex items-center px-4 py-2 bg-white/10 text-gray-200 rounded-lg hover:bg-white/20 transition">
               На главную
             </Link>
-            <button onClick={handleLogout} className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition">
+            <button onClick={handleLogout} className="col-span-2 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition sm:col-span-1">
               Выйти
             </button>
           </div>
