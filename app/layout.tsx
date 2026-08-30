@@ -22,7 +22,15 @@ export const metadata: Metadata = {
   },
   description: "Каталог новинок ассортимента Комплекс-Бар: карточки товаров, листовки, фильтры по категориям и годам",
   keywords: ["новинки", "ассортимент", "товары", "каталог", "Комплекс-Бар"],
-  robots: "index, follow",
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+    googleBot: {
+      index: false,
+      follow: false,
+    },
+  },
   icons: {
     icon: `${basePath}/logo.png`,
     shortcut: `${basePath}/logo.png`,
