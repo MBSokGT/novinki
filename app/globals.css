@@ -87,6 +87,15 @@ button:disabled {
   outline-offset: 2px;
 }
 
+/* Поля внутри "пилюль" с рамкой (категория, бренд в FilterBar) уже получают
+   свой focus-ring через focus-within на обёртке — родной outline инпута
+   при этом обрезается overflow-hidden обёртки и превращается в кривую
+   полосу сбоку. Отключаем его именно там, где обёртка берёт индикацию
+   фокуса на себя. */
+.pill-input:focus-visible {
+  outline: none;
+}
+
 .surface-card {
   background: var(--surface);
   border: 1px solid var(--border);

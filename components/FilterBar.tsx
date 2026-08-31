@@ -99,7 +99,7 @@ export default function FilterBar({
                   onChange={(e) => { setCatInput(e.target.value); setShowCatDrop(true) }}
                   onFocus={() => setShowCatDrop(true)}
                   placeholder="Все категории"
-                  className="pl-2.5 pr-1 py-1 sm:pl-3 sm:py-1.5 text-xs sm:text-sm bg-transparent outline-none text-slate-700 w-32 sm:w-40"
+                  className="pill-input pl-2.5 pr-1 py-1 sm:pl-3 sm:py-1.5 text-xs sm:text-sm bg-transparent outline-none text-slate-700 w-32 sm:w-40"
                 />
                 {catInput && (
                   <button onClick={() => { setCatInput(''); setSelectedCategory(null); setShowCatDrop(false) }} className="pr-1 text-slate-400 hover:text-slate-600">
@@ -138,7 +138,7 @@ export default function FilterBar({
                   onChange={(e) => { setBrandInput(e.target.value); setShowBrandDrop(true) }}
                   onFocus={() => setShowBrandDrop(true)}
                   placeholder="Все бренды"
-                  className="pl-2.5 pr-1 py-1 sm:pl-3 sm:py-1.5 text-xs sm:text-sm bg-transparent outline-none text-slate-700 w-32 sm:w-40"
+                  className="pill-input pl-2.5 pr-1 py-1 sm:pl-3 sm:py-1.5 text-xs sm:text-sm bg-transparent outline-none text-slate-700 w-32 sm:w-40"
                 />
                 {brandInput && (
                   <button onClick={() => { setBrandInput(''); setSelectedBrand(null); setShowBrandDrop(false) }} className="pr-1 text-slate-400 hover:text-slate-600">
