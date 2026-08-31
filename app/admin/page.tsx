@@ -761,7 +761,7 @@ export default function AdminPage() {
             <div className="mb-1 flex justify-center text-[#9B1B1B]">
               <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4M9 9h.01M9 12h.01M9 15h.01" /></svg>
             </div>
-            <div className="font-bold text-slate-800 group-hover:text-slate-800 transition-colors">Вендоры</div>
+            <div className="font-bold text-slate-800 group-hover:text-slate-800 transition-colors">Товары вендоров</div>
             <div className="text-sm text-slate-500 mt-1">Товары не со склада</div>
           </Link>
           <Link href="/admin/flyers" className="group p-3 bg-white rounded-lg border border-slate-200 hover:border-slate-300 hover:shadow-sm transition text-center">
@@ -908,10 +908,6 @@ export default function AdminPage() {
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-2">Особенности</label>
               <div className="flex flex-wrap gap-3">
-                <label className="flex items-center gap-2 px-4 py-3 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition w-fit">
-                  <input type="checkbox" checked={form.is_supplier_novelty} onChange={(e) => setForm({ ...form, is_supplier_novelty: e.target.checked })} className="w-4 h-4 accent-[#9B1B1B]" />
-                  <span className="text-sm font-medium text-slate-700">Новинка поставщика</span>
-                </label>
                 <label className="flex items-center gap-2 px-4 py-3 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition w-fit">
                   <input type="checkbox" checked={form.is_dishwasher_safe} onChange={(e) => setForm({ ...form, is_dishwasher_safe: e.target.checked })} className="w-4 h-4 accent-[#9B1B1B]" />
                   <span className="text-sm font-medium text-slate-700">ПММ (можно мыть в посудомоечной)</span>
@@ -1072,6 +1068,11 @@ export default function AdminPage() {
                 </div>
               </div>
             </div>
+            <label className="flex items-center gap-2 px-4 py-3 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition w-fit">
+              <input type="checkbox" checked={form.is_supplier_novelty} onChange={(e) => setForm({ ...form, is_supplier_novelty: e.target.checked })} className="w-4 h-4 accent-[#9B1B1B]" />
+              <span className="text-sm font-medium text-slate-700">Новинка поставщика</span>
+            </label>
+
             <div className="flex flex-col gap-3 sm:flex-row">
               <button
                 type="submit"
