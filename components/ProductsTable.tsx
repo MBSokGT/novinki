@@ -539,7 +539,7 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
             <button
               key={brand}
               onClick={() => setSelectedBrand(brand)}
-              className={`text-sm transition ${
+              className={`max-w-full break-words text-sm transition ${
                 selectedBrand === brand
                   ? 'font-semibold text-slate-900 underline underline-offset-2'
                   : 'text-slate-500 hover:text-slate-800'
@@ -597,7 +597,7 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
                 <h3 className="font-semibold text-slate-900 text-sm leading-snug line-clamp-2 mb-1">{product.name}</h3>
                 {product.article_number && <p className="text-[10px] text-slate-400 mb-1.5 font-mono tracking-wide">{product.article_number}</p>}
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-2">
-                  <button onClick={(e) => { e.stopPropagation(); setSelectedBrand(product.brand) }} className="text-[11px] font-medium text-slate-600 hover:text-[#9B1B1B] transition underline-offset-2 hover:underline">{product.brand}</button>
+                  <button onClick={(e) => { e.stopPropagation(); setSelectedBrand(product.brand) }} className="max-w-full break-words text-[11px] font-medium text-slate-600 hover:text-[#9B1B1B] transition underline-offset-2 hover:underline">{product.brand}</button>
                   {product.category && <span className="text-[11px] text-slate-400">{product.category}</span>}
                   {product.year && <span className="text-[11px] text-slate-400">{product.year}</span>}
                   {product.is_dishwasher_safe && <span className="text-[10px] font-medium text-blue-600 border border-blue-200 rounded px-1.5 py-px">ПММ</span>}
@@ -840,10 +840,12 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
               </div>
               <h2 className="text-xl sm:text-2xl font-bold mb-5 text-slate-900 leading-snug">{selectedProduct.name}</h2>
               <div className="divide-y divide-slate-100">
-                <div className="pb-4">
-                  <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-1.5">Описание</p>
-                  <p className="text-slate-700 leading-relaxed text-sm">{selectedProduct.description}</p>
-                </div>
+                {selectedProduct.description && (
+                  <div className="pb-4">
+                    <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-1.5">Описание</p>
+                    <p className="text-slate-700 leading-relaxed text-sm">{selectedProduct.description}</p>
+                  </div>
+                )}
                 {selectedProduct.advantages && (
                   <div className="py-4">
                     <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-1.5">Преимущества</p>
