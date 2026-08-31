@@ -460,18 +460,6 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
     [productsMeta, supplierNoveltiesOnly]
   )
 
-  const popularBrands = useMemo(() => {
-    const counts = new Map<string, number>()
-    productsMetaForTab.forEach((product) => {
-      counts.set(product.brand, (counts.get(product.brand) || 0) + 1)
-    })
-
-    return Array.from(counts.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 6)
-      .map(([brand, count]) => ({ brand, count }))
-  }, [productsMetaForTab])
-
   // Группировка по годам: текущий год — первым без заголовка, остальные — с красным заголовком
   const productsByYear = useMemo(() => {
     const currentYear = new Date().getFullYear().toString()
@@ -510,6 +498,8 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
       </div>
       <FilterBar
         products={productsMetaForTab}
+        selectedBrand={selectedBrand}
+        setSelectedBrand={setSelectedBrand}
         selectedCategory={selectedCategory}
         setSelectedCategory={setSelectedCategory}
         selectedYear={selectedYear}
@@ -531,37 +521,6 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
         totalCount={products.length}
         onClearFilters={clearAllFilters}
       />
-      
-      {!supplierNoveltiesOnly && popularBrands.length > 0 && (
-        <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1">
-          <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">Бренды:</span>
-          {popularBrands.map(({ brand, count }) => (
-            <button
-              key={brand}
-              onClick={() => setSelectedBrand(brand)}
-              className={`max-w-full break-words text-sm transition ${
-                selectedBrand === brand
-                  ? 'font-semibold text-slate-900 underline underline-offset-2'
-                  : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              {brand} <span className="text-[11px] text-slate-400">({count})</span>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {selectedBrand && (
-        <div className="mb-4 flex items-center gap-2">
-          <span className="text-sm text-slate-500">Бренд:</span>
-          <span className="inline-flex items-center gap-1.5 border border-slate-300 px-2 py-0.5 text-sm font-medium text-slate-800">
-            {selectedBrand}
-            <button onClick={() => setSelectedBrand(null)} className="text-slate-400 hover:text-slate-700">
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
-          </span>
-        </div>
-      )}
 
       <div className={`transition-opacity duration-200 ${loading ? 'opacity-50' : 'opacity-100'}`}>
       {viewMode === 'cards' ? (

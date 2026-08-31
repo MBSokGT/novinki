@@ -5,6 +5,8 @@ import { Product } from '@/types/product'
 
 interface FilterBarProps {
   products: Product[]
+  selectedBrand: string | null
+  setSelectedBrand: (brand: string | null) => void
   selectedCategory: string | null
   setSelectedCategory: (cat: string | null) => void
   selectedYear: string | null
@@ -29,6 +31,8 @@ interface FilterBarProps {
 
 export default function FilterBar({
   products,
+  selectedBrand,
+  setSelectedBrand,
   selectedCategory,
   setSelectedCategory,
   selectedYear,
@@ -52,24 +56,35 @@ export default function FilterBar({
 }: FilterBarProps) {
   const categories = Array.from(new Set(products.map(p => p.category).filter(Boolean)))
   const years = Array.from(new Set(products.map(p => p.year).filter(Boolean))).sort().reverse()
+  const brands = Array.from(new Set(products.map(p => p.brand).filter(Boolean))).sort((a, b) => a!.localeCompare(b!))
 
   const [catInput, setCatInput] = useState(selectedCategory || '')
   const [showCatDrop, setShowCatDrop] = useState(false)
   const catRef = useRef<HTMLDivElement>(null)
+
+  const [brandInput, setBrandInput] = useState(selectedBrand || '')
+  const [showBrandDrop, setShowBrandDrop] = useState(false)
+  const brandRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     setCatInput(selectedCategory || '')
   }, [selectedCategory])
 
   useEffect(() => {
+    setBrandInput(selectedBrand || '')
+  }, [selectedBrand])
+
+  useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (catRef.current && !catRef.current.contains(e.target as Node)) setShowCatDrop(false)
+      if (brandRef.current && !brandRef.current.contains(e.target as Node)) setShowBrandDrop(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
   const filteredCats = categories.filter(c => c!.toLowerCase().includes(catInput.toLowerCase()))
+  const filteredBrands = brands.filter(b => b!.toLowerCase().includes(brandInput.toLowerCase()))
 
   return (
     <div className="mb-5 bg-white px-3 py-2.5 sm:px-4 sm:py-3 rounded-xl shadow-sm border border-slate-200">
@@ -109,6 +124,45 @@ export default function FilterBar({
                     >{cat}</button>
                   ))}
                   {filteredCats.length === 0 && <div className="px-3 py-2 text-xs text-slate-400">Не найдено</div>}
+                </div>
+              )}
+            </div>
+          )}
+
+          {brands.length > 0 && (
+            <div className="relative" ref={brandRef}>
+              <div className="flex items-center border border-slate-200 rounded-lg bg-white overflow-hidden focus-within:ring-2 focus-within:ring-[#9B1B1B]">
+                <input
+                  type="text"
+                  value={brandInput}
+                  onChange={(e) => { setBrandInput(e.target.value); setShowBrandDrop(true) }}
+                  onFocus={() => setShowBrandDrop(true)}
+                  placeholder="Все бренды"
+                  className="pl-2.5 pr-1 py-1 sm:pl-3 sm:py-1.5 text-xs sm:text-sm bg-transparent outline-none text-slate-700 w-32 sm:w-40"
+                />
+                {brandInput && (
+                  <button onClick={() => { setBrandInput(''); setSelectedBrand(null); setShowBrandDrop(false) }} className="pr-1 text-slate-400 hover:text-slate-600">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+                )}
+                <button onClick={() => setShowBrandDrop(v => !v)} className="pr-2 text-slate-400">
+                  <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                </button>
+              </div>
+              {showBrandDrop && (
+                <div className="absolute top-full left-0 mt-1 z-30 bg-white border border-slate-200 rounded-xl shadow-lg max-h-56 overflow-y-auto min-w-[160px]">
+                  <button
+                    onMouseDown={() => { setSelectedBrand(null); setBrandInput(''); setShowBrandDrop(false) }}
+                    className="w-full text-left px-3 py-2 text-xs sm:text-sm text-slate-500 hover:bg-slate-50"
+                  >Все бренды</button>
+                  {filteredBrands.map(brand => (
+                    <button
+                      key={brand}
+                      onMouseDown={() => { setSelectedBrand(brand!); setBrandInput(brand!); setShowBrandDrop(false) }}
+                      className={`w-full text-left px-3 py-2 text-xs sm:text-sm hover:bg-slate-50 ${selectedBrand === brand ? 'font-medium text-[#9B1B1B]' : 'text-slate-700'}`}
+                    >{brand}</button>
+                  ))}
+                  {filteredBrands.length === 0 && <div className="px-3 py-2 text-xs text-slate-400">Не найдено</div>}
                 </div>
               )}
             </div>
