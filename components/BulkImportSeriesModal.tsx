@@ -29,7 +29,6 @@ export default function BulkImportSeriesModal({ onClose, onImported }: BulkImpor
   const [category, setCategory] = useState('')
   const [year, setYear] = useState('')
   const [isSupplierNovelty, setIsSupplierNovelty] = useState(false)
-  const [showSharedDetails, setShowSharedDetails] = useState(false)
   const [description, setDescription] = useState('')
   const [advantages, setAdvantages] = useState('')
   const [attentionPoints, setAttentionPoints] = useState('')
@@ -158,60 +157,55 @@ export default function BulkImportSeriesModal({ onClose, onImported }: BulkImpor
 
         {(stage === 'preview' || stage === 'importing') && (
           <>
-            <div className="border-b border-slate-100 p-5">
-              <div className="mb-3 flex items-center justify-between">
-                <button onClick={toggleAll} className="text-sm font-medium text-[#9B1B1B] hover:underline">
-                  {selected.size === products.length ? 'Снять выделение' : 'Выбрать все'}
-                </button>
-                <span className="text-sm text-slate-500">Найдено: {products.length}, выбрано: {selected.size}</span>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-3">
-                <input type="text" value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Категория (для всех)" className="rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#9B1B1B]" />
-                <input type="text" value={year} onChange={(e) => setYear(e.target.value)} placeholder="Год (для всех)" className="rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#9B1B1B]" />
-                <label className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700">
-                  <input type="checkbox" checked={isSupplierNovelty} onChange={(e) => setIsSupplierNovelty(e.target.checked)} className="h-4 w-4 accent-[#9B1B1B]" />
-                  Новинка поставщика
-                </label>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setShowSharedDetails((v) => !v)}
-                className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-[#9B1B1B] transition"
-              >
-                <svg className={`h-3.5 w-3.5 transition-transform ${showSharedDetails ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                Общее описание для всей серии
-              </button>
-              {showSharedDetails && (
-                <div className="mt-2 space-y-2">
-                  <p className="text-xs text-slate-400">
-                    Заполните один раз — применится ко всем выбранным товарам. Удобно для серии, где у всех предметов общий материал, коллекция или условия хранения.
-                  </p>
-                  <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Описание — объём, упаковка, материал..." rows={2} className="w-full resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#9B1B1B]" />
-                  <textarea value={advantages} onChange={(e) => setAdvantages(e.target.value)} placeholder="Преимущества — почему стоит попробовать..." rows={2} className="w-full resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#9B1B1B]" />
-                  <textarea value={attentionPoints} onChange={(e) => setAttentionPoints(e.target.value)} placeholder="На что обратить внимание — хранение, применение..." rows={2} className="w-full resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#9B1B1B]" />
+            <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-4">
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-slate-400">Стандартная карточка — общая для всей серии</p>
+                <div className="space-y-2 rounded-xl border border-slate-200 p-3">
+                  <div className="grid gap-2 sm:grid-cols-3">
+                    <input type="text" value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Категория" className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#9B1B1B]" />
+                    <input type="text" value={year} onChange={(e) => setYear(e.target.value)} placeholder="Год" className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#9B1B1B]" />
+                    <label className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700">
+                      <input type="checkbox" checked={isSupplierNovelty} onChange={(e) => setIsSupplierNovelty(e.target.checked)} className="h-4 w-4 accent-[#9B1B1B]" />
+                      Новинка поставщика
+                    </label>
+                  </div>
+                  <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Описание — объём, упаковка, материал..." rows={2} className="w-full resize-none rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#9B1B1B]" />
+                  <textarea value={advantages} onChange={(e) => setAdvantages(e.target.value)} placeholder="Преимущества — почему стоит попробовать..." rows={2} className="w-full resize-none rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#9B1B1B]" />
+                  <textarea value={attentionPoints} onChange={(e) => setAttentionPoints(e.target.value)} placeholder="На что обратить внимание — хранение, применение..." rows={2} className="w-full resize-none rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#9B1B1B]" />
                   <div className="grid gap-2 sm:grid-cols-2">
-                    <input type="text" value={tags} onChange={(e) => setTags(e.target.value)} placeholder="Теги, через запятую" className="rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#9B1B1B]" />
-                    <input type="text" value={orderMultiple} onChange={(e) => setOrderMultiple(e.target.value)} placeholder="Кратность заказа" className="rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#9B1B1B]" />
+                    <input type="text" value={tags} onChange={(e) => setTags(e.target.value)} placeholder="Теги, через запятую" className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#9B1B1B]" />
+                    <input type="text" value={orderMultiple} onChange={(e) => setOrderMultiple(e.target.value)} placeholder="Кратность заказа" className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#9B1B1B]" />
                   </div>
                 </div>
-              )}
-            </div>
-            <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
-              {products.map((p, i) => (
-                <label key={i} className="flex cursor-pointer items-center gap-3 p-3 hover:bg-slate-50">
-                  <input type="checkbox" checked={selected.has(i)} onChange={() => toggle(i)} className="h-4 w-4 shrink-0 accent-[#9B1B1B]" />
-                  <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-slate-100">
-                    {p.image_url ? (
-                      <Image src={p.image_url} alt={p.name} fill className="object-cover" unoptimized />
-                    ) : null}
+              </div>
+
+              <div>
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">Товары серии — артикул и материал у каждого свои</p>
+                  <div className="flex items-center gap-2">
+                    <button onClick={toggleAll} className="text-xs font-medium text-[#9B1B1B] hover:underline">
+                      {selected.size === products.length ? 'Снять выделение' : 'Выбрать все'}
+                    </button>
+                    <span className="text-xs text-slate-500">{selected.size} из {products.length}</span>
                   </div>
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-slate-800">{p.name}</p>
-                    <p className="truncate text-xs text-slate-500">{p.brand}{p.article_number ? ` · Арт. ${p.article_number}` : ''}</p>
-                  </div>
-                </label>
-              ))}
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {products.map((p, i) => (
+                    <label key={i} className={`flex cursor-pointer items-center gap-2.5 rounded-xl border p-2.5 transition ${selected.has(i) ? 'border-[#9B1B1B]/30 bg-red-50/40' : 'border-slate-200 hover:bg-slate-50'}`}>
+                      <input type="checkbox" checked={selected.has(i)} onChange={() => toggle(i)} className="h-4 w-4 shrink-0 accent-[#9B1B1B]" />
+                      <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-slate-100">
+                        {p.image_url ? (
+                          <Image src={p.image_url} alt={p.name} fill className="object-cover" unoptimized />
+                        ) : null}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-slate-800">{p.name}</p>
+                        <p className="truncate text-xs text-slate-500">{p.brand}{p.article_number ? ` · Арт. ${p.article_number}` : ''}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
             </div>
             <div className="flex gap-2 border-t border-slate-100 p-4">
               <button
