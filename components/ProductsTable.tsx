@@ -18,6 +18,7 @@ import { fuzzyMatches } from '@/lib/fuzzySearch'
 import { safeHref } from '@/lib/url'
 import { localizeComplexbarLink } from '@/lib/complexbar-cities'
 import { useComplexbarCity } from '@/lib/useComplexbarCity'
+import CityLocationPrompt from './CityLocationPrompt'
 
 interface ProductsTableProps {
   isAdmin: boolean
@@ -490,6 +491,7 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
 
   return (
     <div>
+      <CityLocationPrompt cityHost={cityHost} setCityHost={setCityHost} />
       <Breadcrumbs />
       <div className="mb-4">
         <SearchBar
