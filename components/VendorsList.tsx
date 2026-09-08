@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { apiClient } from '@/lib/api-client'
 import { openFileInNewTab } from '@/lib/openFile'
 import { safeHref } from '@/lib/url'
+import { fuzzyMatches } from '@/lib/fuzzySearch'
 import { showToast } from './Toast'
 import { Vendor } from '@/types/vendor'
 
@@ -23,8 +24,14 @@ export default function VendorsList({ isAdmin }: VendorsListProps) {
   const [vendors, setVendors] = useState<Vendor[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null)
+  const [search, setSearch] = useState('')
   const router = useRouter()
   const searchParams = useSearchParams()
+
+  const filteredVendors = useMemo(
+    () => vendors.filter((v) => fuzzyMatches([v.name, v.product, v.onec_products], search)),
+    [vendors, search]
+  )
 
   useEffect(() => {
     let cancelled = false
@@ -92,8 +99,35 @@ export default function VendorsList({ isAdmin }: VendorsListProps) {
 
   return (
     <div>
+      <div className="relative mb-4 w-full">
+        <svg className="pointer-events-none absolute left-4 top-1/2 w-5 h-5 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        <input
+          type="text"
+          placeholder="Поиск по названию вендора или товару..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full rounded-xl border border-gray-300 py-3 pl-12 pr-10 shadow-sm transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#9B1B1B]"
+        />
+        {search && (
+          <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        )}
+      </div>
+
+      {filteredVendors.length === 0 && (
+        <div className="py-16 text-center">
+          <svg className="mx-auto h-12 w-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+          <p className="mt-4 text-lg text-slate-400">Ничего не найдено по запросу "{search}"</p>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {vendors.map((vendor) => (
+        {filteredVendors.map((vendor) => (
           <div
             key={vendor.id}
             onClick={() => openVendor(vendor)}
