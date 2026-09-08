@@ -10,8 +10,11 @@ interface CityBadgeProps {
 
 export default function CityBadge({ cityHost, setCityHost }: CityBadgeProps) {
   const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState('')
   const ref = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
   const current = COMPLEXBAR_CITIES.find((c) => c.host === (cityHost || 'complexbar.ru')) || COMPLEXBAR_CITIES[0]
+  const filteredCities = COMPLEXBAR_CITIES.filter((c) => c.name.toLowerCase().includes(query.trim().toLowerCase()))
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -20,6 +23,13 @@ export default function CityBadge({ cityHost, setCityHost }: CityBadgeProps) {
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [])
+
+  useEffect(() => {
+    if (open) {
+      setQuery('')
+      inputRef.current?.focus()
+    }
+  }, [open])
 
   return (
     <div className="relative inline-block" ref={ref}>
@@ -33,16 +43,37 @@ export default function CityBadge({ cityHost, setCityHost }: CityBadgeProps) {
         <svg className="h-3 w-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
       </button>
       {open && (
-        <div className="absolute top-full left-0 z-30 mt-1 max-h-64 w-56 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg">
-          {COMPLEXBAR_CITIES.map((city) => (
-            <button
-              key={city.host}
-              onClick={() => { setCityHost(city.host); setOpen(false) }}
-              className={`block w-full px-3 py-2 text-left text-sm hover:bg-slate-50 ${city.host === current.host ? 'font-medium text-[#9B1B1B]' : 'text-slate-700'}`}
-            >
-              {city.name}
-            </button>
-          ))}
+        <div className="absolute top-full left-0 z-30 mt-1 w-56 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
+          <div className="border-b border-slate-100 p-1.5">
+            <input
+              ref={inputRef}
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && filteredCities.length > 0) {
+                  setCityHost(filteredCities[0].host)
+                  setOpen(false)
+                } else if (e.key === 'Escape') {
+                  setOpen(false)
+                }
+              }}
+              placeholder="Введите город..."
+              className="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm text-slate-700 outline-none focus:border-transparent focus:ring-2 focus:ring-[#9B1B1B]"
+            />
+          </div>
+          <div className="max-h-56 overflow-y-auto">
+            {filteredCities.map((city) => (
+              <button
+                key={city.host}
+                onClick={() => { setCityHost(city.host); setOpen(false) }}
+                className={`block w-full px-3 py-2 text-left text-sm hover:bg-slate-50 ${city.host === current.host ? 'font-medium text-[#9B1B1B]' : 'text-slate-700'}`}
+              >
+                {city.name}
+              </button>
+            ))}
+            {filteredCities.length === 0 && <div className="px-3 py-2 text-sm text-slate-400">Не найдено</div>}
+          </div>
         </div>
       )}
     </div>
