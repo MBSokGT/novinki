@@ -7,6 +7,7 @@ function productRows(products: Product[]) {
     'Название': p.name,
     'Бренд': p.brand,
     'Артикул': p.article_number || '',
+    'Артикулы вариантов': (p.variants || []).map((v) => v.article_number).filter(Boolean).join(', '),
     'Категория': p.category || '',
     'Год': p.year || '',
     'Описание': p.description,
