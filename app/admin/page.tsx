@@ -11,7 +11,9 @@ import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import ExcelImport from '@/components/ExcelImport'
 import ExportCatalogButton from '@/components/ExportCatalogButton'
+import RequestMatchModal from '@/components/RequestMatchModal'
 import { showToast } from '@/components/Toast'
+import { findMatchingRequests } from '@/lib/matchRequests'
 
 const EMPTY_FORM = {
   name: '',
@@ -58,6 +60,7 @@ export default function AdminPage() {
   const [showCatDrop, setShowCatDrop] = useState(false)
   const [yearInput, setYearInput] = useState('')
   const [showYearDrop, setShowYearDrop] = useState(false)
+  const [matchedRequests, setMatchedRequests] = useState<{ productName: string; requests: { id: string; name: string; product: string; article?: string | null }[] } | null>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
   const formRef = useRef<HTMLFormElement>(null)
@@ -276,6 +279,15 @@ export default function AdminPage() {
     price_list_url: priceListUrl || existingPriceList,
   })
 
+  const checkMatchingRequests = async (productData: { name: string; brand: string; tags: string; category: string; article_number: string }) => {
+    const { data: openRequests } = await apiClient.from('requests').select('id, name, product, article').eq('delivered', false)
+    if (!openRequests || openRequests.length === 0) return
+    const matches = findMatchingRequests(productData, openRequests as any)
+    if (matches.length > 0) {
+      setMatchedRequests({ productName: productData.name, requests: matches as any })
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (submitLoading) return
@@ -306,6 +318,7 @@ export default function AdminPage() {
           await fetchProducts()
         }
         showToast('Товар добавлен', 'success')
+        checkMatchingRequests(productData)
       }
 
       resetForm()
@@ -1469,6 +1482,13 @@ export default function AdminPage() {
           </div>
         </div>
       </main>
+      {matchedRequests && (
+        <RequestMatchModal
+          productName={matchedRequests.productName}
+          requests={matchedRequests.requests}
+          onClose={() => setMatchedRequests(null)}
+        />
+      )}
     </div>
   )
 }
