@@ -31,14 +31,20 @@ export default function BulkImportSeriesModal({ onClose, onImported }: BulkImpor
   const [isSupplierNovelty, setIsSupplierNovelty] = useState(false)
 
   const parse = async () => {
-    if (!url.trim()) return
+    const trimmed = url.trim()
+    if (!trimmed) return
     setStage('loading')
     setError('')
+    // Голый артикул (5-8 цифр) — сами собираем ссылку на поиск по complexbar.ru,
+    // не заставляя админа сначала идти туда за самой ссылкой.
+    const targetUrl = /^\d{5,8}$/.test(trimmed)
+      ? `https://complexbar.ru/index.php?dispatch=products.search&search_performed=Y&q=${trimmed}`
+      : trimmed
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/internal/scrape-complexbar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: url.trim() }),
+        body: JSON.stringify({ url: targetUrl }),
       })
       const json = await res.json()
       if (json.error || !json.data?.products?.length) {
@@ -116,14 +122,14 @@ export default function BulkImportSeriesModal({ onClose, onImported }: BulkImpor
         {(stage === 'input' || stage === 'loading') && (
           <div className="p-5">
             <p className="mb-3 text-sm text-slate-500">
-              Вставьте ссылку на страницу поиска, категорию или конкретный товар на complexbar.ru — разберём список и предзаполним карточки названием, брендом, артикулом и фото.
+              Вставьте ссылку на страницу поиска, категорию или конкретный товар на complexbar.ru — разберём список и предзаполним карточки названием, брендом, артикулом и фото. Или просто впишите артикул (5–8 цифр) — найдём сами, без похода на сайт.
             </p>
             <input
               type="text"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && parse()}
-              placeholder="https://complexbar.ru/index.php?...dispatch=products.search..."
+              placeholder="Ссылка на complexbar.ru или просто артикул, например 05032146"
               className="w-full rounded-xl border border-slate-200 px-4 py-3 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#9B1B1B]"
             />
             {error && <p className="mt-2 text-sm text-red-600">{error}</p>}

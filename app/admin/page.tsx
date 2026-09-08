@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { apiClient } from '@/lib/api-client'
 import { openFileInNewTab } from '@/lib/openFile'
 import { isTemperatureCategory } from '@/lib/constants'
@@ -15,6 +15,7 @@ import RequestMatchModal from '@/components/RequestMatchModal'
 import BulkImportSeriesModal from '@/components/BulkImportSeriesModal'
 import { showToast } from '@/components/Toast'
 import { findMatchingRequests } from '@/lib/matchRequests'
+import { buildCategoryWordIndex, suggestCategory } from '@/lib/suggestCategory'
 
 const EMPTY_FORM = {
   name: '',
@@ -63,9 +64,11 @@ export default function AdminPage() {
   const [showYearDrop, setShowYearDrop] = useState(false)
   const [matchedRequests, setMatchedRequests] = useState<{ productName: string; requests: { id: string; name: string; product: string; article?: string | null }[] } | null>(null)
   const [showBulkImport, setShowBulkImport] = useState(false)
+  const [highlightArticle, setHighlightArticle] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
   const formRef = useRef<HTMLFormElement>(null)
+  const articleInputRef = useRef<HTMLInputElement>(null)
 
   const autoResize = (e: React.FormEvent<HTMLTextAreaElement>) => {
     const el = e.currentTarget
@@ -203,10 +206,21 @@ export default function AdminPage() {
     setEditId(null)
     setCatInput('')
     setYearInput('')
+    setHighlightArticle(false)
     if (typeof window !== 'undefined') {
       window.localStorage.removeItem(ADMIN_DRAFT_KEY)
     }
   }
+
+  useEffect(() => {
+    if (highlightArticle) articleInputRef.current?.focus()
+  }, [highlightArticle])
+
+  const categoryWordIndex = useMemo(() => buildCategoryWordIndex(products), [products])
+  const suggestedCategory = useMemo(
+    () => (form.category ? null : suggestCategory(form.name, categoryWordIndex)),
+    [form.name, form.category, categoryWordIndex]
+  )
 
   const filteredProducts = products.filter((product) => {
     const searchText = tableSearch.trim().toLowerCase()
@@ -333,6 +347,7 @@ export default function AdminPage() {
   }
 
   const handleEdit = (product: Product) => {
+    setHighlightArticle(false)
     const cat = (product as any).category || ''
     setForm({
       name: product.name,
@@ -411,12 +426,15 @@ export default function AdminPage() {
       const { data, error } = await apiClient.from('products').insert([payload]).select()
       if (error) throw error
 
-      if (data?.[0]) {
-        setProducts((prev) => [data[0] as Product, ...prev])
+      const created = data?.[0] as Product | undefined
+      if (created) {
+        setProducts((prev) => [created, ...prev])
+        handleEdit(created)
+        setHighlightArticle(true)
       } else {
         await fetchProducts()
       }
-      showToast('Копия товара создана', 'success')
+      showToast('Копия создана — не забудьте указать новый артикул', 'success')
     } catch (error: any) {
       console.error('Duplicate error:', error)
       showToast(error?.message || 'Ошибка при копировании товара', 'error')
@@ -818,8 +836,18 @@ export default function AdminPage() {
                 <input type="text" placeholder="Например: Pinch&Drop, Probar" value={form.brand} onChange={(e) => setForm({...form, brand: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" required />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Артикул <span className="text-slate-400 font-normal">(если есть)</span></label>
-                <input type="text" placeholder="Например: 123456" value={form.article_number} onChange={(e) => setForm({...form, article_number: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" />
+                <label className="block text-xs font-medium text-slate-500 mb-1">
+                  Артикул <span className="text-slate-400 font-normal">(если есть)</span>
+                  {highlightArticle && <span className="ml-1.5 font-medium text-amber-600">— не забудьте поменять</span>}
+                </label>
+                <input
+                  ref={articleInputRef}
+                  type="text"
+                  placeholder="Например: 123456"
+                  value={form.article_number}
+                  onChange={(e) => { setForm({...form, article_number: e.target.value}); setHighlightArticle(false) }}
+                  className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition ${highlightArticle ? 'border-amber-300 bg-amber-50 ring-2 ring-amber-200 focus:ring-amber-300' : 'border-slate-200 focus:ring-[#9B1B1B]'}`}
+                />
               </div>
             </div>
 
@@ -880,6 +908,19 @@ export default function AdminPage() {
                     </div>
                   )}
                 </div>
+                {suggestedCategory && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setForm((prev) => ({ ...prev, category: suggestedCategory }))
+                      setCatInput(suggestedCategory)
+                    }}
+                    className="mt-1.5 inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-[#9B1B1B] transition"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                    Похоже на «{suggestedCategory}» — подставить?
+                  </button>
+                )}
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">Год поставки</label>
