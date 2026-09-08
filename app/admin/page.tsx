@@ -12,6 +12,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import ExcelImport from '@/components/ExcelImport'
 import ExportCatalogButton from '@/components/ExportCatalogButton'
 import RequestMatchModal from '@/components/RequestMatchModal'
+import BulkImportSeriesModal from '@/components/BulkImportSeriesModal'
 import { showToast } from '@/components/Toast'
 import { findMatchingRequests } from '@/lib/matchRequests'
 
@@ -61,6 +62,7 @@ export default function AdminPage() {
   const [yearInput, setYearInput] = useState('')
   const [showYearDrop, setShowYearDrop] = useState(false)
   const [matchedRequests, setMatchedRequests] = useState<{ productName: string; requests: { id: string; name: string; product: string; article?: string | null }[] } | null>(null)
+  const [showBulkImport, setShowBulkImport] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
   const formRef = useRef<HTMLFormElement>(null)
@@ -723,6 +725,13 @@ export default function AdminPage() {
           </div>
           <div className="grid grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:gap-3 [&_a]:w-full [&_a]:justify-center [&_button]:w-full [&_button]:justify-center sm:[&_a]:w-auto sm:[&_button]:w-auto">
             <ExcelImport onSuccess={handleImportSuccess} />
+            <button
+              onClick={() => setShowBulkImport(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 text-gray-200 rounded-lg hover:bg-white/20 transition"
+            >
+              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 01-5.656-5.656l1.5-1.5M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 015.656 5.656l-1.5 1.5" /></svg>
+              Серия по ссылке
+            </button>
             <ExportCatalogButton variant="toolbar" />
             <Link href="/admin/trash" className="inline-flex items-center gap-2 px-4 py-2 bg-[#9B1B1B] text-white rounded-lg hover:bg-[#7A1515] transition">
               <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -1487,6 +1496,12 @@ export default function AdminPage() {
           productName={matchedRequests.productName}
           requests={matchedRequests.requests}
           onClose={() => setMatchedRequests(null)}
+        />
+      )}
+      {showBulkImport && (
+        <BulkImportSeriesModal
+          onClose={() => setShowBulkImport(false)}
+          onImported={fetchProducts}
         />
       )}
     </div>

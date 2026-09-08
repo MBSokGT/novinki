@@ -23,7 +23,12 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_BASE_PATH: publicBasePath,
   },
   images: {
-    remotePatterns: [{ protocol: 'https', hostname: 'picsum.photos' }],
+    remotePatterns: [
+      { protocol: 'https', hostname: 'picsum.photos' },
+      // Товары, спарсенные с complexbar.ru (см. "Добавить серию по ссылке"),
+      // хранят ссылку на их картиночный CDN, а не на сам complexbar.ru.
+      { protocol: 'https', hostname: '**.scalesta-cdn.com' },
+    ],
   },
   async headers() {
     return [
