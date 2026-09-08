@@ -857,6 +857,31 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
                     )}
                   </div>
                 )}
+                {selectedProduct.variants && selectedProduct.variants.length > 0 && (
+                  <div className="py-4">
+                    <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-3">Варианты ({selectedProduct.variants.length})</p>
+                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                      {selectedProduct.variants.map((v, i) => {
+                        const href = safeHref(v.website_link)
+                        const content = (
+                          <>
+                            <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-slate-100">
+                              {v.image_url && <Image src={v.image_url} alt={v.article_number} fill className="object-cover" unoptimized />}
+                            </div>
+                            <p className="mt-1 truncate text-center text-[11px] text-slate-500">{v.article_number || '—'}</p>
+                          </>
+                        )
+                        return href ? (
+                          <a key={`${v.article_number}-${i}`} href={localizeComplexbarLink(href, cityHost)} target="_blank" rel="noopener noreferrer" className="block transition hover:opacity-80">
+                            {content}
+                          </a>
+                        ) : (
+                          <div key={`${v.article_number}-${i}`}>{content}</div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
                 {selectedProductSimilar.length > 0 && (
                   <div className="pt-4">
                     <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-3">Похожие товары</p>

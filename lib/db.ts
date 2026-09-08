@@ -127,6 +127,7 @@ const PRODUCT_COLUMNS = [
   'year',
   'tags',
   'order_multiple',
+  'variants',
   'rating',
   'price',
   'created_by',
@@ -152,7 +153,7 @@ const VENDOR_COLUMNS = [
   'updated_at',
 ] as const
 
-const JSON_FIELDS = new Set(['images', 'files'])
+const JSON_FIELDS = new Set(['images', 'files', 'variants'])
 
 const COLLECTIONS: Record<string, CollectionConfig> = {
   products: {

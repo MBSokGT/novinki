@@ -1,3 +1,9 @@
+export interface ProductVariant {
+  image_url: string
+  article_number: string
+  website_link: string
+}
+
 export interface Product {
   id: string
   name: string
@@ -21,6 +27,7 @@ export interface Product {
   year?: string
   tags?: string
   order_multiple?: string
+  variants?: ProductVariant[]
   rating?: number
   price?: number
   created_by?: string

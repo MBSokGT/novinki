@@ -5,7 +5,7 @@ import { apiClient } from '@/lib/api-client'
 import { openFileInNewTab } from '@/lib/openFile'
 import { isTemperatureCategory } from '@/lib/constants'
 import { normalizeLink, safeHref } from '@/lib/url'
-import { Product } from '@/types/product'
+import { Product, ProductVariant } from '@/types/product'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -34,6 +34,7 @@ const EMPTY_FORM = {
   is_microwave_safe: false,
   temp_min: '',
   temp_max: '',
+  variants: [] as ProductVariant[],
 }
 
 const ADMIN_DRAFT_KEY = 'novinki:adminFormDraft'
@@ -289,11 +290,36 @@ export default function AdminPage() {
     is_microwave_safe: form.is_microwave_safe,
     temp_min: form.temp_min ? parseFloat(form.temp_min) : null,
     temp_max: form.temp_max ? parseFloat(form.temp_max) : null,
+    variants: form.variants,
     images,
     image_url: images[0] || '',
     flyer_url: flyerUrl || existingFlyer,
     price_list_url: priceListUrl || existingPriceList,
   })
+
+  const handleAddVariants = (items: { name: string; brand: string; article_number: string; image_url: string; website_link: string }[]) => {
+    setForm((prev) => {
+      const existingArticles = new Set(prev.variants.map((v) => v.article_number))
+      const newVariants = items
+        .filter((item) => !existingArticles.has(item.article_number))
+        .map((item) => ({ image_url: item.image_url, article_number: item.article_number, website_link: item.website_link }))
+      const brands = new Set(items.map((item) => item.brand).filter(Boolean))
+      return {
+        ...prev,
+        variants: [...prev.variants, ...newVariants],
+        brand: prev.brand || (brands.size === 1 ? items[0].brand : prev.brand),
+        name: prev.name || (items.length === 1 ? items[0].name : prev.name),
+      }
+    })
+    if (existingImages.length === 0 && newImages.length === 0 && items[0]?.image_url) {
+      setExistingImages([items[0].image_url])
+    }
+    showToast(`Добавлено вариантов: ${items.length}`, 'success')
+  }
+
+  const removeVariant = (index: number) => {
+    setForm((prev) => ({ ...prev, variants: prev.variants.filter((_, i) => i !== index) }))
+  }
 
   const checkMatchingRequests = async (productData: { name: string; brand: string; tags: string; category: string; article_number: string }) => {
     const { data: openRequests } = await apiClient.from('requests').select('id, name, product, article').eq('delivered', false)
@@ -366,6 +392,7 @@ export default function AdminPage() {
       is_microwave_safe: Boolean(product.is_microwave_safe),
       temp_min: product.temp_min != null ? String(product.temp_min) : '',
       temp_max: product.temp_max != null ? String(product.temp_max) : '',
+      variants: product.variants || [],
     })
     setCatInput(cat)
     setYearInput(product.year || '')
@@ -421,6 +448,7 @@ export default function AdminPage() {
         is_microwave_safe: Boolean(product.is_microwave_safe),
         temp_min: product.temp_min ?? null,
         temp_max: product.temp_max ?? null,
+        variants: product.variants || [],
       }
 
       const { data, error } = await apiClient.from('products').insert([payload]).select()
@@ -1009,6 +1037,39 @@ export default function AdminPage() {
               <input type="text" placeholder="Например: complexbar.ru/product или https://..." value={form.website_link} onChange={(e) => setForm({...form, website_link: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" />
             </div>
             <div>
+              <div className="mb-1 flex items-center justify-between">
+                <label className="block text-xs font-medium text-slate-500">Варианты <span className="text-slate-400 font-normal">— фото, артикул и ссылка на каждую позицию серии</span></label>
+                <button
+                  type="button"
+                  onClick={() => setShowBulkImport(true)}
+                  className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-[#9B1B1B] hover:underline"
+                >
+                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                  Загрузить по ссылке
+                </button>
+              </div>
+              {form.variants.length > 0 && (
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {form.variants.map((v, i) => (
+                    <div key={`${v.article_number}-${i}`} className="flex items-center gap-2 rounded-xl border border-slate-200 p-2">
+                      <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-slate-100">
+                        {v.image_url && <Image src={v.image_url} alt={v.article_number} fill className="object-cover" unoptimized />}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-xs font-medium text-slate-700">Арт. {v.article_number || '—'}</p>
+                        {safeHref(v.website_link) && (
+                          <a href={v.website_link} target="_blank" rel="noopener noreferrer" className="truncate text-xs text-slate-400 hover:text-[#9B1B1B] hover:underline block">Ссылка</a>
+                        )}
+                      </div>
+                      <button type="button" onClick={() => removeVariant(i)} className="shrink-0 text-slate-300 hover:text-red-600">
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">Теги <span className="text-slate-400 font-normal">— характеристики для поиска, через запятую</span></label>
               <input type="text" placeholder="Например: файн рим, тонкое стекло, серия Elegance" value={form.tags} onChange={(e) => setForm({...form, tags: e.target.value})} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" />
             </div>
@@ -1542,7 +1603,7 @@ export default function AdminPage() {
       {showBulkImport && (
         <BulkImportSeriesModal
           onClose={() => setShowBulkImport(false)}
-          onImported={fetchProducts}
+          onAddVariants={handleAddVariants}
         />
       )}
     </div>
