@@ -5,11 +5,14 @@ import VendorsList from '@/components/VendorsList'
 import RequestForm from '@/components/RequestForm'
 import Footer from '@/components/Footer'
 import ToastContainer from '@/components/Toast'
+import CityBadge from '@/components/CityBadge'
+import CityLocationPrompt from '@/components/CityLocationPrompt'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import { apiClient } from '@/lib/api-client'
 import { useRouter } from 'next/navigation'
+import { useComplexbarCity } from '@/lib/useComplexbarCity'
 
 export default function Home() {
   const [isAdmin, setIsAdmin] = useState(false)
@@ -17,6 +20,7 @@ export default function Home() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [menuOpen, setMenuOpen] = useState(false)
+  const { cityHost, setCityHost } = useComplexbarCity()
   // Читаем вкладку из URL сразу при инициализации (не в useEffect), чтобы открытая
   // по ссылке "?tab=vendors" страница не успевала на первом кадре смонтировать
   // ProductsTable, который иначе увидит там же "?supplier=1" (если он остался в
@@ -109,6 +113,11 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col">
       <nav className="bg-[#1A1A1A] shadow-lg border-b border-[#333] sticky top-0 z-50">
+        <div className="border-b border-white/10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-1">
+            <CityBadge cityHost={cityHost} setCityHost={setCityHost} />
+          </div>
+        </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
           <div className="flex justify-between items-center gap-4">
             <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -224,6 +233,7 @@ export default function Home() {
           )}
         </div>
       </nav>
+      <CityLocationPrompt cityHost={cityHost} setCityHost={setCityHost} />
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 py-6">
         {activeSection === 'vendors' ? (
           <VendorsList isAdmin={isAdmin} />
@@ -232,6 +242,7 @@ export default function Home() {
             isAdmin={isAdmin}
             supplierNoveltiesOnly={activeSection === 'supplier'}
             setSupplierNoveltiesOnly={(value) => setActiveSection(value ? 'supplier' : 'stock')}
+            cityHost={cityHost}
           />
         )}
       </main>

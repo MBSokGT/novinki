@@ -17,13 +17,12 @@ import { isTemperatureCategory } from '@/lib/constants'
 import { fuzzyMatches } from '@/lib/fuzzySearch'
 import { safeHref } from '@/lib/url'
 import { localizeComplexbarLink } from '@/lib/complexbar-cities'
-import { useComplexbarCity } from '@/lib/useComplexbarCity'
-import CityLocationPrompt from './CityLocationPrompt'
 
 interface ProductsTableProps {
   isAdmin: boolean
   supplierNoveltiesOnly: boolean
   setSupplierNoveltiesOnly: (value: boolean) => void
+  cityHost: string | null
 }
 
 const VIEW_MODE_KEY = 'novinki:viewMode'
@@ -33,7 +32,7 @@ const YEAR_KEY = 'novinki:selectedYear'
 const DISHWASHER_SAFE_KEY = 'novinki:dishwasherSafeOnly'
 const MICROWAVE_SAFE_KEY = 'novinki:microwaveSafeOnly'
 
-export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSupplierNoveltiesOnly }: ProductsTableProps) {
+export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSupplierNoveltiesOnly, cityHost }: ProductsTableProps) {
   const [products, setProducts] = useState<Product[]>([])
   // Лёгкий список всех товаров: автодополнение, категории, похожие товары
   const [productsMeta, setProductsMeta] = useState<Product[]>([])
@@ -43,7 +42,6 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
   const [initialLoading, setInitialLoading] = useState(true)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
-  const { cityHost, setCityHost } = useComplexbarCity()
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('cards')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
@@ -491,7 +489,6 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
 
   return (
     <div>
-      <CityLocationPrompt cityHost={cityHost} setCityHost={setCityHost} />
       <Breadcrumbs />
       <div className="mb-4">
         <SearchBar
@@ -505,8 +502,6 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
         products={productsMetaForTab}
         selectedBrand={selectedBrand}
         setSelectedBrand={setSelectedBrand}
-        cityHost={cityHost}
-        setCityHost={setCityHost}
         selectedCategory={selectedCategory}
         setSelectedCategory={setSelectedCategory}
         selectedYear={selectedYear}
