@@ -2,11 +2,14 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { Product } from '@/types/product'
+import { COMPLEXBAR_CITIES } from '@/lib/complexbar-cities'
 
 interface FilterBarProps {
   products: Product[]
   selectedBrand: string | null
   setSelectedBrand: (brand: string | null) => void
+  cityHost: string | null
+  setCityHost: (host: string | null) => void
   selectedCategory: string | null
   setSelectedCategory: (cat: string | null) => void
   selectedYear: string | null
@@ -33,6 +36,8 @@ export default function FilterBar({
   products,
   selectedBrand,
   setSelectedBrand,
+  cityHost,
+  setCityHost,
   selectedCategory,
   setSelectedCategory,
   selectedYear,
@@ -233,6 +238,21 @@ export default function FilterBar({
               />
             </div>
           )}
+
+          <div className="relative">
+            <select
+              value={cityHost || 'complexbar.ru'}
+              onChange={(e) => setCityHost(e.target.value)}
+              title="Ваш город — ссылки «Посмотреть товар» будут вести на страницу этого города на complexbar.ru"
+              className="appearance-none pl-7 pr-7 py-1 sm:pl-8 sm:pr-8 sm:py-1.5 text-xs sm:text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] focus:border-transparent bg-white text-slate-700"
+            >
+              {COMPLEXBAR_CITIES.map((city) => (
+                <option key={city.host} value={city.host}>{city.name}</option>
+              ))}
+            </select>
+            <svg className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+            <svg className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+          </div>
 
           {activeFiltersCount > 0 && (
             <button

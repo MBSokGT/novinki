@@ -16,6 +16,8 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { isTemperatureCategory } from '@/lib/constants'
 import { fuzzyMatches } from '@/lib/fuzzySearch'
 import { safeHref } from '@/lib/url'
+import { localizeComplexbarLink } from '@/lib/complexbar-cities'
+import { useComplexbarCity } from '@/lib/useComplexbarCity'
 
 interface ProductsTableProps {
   isAdmin: boolean
@@ -40,6 +42,7 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
   const [initialLoading, setInitialLoading] = useState(true)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
+  const { cityHost, setCityHost } = useComplexbarCity()
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('cards')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
@@ -500,6 +503,8 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
         products={productsMetaForTab}
         selectedBrand={selectedBrand}
         setSelectedBrand={setSelectedBrand}
+        cityHost={cityHost}
+        setCityHost={setCityHost}
         selectedCategory={selectedCategory}
         setSelectedCategory={setSelectedCategory}
         selectedYear={selectedYear}
@@ -579,7 +584,7 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
                       </a>
                     )}
                     {safeHref(product.website_link) && (
-                      <a href={safeHref(product.website_link)!} target="_blank" rel="noopener noreferrer"
+                      <a href={localizeComplexbarLink(safeHref(product.website_link)!, cityHost)} target="_blank" rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
                         className="text-[11px] font-medium text-slate-400 hover:text-slate-700 transition" title="На сайте">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
@@ -848,7 +853,7 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
                       </a>
                     )}
                     {safeHref(selectedProduct.website_link) && (
-                      <a href={safeHref(selectedProduct.website_link)!} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-900">
+                      <a href={localizeComplexbarLink(safeHref(selectedProduct.website_link)!, cityHost)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-900">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
                         Посмотреть товар
                       </a>
