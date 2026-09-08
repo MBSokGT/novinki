@@ -5,7 +5,7 @@ import { COMPLEXBAR_CITIES } from '@/lib/complexbar-cities'
 
 // Спрашиваем один раз за браузер — если сотрудник отказался или город не
 // нашёлся в списке Комплекс-Бар, больше не докучаем (город всегда можно
-// выбрать вручную в фильтрах).
+// выбрать вручную в верхнем левом углу сайта).
 const ASKED_KEY = 'complexbar_city_geo_asked'
 
 type Stage = 'hidden' | 'offer' | 'locating' | 'confirm' | 'not_found' | 'error'
@@ -113,7 +113,7 @@ export default function CityLocationPrompt({ cityHost, setCityHost }: CityLocati
               <h3 className="text-lg font-bold">Определить ваш город?</h3>
             </div>
             <p className="mb-4 text-sm text-slate-500">
-              Тогда ссылки «Посмотреть товар» будут сразу вести на страницу вашего города на complexbar.ru. Можно и не сейчас — город всегда можно выбрать вручную в фильтрах.
+              Тогда ссылки «Посмотреть товар» будут сразу вести на страницу вашего города на complexbar.ru. Можно и не сейчас — город всегда можно выбрать вручную в верхнем левом углу сайта.
             </p>
             <div className="flex gap-2">
               <button onClick={locate} className="flex-1 rounded-xl bg-[#9B1B1B] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#7A1515]">
@@ -153,7 +153,7 @@ export default function CityLocationPrompt({ cityHost, setCityHost }: CityLocati
             <h3 className="mb-1 text-lg font-bold text-slate-900">
               {stage === 'not_found' ? 'Не нашли ваш город в списке Комплекс-Бар' : 'Не получилось определить город'}
             </h3>
-            <p className="mb-4 text-sm text-slate-500">Выберите его вручную — селектор «Ваш город» есть в панели фильтров, над списком товаров.</p>
+            <p className="mb-4 text-sm text-slate-500">Выберите его вручную — «Ваш город» есть в верхнем левом углу сайта.</p>
             <button onClick={dismiss} className="w-full rounded-xl bg-[#9B1B1B] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#7A1515]">
               Понятно
             </button>
