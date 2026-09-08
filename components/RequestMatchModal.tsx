@@ -66,7 +66,7 @@ export default function RequestMatchModal({ productName, requests, onClose }: Re
                     disabled={loadingId === r.id}
                     className="shrink-0 rounded-lg bg-[#9B1B1B] px-3 py-1.5 text-xs font-medium text-white transition hover:bg-[#7A1515] disabled:opacity-50"
                   >
-                    {loadingId === r.id ? 'Сохраняю...' : 'Отметить выполненным'}
+                    {loadingId === r.id ? 'Сохраняю...' : 'Выполнено'}
                   </button>
                 )}
               </div>
