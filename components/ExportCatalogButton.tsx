@@ -49,7 +49,7 @@ export default function ExportCatalogButton({ variant = 'footer' }: ExportCatalo
       <button
         onClick={handleExport}
         disabled={exporting}
-        className="flex items-center gap-2 px-4 py-2 bg-white/10 text-gray-200 rounded-lg hover:bg-white/20 transition disabled:opacity-60 disabled:cursor-wait"
+        className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 text-gray-200 rounded-lg hover:bg-white/20 transition disabled:opacity-60 disabled:cursor-wait"
       >
         {icon}
         {exporting ? 'Выгрузка...' : 'Выгрузить в Excel'}

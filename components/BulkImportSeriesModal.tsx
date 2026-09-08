@@ -29,6 +29,12 @@ export default function BulkImportSeriesModal({ onClose, onImported }: BulkImpor
   const [category, setCategory] = useState('')
   const [year, setYear] = useState('')
   const [isSupplierNovelty, setIsSupplierNovelty] = useState(false)
+  const [showSharedDetails, setShowSharedDetails] = useState(false)
+  const [description, setDescription] = useState('')
+  const [advantages, setAdvantages] = useState('')
+  const [attentionPoints, setAttentionPoints] = useState('')
+  const [tags, setTags] = useState('')
+  const [orderMultiple, setOrderMultiple] = useState('')
 
   const parse = async () => {
     const trimmed = url.trim()
@@ -83,14 +89,14 @@ export default function BulkImportSeriesModal({ onClose, onImported }: BulkImpor
       name: p.name,
       brand: p.brand,
       article_number: p.article_number,
-      description: '',
-      advantages: '',
-      attention_points: '',
+      description,
+      advantages,
+      attention_points: attentionPoints,
       website_link: p.website_link,
       category,
       year,
-      tags: '',
-      order_multiple: '',
+      tags,
+      order_multiple: orderMultiple,
       is_supplier_novelty: isSupplierNovelty,
       is_dishwasher_safe: false,
       is_microwave_safe: false,
@@ -167,6 +173,29 @@ export default function BulkImportSeriesModal({ onClose, onImported }: BulkImpor
                   Новинка поставщика
                 </label>
               </div>
+
+              <button
+                type="button"
+                onClick={() => setShowSharedDetails((v) => !v)}
+                className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-[#9B1B1B] transition"
+              >
+                <svg className={`h-3.5 w-3.5 transition-transform ${showSharedDetails ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                Общее описание для всей серии
+              </button>
+              {showSharedDetails && (
+                <div className="mt-2 space-y-2">
+                  <p className="text-xs text-slate-400">
+                    Заполните один раз — применится ко всем выбранным товарам. Удобно для серии, где у всех предметов общий материал, коллекция или условия хранения.
+                  </p>
+                  <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Описание — объём, упаковка, материал..." rows={2} className="w-full resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#9B1B1B]" />
+                  <textarea value={advantages} onChange={(e) => setAdvantages(e.target.value)} placeholder="Преимущества — почему стоит попробовать..." rows={2} className="w-full resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#9B1B1B]" />
+                  <textarea value={attentionPoints} onChange={(e) => setAttentionPoints(e.target.value)} placeholder="На что обратить внимание — хранение, применение..." rows={2} className="w-full resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#9B1B1B]" />
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <input type="text" value={tags} onChange={(e) => setTags(e.target.value)} placeholder="Теги, через запятую" className="rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#9B1B1B]" />
+                    <input type="text" value={orderMultiple} onChange={(e) => setOrderMultiple(e.target.value)} placeholder="Кратность заказа" className="rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#9B1B1B]" />
+                  </div>
+                </div>
+              )}
             </div>
             <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
               {products.map((p, i) => (

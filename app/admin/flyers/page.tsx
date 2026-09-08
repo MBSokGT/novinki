@@ -8,6 +8,8 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { Product } from '@/types/product'
 import { Vendor } from '@/types/vendor'
+import { downloadFilesAsZip, type ZipFileEntry } from '@/lib/downloadZip'
+import { showToast } from '@/components/Toast'
 
 function fileLabel(url: string) {
   const name = url.split('/').pop() || 'Файл'
@@ -22,6 +24,7 @@ export default function FlyersLibraryPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [vendors, setVendors] = useState<Vendor[]>([])
   const [search, setSearch] = useState('')
+  const [downloading, setDownloading] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -72,6 +75,40 @@ export default function FlyersLibraryPage() {
 
   const tabCounts = { stock: stockProducts.length, supplier: supplierProducts.length, vendors: vendorsWithFiles.length }
 
+  const activeTabLabel = activeTab === 'stock' ? 'Склад' : activeTab === 'supplier' ? 'Поставщики' : 'Вендоры'
+
+  const filesForActiveTab = (): ZipFileEntry[] => {
+    if (activeTab === 'vendors') {
+      return filteredVendors.flatMap((vendor) =>
+        (vendor.files || []).map((url, idx) => ({ url, name: `${vendor.name} — файл ${idx + 1}` }))
+      )
+    }
+    const list = activeTab === 'stock' ? filteredStock : filteredSupplier
+    return list.flatMap((product) => {
+      const entries: ZipFileEntry[] = []
+      if (product.flyer_url) entries.push({ url: product.flyer_url, name: `${product.name} — листовка` })
+      if (product.price_list_url) entries.push({ url: product.price_list_url, name: `${product.name} — прайс-лист` })
+      return entries
+    })
+  }
+
+  const handleDownloadAll = async () => {
+    const files = filesForActiveTab()
+    if (files.length === 0) {
+      showToast('Нет файлов для скачивания', 'info')
+      return
+    }
+    setDownloading(true)
+    try {
+      const { downloaded, failed } = await downloadFilesAsZip(files, `Листовки — ${activeTabLabel}.zip`)
+      showToast(failed > 0 ? `Скачано ${downloaded} из ${files.length} файлов` : `Скачано файлов: ${downloaded}`, failed > 0 ? 'error' : 'success')
+    } catch {
+      showToast('Не удалось собрать архив', 'error')
+    } finally {
+      setDownloading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-slate-50">
       <nav className="bg-[#1A1A1A] shadow-lg border-b border-[#333]">
@@ -120,15 +157,29 @@ export default function FlyersLibraryPage() {
               Вендоры ({tabCounts.vendors})
             </button>
           </div>
-          <div className="relative w-full max-w-xs">
-            <svg className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" /></svg>
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Поиск по названию..."
-              className="w-full rounded-lg border border-slate-200 py-2 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition"
-            />
+          <div className="flex items-center gap-2">
+            <div className="relative w-full max-w-xs">
+              <svg className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" /></svg>
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Поиск по названию..."
+                className="w-full rounded-lg border border-slate-200 py-2 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition"
+              />
+            </div>
+            <button
+              onClick={handleDownloadAll}
+              disabled={downloading}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[#9B1B1B] px-3 py-2 text-sm font-medium text-white transition hover:bg-[#7A1515] disabled:opacity-60"
+            >
+              {downloading ? (
+                <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+              ) : (
+                <svg className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H8a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+              )}
+              <span className="hidden sm:inline">{downloading ? 'Собираю архив...' : 'Скачать всё'}</span>
+            </button>
           </div>
         </div>
 
