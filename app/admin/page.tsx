@@ -492,6 +492,7 @@ export default function AdminPage() {
             year: product.year || '',
             tags: product.tags || '',
             order_multiple: product.order_multiple || '',
+            variants: product.variants || [],
             price: product.price ?? null,
             is_supplier_novelty: Boolean(product.is_supplier_novelty),
             is_dishwasher_safe: Boolean(product.is_dishwasher_safe),
@@ -500,7 +501,7 @@ export default function AdminPage() {
             temp_max: product.temp_max ?? null,
             deleted_at: new Date().toISOString(),
           })
-          
+
           if (insertError) {
             console.error('Error inserting to deleted_products:', insertError)
             showToast('Ошибка перемещения в корзину', 'error')
@@ -627,6 +628,7 @@ export default function AdminPage() {
           year: product.year || '',
           tags: product.tags || '',
           order_multiple: product.order_multiple || '',
+          variants: product.variants || [],
           is_supplier_novelty: Boolean(product.is_supplier_novelty),
           is_dishwasher_safe: Boolean(product.is_dishwasher_safe),
           is_microwave_safe: Boolean(product.is_microwave_safe),

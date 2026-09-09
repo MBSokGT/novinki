@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { showToast } from '@/components/Toast'
+import { ProductVariant } from '@/types/product'
 
 interface DeletedProduct {
   id: string
@@ -25,6 +26,7 @@ interface DeletedProduct {
   year?: string
   tags?: string
   order_multiple?: string
+  variants?: ProductVariant[]
   price?: number
   is_supplier_novelty?: boolean
   is_dishwasher_safe?: boolean
@@ -119,6 +121,7 @@ export default function TrashPage() {
         year: deletedProduct.year || '',
         tags: deletedProduct.tags || '',
         order_multiple: deletedProduct.order_multiple || '',
+        variants: deletedProduct.variants || [],
         price: deletedProduct.price ?? null,
         is_supplier_novelty: Boolean(deletedProduct.is_supplier_novelty),
         is_dishwasher_safe: Boolean(deletedProduct.is_dishwasher_safe),
