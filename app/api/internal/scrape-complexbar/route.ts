@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import * as cheerio from 'cheerio'
 import { getCurrentUser } from '@/lib/db'
+import { saveUploadedFile } from '@/lib/storage'
 
 // Только complexbar.ru и её городские поддомены — этот эндпоинт делает
 // запрос с сервера по адресу, который прислал админ, так что нельзя
@@ -20,6 +21,37 @@ interface ScrapedProduct {
   article_number: string
   image_url: string
   website_link: string
+}
+
+// Ссылки на картинки с CDN complexbar.ru часто подписанные и могут переставать
+// открываться сами по себе, независимо от того, жив ли сам complexbar.ru
+// (истёкшая подпись, смена CDN и т.п.) — поэтому сразу скачиваем и храним
+// у себя, как и для обычного фото товара, а не держим живую внешнюю ссылку.
+async function mirrorImage(url: string): Promise<string> {
+  if (!url) return url
+  try {
+    const response = await fetch(url, { signal: AbortSignal.timeout(10000) })
+    if (!response.ok) return url
+    const buffer = Buffer.from(await response.arrayBuffer())
+    const ext = new URL(url).pathname.split('.').pop()?.toLowerCase() || 'jpg'
+    return await saveUploadedFile('products', `variant.${/^[a-z0-9]{2,4}$/.test(ext) ? ext : 'jpg'}`, buffer)
+  } catch {
+    return url
+  }
+}
+
+async function mirrorImages(products: ScrapedProduct[]): Promise<ScrapedProduct[]> {
+  const CONCURRENCY = 6
+  const result = [...products]
+  let cursor = 0
+  async function worker() {
+    while (cursor < result.length) {
+      const i = cursor++
+      result[i] = { ...result[i], image_url: await mirrorImage(result[i].image_url) }
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, result.length) }, worker))
+  return result
 }
 
 function absolutize(url: string, base: string): string {
@@ -132,6 +164,8 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     )
   }
+
+  products = await mirrorImages(products)
 
   return NextResponse.json({ data: { products }, error: null }, { headers: { 'Cache-Control': 'no-store' } })
 }
