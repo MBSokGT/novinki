@@ -1,8 +1,11 @@
 // Минимальный service worker — нужен только чтобы браузер считал сайт
-// устанавливаемым как приложение (PWA). Никакого офлайн-кэша каталога:
-// данные всегда идут напрямую в сеть, поэтому кэш не разрастается и
-// карточки никогда не показываются устаревшими.
-const CACHE_VERSION = 'v1'
+// устанавливаемым как приложение (PWA). Никакого офлайн-кэша каталога и
+// никакого перехвата запросов: раньше здесь стоял обработчик 'fetch',
+// который на Safari ломал загрузку картинок (FetchEvent.respondWith
+// падал с "Load failed" даже на собственных, локальных файлах). Без него
+// все запросы идут напрямую в сеть, как без service worker'а вообще —
+// современным браузерам обработчик fetch для установки PWA не обязателен.
+const CACHE_VERSION = 'v2'
 const CACHE_NAME = `novinki-shell-${CACHE_VERSION}`
 
 self.addEventListener('install', () => {
@@ -16,8 +19,4 @@ self.addEventListener('activate', (event) => {
     )
   )
   self.clients.claim()
-})
-
-self.addEventListener('fetch', (event) => {
-  event.respondWith(fetch(event.request))
 })
