@@ -73,7 +73,8 @@ function parseListing($: cheerio.CheerioAPI, baseUrl: string): ScrapedProduct[] 
 
     const brand = card.find('.cmx-product-grid__item-brand, .cmx-products-brand-name').first().text().trim()
     const article = card.find('[id^="product_code_"]').first().text().trim()
-    const img = card.find('img[data-src]').first().attr('data-src') || ''
+    const imgEl = card.find('img[data-src], img').first()
+    const img = imgEl.attr('data-src') || imgEl.attr('src') || ''
 
     products.push({
       name,
@@ -92,10 +93,18 @@ function parseSingleProduct($: cheerio.CheerioAPI, baseUrl: string): ScrapedProd
 
   const brand = $('a.ga-brand-link').first().text().trim()
   const article = $('[id^="product_code_"]').first().text().trim()
+  // Главное фото на странице товара: сначала пробуем полноразмерную ссылку
+  // с обёртки-превьюера, иначе — сам <img> (страница верстается то через
+  // ленивую загрузку с data-src, то сразу через обычный src, вёрстка меняется).
   const img =
-    $('.cm-image-gallery img[data-src], .ty-product-block__gallery img[data-src], img.cm-image[data-src]')
+    $('.cmx-product-details-images a.cm-previewer').first().attr('href') ||
+    $('.cmx-product-details-images img, .cm-image-gallery img, .ty-product-block__gallery img, img.cm-image')
       .first()
-      .attr('data-src') || ''
+      .attr('data-src') ||
+    $('.cmx-product-details-images img, .cm-image-gallery img, .ty-product-block__gallery img, img.cm-image')
+      .first()
+      .attr('src') ||
+    ''
 
   return [
     {
