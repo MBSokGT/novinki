@@ -10,6 +10,8 @@ export interface ProductVariant {
   availability?: Availability | null
   availability_label?: string | null
   link_broken?: boolean
+  price?: number | null
+  currency?: string | null
 }
 
 export interface Product {
@@ -40,6 +42,8 @@ export interface Product {
   availability_label?: string | null
   link_broken?: boolean
   link_checked_at?: string | null
+  site_price?: number | null
+  site_currency?: string | null
   rating?: number
   price?: number
   created_by?: string

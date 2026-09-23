@@ -1,6 +1,6 @@
 import { getLocalD1 } from './sqlite'
 import { isComplexbarHost } from './complexbar-cities'
-import { parseProductStatus, type ProductStatus } from './complexbarParser'
+import { parseProductPrice, parseProductStatus, type ProductStatus } from './complexbarParser'
 import type { ProductVariant } from '@/types/product'
 
 // Пауза между запросами к complexbar.ru — проверка идёт раз в сутки и не
@@ -10,7 +10,7 @@ const MIN_INTERVAL_MS = 1000 * 60 * 60 * 20
 
 export type LinkCheckResult =
   | { broken: true }
-  | { broken: false; status: ProductStatus | null }
+  | { broken: false; status: ProductStatus | null; price: { price: number; currency: string } | null }
 
 let running = false
 let startedAt: string | null = null
@@ -47,7 +47,7 @@ export async function checkLink(link: string): Promise<LinkCheckResult | null> {
   if (wasProduct && !new URL(response.url || link).pathname.includes('/product/')) return { broken: true }
 
   const html = await response.text()
-  return { broken: false, status: parseProductStatus(html) }
+  return { broken: false, status: parseProductStatus(html), price: parseProductPrice(html) }
 }
 
 function parseVariants(raw: string | null): ProductVariant[] {
@@ -66,6 +66,8 @@ function applyToVariant(variant: ProductVariant, result: LinkCheckResult): Produ
     link_broken: false,
     availability: result.status?.availability ?? null,
     availability_label: result.status?.label ?? null,
+    price: result.price?.price ?? null,
+    currency: result.price?.currency ?? null,
   }
 }
 
@@ -126,11 +128,14 @@ export async function checkAllLinks({ force = false } = {}) {
 
       const mainResult = isCheckableLink(fresh.website_link) ? cache.get(fresh.website_link!) : undefined
       if (mainResult) {
-        assignments.push('link_broken = ?', 'availability = ?', 'availability_label = ?')
+        const ok = mainResult.broken ? null : mainResult
+        assignments.push('link_broken = ?', 'availability = ?', 'availability_label = ?', 'site_price = ?', 'site_currency = ?')
         values.push(
           mainResult.broken ? 1 : 0,
-          mainResult.broken ? null : mainResult.status?.availability ?? null,
-          mainResult.broken ? null : mainResult.status?.label ?? null
+          ok?.status?.availability ?? null,
+          ok?.status?.label ?? null,
+          ok?.price?.price ?? null,
+          ok?.price?.currency ?? null
         )
       }
 

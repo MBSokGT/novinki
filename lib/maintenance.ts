@@ -26,6 +26,12 @@ export async function purgeOldTrash(now = Date.now()) {
   const threshold = new Date(now - TRASH_RETENTION_MS).toISOString()
   await db.prepare('DELETE FROM deleted_products WHERE deleted_at <= ?').bind(threshold).run()
   await db.prepare('DELETE FROM deleted_vendors WHERE deleted_at <= ?').bind(threshold).run()
+  // История правок карточек, которых больше нет ни в каталоге, ни в корзине
+  await db
+    .prepare(
+      'DELETE FROM product_history WHERE product_id NOT IN (SELECT id FROM products) AND product_id NOT IN (SELECT original_product_id FROM deleted_products WHERE original_product_id IS NOT NULL)'
+    )
+    .run()
 }
 
 // Ссылки на загруженные файлы разбросаны по многим колонкам (фото, галерея,

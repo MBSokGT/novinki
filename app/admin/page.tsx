@@ -8,6 +8,8 @@ import { normalizeLink, safeHref } from '@/lib/url'
 import { Product, ProductVariant } from '@/types/product'
 import { toTrashRecord } from '@/lib/trashPayload'
 import LinkAttentionPanel from '@/components/LinkAttentionPanel'
+import ProductHistoryModal from '@/components/ProductHistoryModal'
+import type { FieldsFromFeatures } from '@/lib/featuresToFields'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -46,6 +48,11 @@ export default function AdminPage() {
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([])
   const [years, setYears] = useState<{ id: string; name: string }[]>([])
   const [form, setForm] = useState(EMPTY_FORM)
+  // Актуальная форма для асинхронного автозаполнения (оно приходит позже клика)
+  const formSnapshotRef = useRef(form)
+  useEffect(() => {
+    formSnapshotRef.current = form
+  }, [form])
   const [existingImages, setExistingImages] = useState<string[]>([])
   const [newImages, setNewImages] = useState<File[]>([])
   const [flyer, setFlyer] = useState<File | null>(null)
@@ -53,6 +60,7 @@ export default function AdminPage() {
   const [existingFlyer, setExistingFlyer] = useState('')
   const [existingPriceList, setExistingPriceList] = useState('')
   const [editId, setEditId] = useState<string | null>(null)
+  const [historyProduct, setHistoryProduct] = useState<Product | null>(null)
   const [user, setUser] = useState<any>(null)
   const [tableSearch, setTableSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'archived'>('all')
@@ -320,6 +328,35 @@ export default function AdminPage() {
       setExistingImages([items[0].image_url])
     }
     showToast(`Добавлено вариантов: ${items.length}`, 'success')
+    const source = items.find((item) => item.website_link)?.website_link
+    if (source) autofillFromComplexbar(source)
+  }
+
+  // Характеристики со страницы товара на complexbar.ru — в пустые поля формы.
+  // Уже заполненное админом не трогаем.
+  const autofillFromComplexbar = async (url: string) => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/internal/complexbar-details`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      })
+      const fields: FieldsFromFeatures | undefined = (await res.json()).data?.fields
+      if (!fields) return
+      const current = formSnapshotRef.current
+      const patch: Partial<typeof current> = {}
+      const filled: string[] = []
+      if (fields.is_dishwasher_safe && !current.is_dishwasher_safe) { patch.is_dishwasher_safe = true; filled.push('ПММ') }
+      if (fields.is_microwave_safe && !current.is_microwave_safe) { patch.is_microwave_safe = true; filled.push('СВЧ') }
+      if (fields.temp_min !== undefined && !current.temp_min) { patch.temp_min = String(fields.temp_min); filled.push('температура от') }
+      if (fields.temp_max !== undefined && !current.temp_max) { patch.temp_max = String(fields.temp_max); filled.push('температура до') }
+      if (fields.attention_points && !current.attention_points.trim()) { patch.attention_points = fields.attention_points; filled.push('на что обратить внимание') }
+      if (fields.tags && !current.tags.trim()) { patch.tags = fields.tags; filled.push('теги') }
+      setForm((prev) => ({ ...prev, ...patch }))
+      if (filled.length > 0) showToast(`Из характеристик complexbar.ru заполнено: ${filled.join(', ')}`, 'success')
+    } catch {
+      // автозаполнение — приятный бонус, без него форма работает как обычно
+    }
   }
 
   const updateVariantName = (index: number, name: string) => {
@@ -682,6 +719,22 @@ export default function AdminPage() {
     else showToast(`Архивировано: ${succeededIds.size}, не удалось: ${failedCount}`, 'error')
   }
 
+  // Массово проставить год или категорию выбранным карточкам.
+  const handleBulkSetField = async (field: 'year' | 'category', value: string, label: string) => {
+    if (selectedIds.size === 0 || !value) return
+    if (!confirm(`Поставить ${label} «${value}» выбранным товарам (${selectedIds.size})?`)) return
+
+    const ids = Array.from(selectedIds)
+    const results = await Promise.all(
+      ids.map(async (id) => ({ id, error: (await apiClient.from('products').update({ [field]: value }).eq('id', id)).error }))
+    )
+    const succeededIds = new Set(results.filter((r) => !r.error).map((r) => r.id))
+    const failedCount = results.length - succeededIds.size
+    setProducts((prev) => prev.map((p) => (succeededIds.has(p.id) ? { ...p, [field]: value } : p)))
+    if (failedCount === 0) showToast(`Готово, изменено товаров: ${succeededIds.size}`, 'success')
+    else showToast(`Изменено: ${succeededIds.size}, не удалось: ${failedCount}`, 'error')
+  }
+
   const handleBulkPublish = async () => {
     if (selectedIds.size === 0) return
     if (!confirm(`Опубликовать выбранные товары (${selectedIds.size})? Они станут видны на сайте.`)) return
@@ -820,6 +873,16 @@ export default function AdminPage() {
               )}
             </div>
             <h2 className="text-xl font-bold text-slate-800 sm:text-2xl">{editId ? 'Редактировать новинку' : 'Добавить новинку'}</h2>
+            {editId && products.find((p) => p.id === editId) && (
+              <button
+                type="button"
+                onClick={() => setHistoryProduct(products.find((p) => p.id === editId) || null)}
+                className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
+              >
+                <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                История правок
+              </button>
+            )}
           </div>
           <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">
             {/* Основные поля */}
@@ -1317,6 +1380,24 @@ export default function AdminPage() {
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 01-2-2V4a2 2 0 012-2h14a2 2 0 012 2v2a2 2 0 01-2 2M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
                         Архивировать
                       </button>
+                      <select
+                        value=""
+                        onChange={(e) => handleBulkSetField('year', e.target.value, 'год')}
+                        className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-medium text-slate-700"
+                        aria-label="Поставить год выбранным"
+                      >
+                        <option value="">Год…</option>
+                        {years.map((y) => <option key={y.id} value={y.name}>{y.name}</option>)}
+                      </select>
+                      <select
+                        value=""
+                        onChange={(e) => handleBulkSetField('category', e.target.value, 'категорию')}
+                        className="max-w-[10rem] rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-medium text-slate-700"
+                        aria-label="Поставить категорию выбранным"
+                      >
+                        <option value="">Категория…</option>
+                        {categories.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
+                      </select>
                       <button
                         onClick={handleBulkDuplicate}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition"
@@ -1581,6 +1662,17 @@ export default function AdminPage() {
           productName={matchedRequests.productName}
           requests={matchedRequests.requests}
           onClose={() => setMatchedRequests(null)}
+        />
+      )}
+      {historyProduct && (
+        <ProductHistoryModal
+          product={historyProduct}
+          onClose={() => setHistoryProduct(null)}
+          onRestored={(restored) => {
+            setProducts((prev) => prev.map((p) => (p.id === restored.id ? restored : p)))
+            setHistoryProduct(null)
+            if (editId === restored.id) handleEdit(restored)
+          }}
         />
       )}
       {showBulkImport && (

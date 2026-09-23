@@ -55,4 +55,24 @@ export function shortLabel(label: string): string {
   return label.replace(/\s*[>≥<]?\s*\d[\d\s]*\s*шт\.?/i, '').trim() || label
 }
 
-export const AVAILABILITY_SOURCE_HINT = 'По данным complexbar.ru, обновляется раз в сутки'
+export const AVAILABILITY_SOURCE_HINT = 'По данным complexbar.ru (Москва), обновляется раз в сутки'
+
+const CURRENCY_SIGNS: Record<string, string> = { RUB: '₽', KZT: '₸', BYN: 'Br', KGS: 'сом', AMD: '֏' }
+
+export function formatPrice(price: number | null | undefined, currency?: string | null): string | null {
+  if (price === null || price === undefined || !Number.isFinite(price)) return null
+  const amount = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 }).format(price)
+  return `${amount} ${CURRENCY_SIGNS[currency || 'RUB'] || currency || '₽'}`
+}
+
+// Цена для карточки в каталоге: своя цена товара или "от" минимальной цены вариантов.
+export function productPriceSummary(product: Pick<Product, 'site_price' | 'site_currency' | 'variants'>): string | null {
+  const own = formatPrice(product.site_price, product.site_currency)
+  if (own) return own
+  const priced = (product.variants || []).filter((v) => typeof v.price === 'number' && v.price > 0)
+  if (priced.length === 0) return null
+  const cheapest = priced.reduce((min, v) => (v.price! < min.price! ? v : min))
+  const text = formatPrice(cheapest.price, cheapest.currency)
+  const allSame = priced.every((v) => v.price === cheapest.price)
+  return allSame ? text : `от ${text}`
+}

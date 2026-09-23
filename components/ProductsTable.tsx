@@ -18,7 +18,7 @@ import { fuzzyMatches } from '@/lib/fuzzySearch'
 import { productSearchFields } from '@/lib/productSearch'
 import { shortVariantNames } from '@/lib/variantName'
 import { isNewSince, useLastVisit } from '@/lib/useLastVisit'
-import AvailabilityBadge, { AVAILABILITY_SOURCE_HINT, productAvailabilitySummary } from '@/components/AvailabilityBadge'
+import AvailabilityBadge, { AVAILABILITY_SOURCE_HINT, formatPrice, productAvailabilitySummary, productPriceSummary } from '@/components/AvailabilityBadge'
 import { safeHref } from '@/lib/url'
 import { localizeComplexbarLink } from '@/lib/complexbar-cities'
 import ImageWithFallback from '@/components/ImageWithFallback'
@@ -607,6 +607,10 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
                     const summary = productAvailabilitySummary(product)
                     return summary && <AvailabilityBadge kind={summary.kind} label={summary.label} title={AVAILABILITY_SOURCE_HINT} />
                   })()}
+                  {(() => {
+                    const price = productPriceSummary(product)
+                    return price && <span className="text-[11px] font-semibold text-slate-700" title="Цена на complexbar.ru">{price}</span>
+                  })()}
                 </div>
                 <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed mb-3">{product.description}</p>
                 <div className="mt-auto flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
@@ -842,11 +846,6 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
             <div className="p-5 sm:p-7 overflow-y-auto max-h-[calc(90vh-9rem)] sm:max-h-[calc(90vh-11rem)]">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-3">
                 <button onClick={() => { setSelectedBrand(selectedProduct.brand); closeProduct(); }} className="text-xs font-semibold text-slate-500 uppercase tracking-wide hover:text-[#9B1B1B] transition">{selectedProduct.brand}</button>
-                {selectedProduct.link_broken ? (
-                  <AvailabilityBadge kind="broken" label="Страница пропала с complexbar.ru" title={AVAILABILITY_SOURCE_HINT} />
-                ) : selectedProduct.availability && selectedProduct.availability_label ? (
-                  <AvailabilityBadge kind={selectedProduct.availability} label={selectedProduct.availability_label} title={AVAILABILITY_SOURCE_HINT} />
-                ) : null}
                 {selectedProduct.is_dishwasher_safe && <span className="text-[10px] font-medium text-blue-600 border border-blue-200 rounded px-1.5 py-px">Подходит для ПММ</span>}
                 {selectedProduct.is_microwave_safe && <span className="text-[10px] font-medium text-blue-600 border border-blue-200 rounded px-1.5 py-px">Подходит для СВЧ</span>}
                 {(selectedProduct.temp_min != null || selectedProduct.temp_max != null) && (
@@ -911,6 +910,20 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
                         Посмотреть товар
                       </a>
                     )}
+                    {selectedProduct.link_broken ? (
+                      <AvailabilityBadge variant="inline" kind="broken" label="Страница пропала с complexbar.ru" title={AVAILABILITY_SOURCE_HINT} />
+                    ) : (
+                      (selectedProduct.availability_label || selectedProduct.site_price) && (
+                        <span className="inline-flex items-center gap-2" title={AVAILABILITY_SOURCE_HINT}>
+                          {selectedProduct.availability && selectedProduct.availability_label && (
+                            <AvailabilityBadge variant="inline" kind={selectedProduct.availability} label={selectedProduct.availability_label} />
+                          )}
+                          {formatPrice(selectedProduct.site_price, selectedProduct.site_currency) && (
+                            <span className="text-sm font-semibold text-slate-800">{formatPrice(selectedProduct.site_price, selectedProduct.site_currency)}</span>
+                          )}
+                        </span>
+                      )
+                    )}
                   </div>
                 )}
                 {selectedProduct.variants && selectedProduct.variants.length > 0 && (
@@ -951,6 +964,9 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
                                   <AvailabilityBadge variant="inline" kind={v.availability || 'other'} label={v.availability_label!} title={AVAILABILITY_SOURCE_HINT} />
                                 )}
                               </div>
+                            )}
+                            {!v.link_broken && formatPrice(v.price, v.currency) && (
+                              <p className="text-center text-[11px] font-semibold text-slate-700" title="Цена на complexbar.ru">{formatPrice(v.price, v.currency)}</p>
                             )}
                           </>
                         )

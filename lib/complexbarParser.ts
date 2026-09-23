@@ -114,3 +114,48 @@ export function parseProductStatus(html: string): ProductStatus | null {
 export function looksLikeProductPage(html: string): boolean {
   return /id="product_code_\d+"/.test(html) || /"@type"\s*:\s*"(?:[^"]*\/)?Product"/.test(html)
 }
+
+// Цена товара из разметки schema.org самого товара (блок Product → offers).
+// Это розничная цена на сайте для неавторизованного посетителя.
+export function parseProductPrice(html: string): { price: number; currency: string } | null {
+  const $ = cheerio.load(html)
+  let found: { price: number; currency: string } | null = null
+  $('script[type="application/ld+json"]').each((_, el) => {
+    if (found) return
+    let data: unknown
+    try {
+      data = JSON.parse($(el).contents().text())
+    } catch {
+      return
+    }
+    const items = Array.isArray(data) ? data : [data]
+    for (const item of items as Array<Record<string, unknown>>) {
+      if (!String(item?.['@type'] || '').endsWith('Product')) continue
+      const offers = Array.isArray(item.offers) ? item.offers[0] : item.offers
+      const price = Number((offers as Record<string, unknown> | undefined)?.price)
+      if (Number.isFinite(price) && price > 0) {
+        found = { price, currency: String((offers as Record<string, unknown>).priceCurrency || 'RUB') }
+        return
+      }
+    }
+  })
+  return found
+}
+
+// Характеристики со страницы товара: "Материал" → "Стекло хрустальное" и т.п.
+export function parseProductFeatures(html: string): Record<string, string> {
+  const $ = cheerio.load(html)
+  const features: Record<string, string> = {}
+  $('.ty-product-feature').each((_, el) => {
+    const label = $(el).find('.ty-product-feature__label').first().text().replace(/\s+/g, ' ').trim()
+    const value = $(el)
+      .find('.ty-product-feature__value')
+      .first()
+      .text()
+      .replace(/\s+/g, ' ')
+      .trim()
+      .replace(/^Найти похожие\s*/i, '')
+    if (label && value && value !== '-' && !(label in features)) features[label] = value
+  })
+  return features
+}

@@ -133,6 +133,8 @@ const PRODUCT_COLUMNS = [
   'availability_label',
   'link_broken',
   'link_checked_at',
+  'site_price',
+  'site_currency',
   'rating',
   'price',
   'created_by',
@@ -158,7 +160,7 @@ const VENDOR_COLUMNS = [
   'updated_at',
 ] as const
 
-const JSON_FIELDS = new Set(['images', 'files', 'variants'])
+const JSON_FIELDS = new Set(['images', 'files', 'variants', 'changed_fields', 'snapshot'])
 
 const COLLECTIONS: Record<string, CollectionConfig> = {
   products: {
@@ -238,6 +240,13 @@ const COLLECTIONS: Record<string, CollectionConfig> = {
   product_statistics: {
     table: 'product_statistics',
     columns: ['id', 'name', 'brand', 'view_count', 'bookmark_count'],
+    requiresAdmin: true,
+    readOnly: true,
+  },
+  // Пишется только сервером (см. recordProductHistory), читать — админам.
+  product_history: {
+    table: 'product_history',
+    columns: ['id', 'product_id', 'changed_by', 'changed_at', 'changed_fields', 'snapshot'],
     requiresAdmin: true,
     readOnly: true,
   },
@@ -849,6 +858,58 @@ function withProductAttribution(operation: DataOperation, user: SessionUser | nu
   return writePayload
 }
 
+// Служебные поля, которые меняются сами (проверка наличия, отметки автора и
+// времени) — в истории правок от них был бы только шум.
+const HISTORY_IGNORED_FIELDS = new Set([
+  'id', 'created_at', 'created_by', 'updated_at', 'updated_by', 'rating',
+  'availability', 'availability_label', 'link_broken', 'link_checked_at', 'site_price', 'site_currency',
+])
+const HISTORY_KEEP_VERSIONS = 30
+
+function historyComparable(value: unknown): string {
+  if (value === null || value === undefined || value === '') return ''
+  if (typeof value === 'boolean') return value ? '1' : ''
+  if (typeof value === 'number') return String(value)
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+      try {
+        return JSON.stringify(JSON.parse(trimmed))
+      } catch {
+        return trimmed
+      }
+    }
+    return trimmed
+  }
+  return JSON.stringify(value)
+}
+
+export function changedProductFields(before: Record<string, unknown>, update: Record<string, unknown>): string[] {
+  return Object.keys(update).filter(
+    (key) => !HISTORY_IGNORED_FIELDS.has(key) && key in before && historyComparable(before[key]) !== historyComparable(update[key])
+  )
+}
+
+async function recordProductHistory(beforeRows: Array<Record<string, unknown>>, update: Record<string, unknown>, user: SessionUser | null) {
+  const db = await getDb()
+  const now = nowIso()
+  for (const before of beforeRows) {
+    const changed = changedProductFields(before, update)
+    if (changed.length === 0) continue
+    const productId = String(before.id)
+    await db
+      .prepare('INSERT INTO product_history (id, product_id, changed_by, changed_at, changed_fields, snapshot) VALUES (?, ?, ?, ?, ?, ?)')
+      .bind(createId(), productId, user?.email || null, now, JSON.stringify(changed), JSON.stringify(before))
+      .run()
+    await db
+      .prepare(
+        'DELETE FROM product_history WHERE product_id = ? AND id NOT IN (SELECT id FROM product_history WHERE product_id = ? ORDER BY changed_at DESC LIMIT ?)'
+      )
+      .bind(productId, productId, HISTORY_KEEP_VERSIONS)
+      .run()
+  }
+}
+
 export async function executeDataRequest(request: NextRequest, payload: DataRequestPayload): Promise<QueryResult<unknown>> {
   const user = await getCurrentUser(request)
   try {
@@ -869,8 +930,18 @@ export async function executeDataRequest(request: NextRequest, payload: DataRequ
           ),
           error: null,
         }
-      case 'update':
-        return await runUpdate(payload)
+      case 'update': {
+        if (payload.collection !== 'products') return await runUpdate(payload)
+        const ids = await findMatchingIds(payload.collection, payload.filters, payload.orFilters)
+        const before = await fetchByIds(payload.collection, ids)
+        const result = await runUpdate(payload)
+        if (!result.error) {
+          await recordProductHistory(before, payload.writePayload as Record<string, unknown>, user).catch((error) =>
+            console.error('[history] не удалось записать историю правок:', error)
+          )
+        }
+        return result
+      }
       case 'upsert':
         return await runUpsert(payload)
       case 'delete':

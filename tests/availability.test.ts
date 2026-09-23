@@ -88,6 +88,6 @@ describe('проверка ссылок', () => {
 
   it('живая страница — отдаёт статус наличия', async () => {
     respond(200, productPage('Нет в наличии'))
-    expect(await checkLink('https://complexbar.ru/product/x/')).toEqual({ broken: false, status: { availability: 'out_of_stock', label: 'Нет в наличии' } })
+    expect(await checkLink('https://complexbar.ru/product/x/')).toEqual({ broken: false, status: { availability: 'out_of_stock', label: 'Нет в наличии' }, price: null })
   })
 })
