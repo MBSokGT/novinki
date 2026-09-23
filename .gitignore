@@ -12,3 +12,6 @@ uploads/
 *.db-wal
 *.db-shm
 .claude/
+
+# Генерируется Next.js при каждой сборке/запуске dev — содержимое отличается
+next-env.d.ts
