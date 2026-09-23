@@ -581,8 +581,8 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
               className="relative flex flex-col bg-white border border-slate-200 rounded-lg overflow-hidden hover:border-slate-300 hover:shadow-md transition-all duration-200 group cursor-pointer"
               style={{ animationDelay: `${idx * 40}ms` }}
             >
-              <div className="relative h-40 bg-slate-50 overflow-hidden">
-                <ImageWithFallback src={product.image_url} alt={product.name} label={product.brand || product.name} className="object-cover group-hover:scale-[1.02] transition-transform duration-300" loading="lazy" />
+              <div className="relative h-48 bg-white overflow-hidden border-b border-slate-100">
+                <ImageWithFallback src={product.image_url} alt={product.name} label={product.brand || product.name} className="object-contain p-3 group-hover:scale-[1.03] transition-transform duration-300" loading="lazy" />
                 {isNewSince(product.created_at, lastVisit) && (
                   <span className="absolute left-2 top-2 rounded-md bg-[#9B1B1B] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm">Новое</span>
                 )}
@@ -664,7 +664,7 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
                   className="relative w-16 h-16 shrink-0 overflow-hidden bg-slate-100 rounded-lg"
                   onClick={(e) => { e.stopPropagation(); product.image_url && setSelectedImage(product.image_url) }}
                 >
-                  <ImageWithFallback src={product.image_url} alt={product.name} label={product.brand || product.name} size="sm" loading="lazy" />
+                  <ImageWithFallback src={product.image_url} alt={product.name} label={product.brand || product.name} size="sm" className="object-contain bg-white p-0.5" loading="lazy" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
@@ -714,7 +714,7 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
                         className="relative w-20 h-20 overflow-hidden bg-slate-50 rounded-lg"
                         onClick={(e) => { e.stopPropagation(); product.image_url && setSelectedImage(product.image_url) }}
                       >
-                        <ImageWithFallback src={product.image_url} alt={product.name} label={product.brand || product.name} size="sm" loading="lazy" />
+                        <ImageWithFallback src={product.image_url} alt={product.name} label={product.brand || product.name} size="sm" className="object-contain bg-white p-0.5" loading="lazy" />
                       </div>
                     </td>
                     <td className="sticky left-[128px] z-10 bg-white group-hover:bg-slate-100 px-6 py-4">
@@ -1000,7 +1000,7 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
                           className="flex items-center gap-2 p-2 rounded-lg border border-slate-100 hover:border-slate-300 hover:bg-slate-50 transition text-left"
                         >
                           <div className="relative w-10 h-10 overflow-hidden bg-slate-100 flex-shrink-0">
-                            <ImageWithFallback src={similar.image_url} alt={similar.name} label={similar.brand || similar.name} size="md" />
+                            <ImageWithFallback src={similar.image_url} alt={similar.name} label={similar.brand || similar.name} size="md" className="object-contain bg-white p-0.5" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="text-xs font-medium text-slate-900 line-clamp-2 leading-snug">{similar.name}</div>

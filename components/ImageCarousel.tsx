@@ -35,7 +35,7 @@ export default function ImageCarousel({ images, alt, className, onImageClick, fa
         src={current}
         alt={alt}
         fill
-        className="object-cover cursor-pointer"
+        className="object-contain cursor-pointer bg-white p-2"
         onClick={() => onImageClick?.(current)}
       />
       {slides.length > 1 && (

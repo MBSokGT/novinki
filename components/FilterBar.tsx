@@ -83,13 +83,23 @@ export default function FilterBar({
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
+  const [mobileOpen, setMobileOpen] = useState(false)
   const filteredCats = categories.filter(c => c!.toLowerCase().includes(catInput.toLowerCase()))
   const filteredBrands = brands.filter(b => b!.toLowerCase().includes(brandInput.toLowerCase()))
 
   return (
     <div className="mb-5 bg-white px-3 py-2.5 sm:px-4 sm:py-3 rounded-xl shadow-sm border border-slate-200">
       <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 justify-between">
-        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+        <button
+          onClick={() => setMobileOpen((v) => !v)}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 sm:hidden"
+        >
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h18M6 12h12M10 20h4" /></svg>
+          Фильтры
+          {activeFiltersCount > 0 && <span className="rounded bg-[#9B1B1B] px-1.5 text-[11px] text-white">{activeFiltersCount}</span>}
+          <svg className={`h-3.5 w-3.5 text-slate-400 transition-transform ${mobileOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+        </button>
+        <div className={`${mobileOpen ? 'flex' : 'hidden'} order-last w-full flex-wrap items-center gap-1.5 sm:order-none sm:flex sm:w-auto sm:gap-2`}>
           {categories.length > 0 && (
             <div className="relative" ref={catRef}>
               <div className="flex items-center border border-slate-200 rounded-lg bg-white overflow-hidden focus-within:ring-2 focus-within:ring-[#9B1B1B]">
