@@ -6,6 +6,7 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-3">
         <p className="text-sm text-gray-400">
           © {new Date().getFullYear()} Комплекс-Бар · Внутренний каталог новинок ассортимента
+          <span className="ml-2 font-mono text-xs text-gray-600" title="Версия приложения">v{process.env.NEXT_PUBLIC_APP_VERSION}</span>
         </p>
         <div className="flex items-center gap-4">
           <ExportCatalogButton variant="footer" />

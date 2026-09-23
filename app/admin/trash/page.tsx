@@ -7,6 +7,7 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { showToast } from '@/components/Toast'
 import { ProductVariant } from '@/types/product'
+import { fromTrashRecord } from '@/lib/trashPayload'
 
 interface DeletedProduct {
   id: string
@@ -105,31 +106,7 @@ export default function TrashPage() {
   const handleRestore = async (deletedProduct: DeletedProduct) => {
     if (!confirm('Восстановить этот товар?')) return
     try {
-      const { error: insertError } = await apiClient.from('products').insert({
-        name: deletedProduct.name,
-        brand: deletedProduct.brand,
-        article_number: deletedProduct.article_number,
-        description: deletedProduct.description,
-        image_url: deletedProduct.image_url,
-        images: deletedProduct.images || [],
-        flyer_url: deletedProduct.flyer_url || '',
-        price_list_url: deletedProduct.price_list_url || '',
-        advantages: deletedProduct.advantages,
-        attention_points: deletedProduct.attention_points,
-        website_link: deletedProduct.website_link,
-        category: deletedProduct.category || '',
-        year: deletedProduct.year || '',
-        tags: deletedProduct.tags || '',
-        order_multiple: deletedProduct.order_multiple || '',
-        variants: deletedProduct.variants || [],
-        price: deletedProduct.price ?? null,
-        is_supplier_novelty: Boolean(deletedProduct.is_supplier_novelty),
-        is_dishwasher_safe: Boolean(deletedProduct.is_dishwasher_safe),
-        is_microwave_safe: Boolean(deletedProduct.is_microwave_safe),
-        temp_min: deletedProduct.temp_min ?? null,
-        temp_max: deletedProduct.temp_max ?? null,
-        is_archived: false
-      })
+      const { error: insertError } = await apiClient.from('products').insert(fromTrashRecord(deletedProduct))
 
       if (insertError) {
         showToast(`Ошибка восстановления: ${insertError.message}`, 'error')

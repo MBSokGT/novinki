@@ -5,7 +5,7 @@ function hasSession(rawValue?: string) {
   return typeof rawValue === 'string' && rawValue.trim().length > 16
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith('/admin')) {
     const session = request.cookies.get('novinki_session')?.value
     if (!hasSession(session)) {

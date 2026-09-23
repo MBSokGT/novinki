@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import * as cheerio from 'cheerio'
 import { getCurrentUser } from '@/lib/db'
-import { saveUploadedFile } from '@/lib/storage'
+import { parseComplexbarPage } from '@/lib/complexbarParser'
 
 // Только complexbar.ru и её городские поддомены — этот эндпоинт делает
 // запрос с сервера по адресу, который прислал админ, так что нельзя
@@ -13,108 +12,6 @@ const ALLOWED_HOST_EXACT = 'complexbar.ru'
 function isAllowedHost(hostname: string): boolean {
   const lower = hostname.toLowerCase()
   return lower === ALLOWED_HOST_EXACT || lower.endsWith(ALLOWED_HOST_SUFFIX)
-}
-
-interface ScrapedProduct {
-  name: string
-  brand: string
-  article_number: string
-  image_url: string
-  website_link: string
-}
-
-// Ссылки на картинки с CDN complexbar.ru часто подписанные и могут переставать
-// открываться сами по себе, независимо от того, жив ли сам complexbar.ru
-// (истёкшая подпись, смена CDN и т.п.) — поэтому сразу скачиваем и храним
-// у себя, как и для обычного фото товара, а не держим живую внешнюю ссылку.
-async function mirrorImage(url: string): Promise<string> {
-  if (!url) return url
-  try {
-    const response = await fetch(url, { signal: AbortSignal.timeout(10000) })
-    if (!response.ok) return url
-    const buffer = Buffer.from(await response.arrayBuffer())
-    const ext = new URL(url).pathname.split('.').pop()?.toLowerCase() || 'jpg'
-    return await saveUploadedFile('products', `variant.${/^[a-z0-9]{2,4}$/.test(ext) ? ext : 'jpg'}`, buffer)
-  } catch {
-    return url
-  }
-}
-
-async function mirrorImages(products: ScrapedProduct[]): Promise<ScrapedProduct[]> {
-  const CONCURRENCY = 6
-  const result = [...products]
-  let cursor = 0
-  async function worker() {
-    while (cursor < result.length) {
-      const i = cursor++
-      result[i] = { ...result[i], image_url: await mirrorImage(result[i].image_url) }
-    }
-  }
-  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, result.length) }, worker))
-  return result
-}
-
-function absolutize(url: string, base: string): string {
-  try {
-    return new URL(url, base).toString()
-  } catch {
-    return url
-  }
-}
-
-function parseListing($: cheerio.CheerioAPI, baseUrl: string): ScrapedProduct[] {
-  const products: ScrapedProduct[] = []
-  $('.cmx-product-grid__item').each((_, el) => {
-    const card = $(el)
-    const link = card.find('a.product-title').first()
-    const name = link.text().trim()
-    const href = link.attr('href')
-    if (!name || !href) return
-
-    const brand = card.find('.cmx-product-grid__item-brand, .cmx-products-brand-name').first().text().trim()
-    const article = card.find('[id^="product_code_"]').first().text().trim()
-    const imgEl = card.find('img[data-src], img').first()
-    const img = imgEl.attr('data-src') || imgEl.attr('src') || ''
-
-    products.push({
-      name,
-      brand,
-      article_number: article,
-      image_url: img ? absolutize(img, baseUrl) : '',
-      website_link: absolutize(href, baseUrl),
-    })
-  })
-  return products
-}
-
-function parseSingleProduct($: cheerio.CheerioAPI, baseUrl: string): ScrapedProduct[] {
-  const name = $('h1').first().text().trim()
-  if (!name) return []
-
-  const brand = $('a.ga-brand-link').first().text().trim()
-  const article = $('[id^="product_code_"]').first().text().trim()
-  // Главное фото на странице товара: сначала пробуем полноразмерную ссылку
-  // с обёртки-превьюера, иначе — сам <img> (страница верстается то через
-  // ленивую загрузку с data-src, то сразу через обычный src, вёрстка меняется).
-  const img =
-    $('.cmx-product-details-images a.cm-previewer').first().attr('href') ||
-    $('.cmx-product-details-images img, .cm-image-gallery img, .ty-product-block__gallery img, img.cm-image')
-      .first()
-      .attr('data-src') ||
-    $('.cmx-product-details-images img, .cm-image-gallery img, .ty-product-block__gallery img, img.cm-image')
-      .first()
-      .attr('src') ||
-    ''
-
-  return [
-    {
-      name,
-      brand,
-      article_number: article,
-      image_url: img ? absolutize(img, baseUrl) : '',
-      website_link: baseUrl,
-    },
-  ]
 }
 
 export async function POST(request: NextRequest) {
@@ -159,13 +56,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ data: null, error: { message: 'Не удалось загрузить страницу — сайт недоступен или запрос завис' } }, { status: 502 })
   }
 
-  const $ = cheerio.load(html)
-  const baseUrl = parsed.toString()
-
-  let products = parseListing($, baseUrl)
-  if (products.length === 0) {
-    products = parseSingleProduct($, baseUrl)
-  }
+  const products = parseComplexbarPage(html, parsed.toString())
 
   if (products.length === 0) {
     return NextResponse.json(
@@ -173,8 +64,6 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     )
   }
-
-  products = await mirrorImages(products)
 
   return NextResponse.json({ data: { products }, error: null }, { headers: { 'Cache-Control': 'no-store' } })
 }

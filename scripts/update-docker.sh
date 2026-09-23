@@ -79,7 +79,7 @@ git checkout "$BRANCH"
 git reset --hard "origin/$BRANCH"
 
 echo "==> Пересборка образа и перезапуск (данные в volumes не трогаются)..."
-$DC up -d --build "$SERVICE"
+APP_VERSION="$(git rev-parse --short HEAD)" $DC up -d --build "$SERVICE"
 
 echo "==> Ждём, пока контейнер поднимется..."
 sleep 5

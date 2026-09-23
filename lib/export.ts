@@ -2,7 +2,7 @@ import * as XLSX from 'xlsx'
 import { Product } from '@/types/product'
 import { Vendor } from '@/types/vendor'
 
-function productRows(products: Product[]) {
+export function productRows(products: Product[]) {
   return products.map((p) => ({
     'Название': p.name,
     'Бренд': p.brand,

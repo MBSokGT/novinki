@@ -3,13 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 
-interface ScrapedProduct {
-  name: string
-  brand: string
-  article_number: string
-  image_url: string
-  website_link: string
-}
+import type { ScrapedProduct } from '@/lib/complexbarParser'
 
 interface BulkImportSeriesModalProps {
   onClose: () => void
@@ -19,7 +13,7 @@ interface BulkImportSeriesModalProps {
   onAddVariants: (items: ScrapedProduct[]) => void
 }
 
-type Stage = 'input' | 'loading' | 'preview'
+type Stage = 'input' | 'loading' | 'preview' | 'saving'
 
 export default function BulkImportSeriesModal({ onClose, onAddVariants }: BulkImportSeriesModalProps) {
   const [stage, setStage] = useState<Stage>('input')
@@ -73,11 +67,28 @@ export default function BulkImportSeriesModal({ onClose, onAddVariants }: BulkIm
     setSelected((prev) => (prev.size === products.length ? new Set() : new Set(products.map((_, i) => i))))
   }
 
-  const confirm = () => {
+  // Фото скачиваются к нам на сервер только сейчас и только для выбранных
+  // позиций — если скачивать всё найденное сразу при разборе, невыбранные и
+  // брошенные на полпути импорты оставляли бы на диске мусорные файлы.
+  const confirm = async () => {
     const chosen = products.filter((_, i) => selected.has(i))
     if (chosen.length === 0) return
-    onAddVariants(chosen)
-    onClose()
+    setStage('saving')
+    setError('')
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/internal/mirror-images`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ urls: chosen.map((p) => p.image_url) }),
+      })
+      const json = await res.json()
+      const urls: string[] | undefined = json.data?.urls
+      onAddVariants(urls ? chosen.map((p, i) => ({ ...p, image_url: urls[i] || p.image_url })) : chosen)
+      onClose()
+    } catch {
+      setError('Не удалось сохранить фото — попробуйте ещё раз')
+      setStage('preview')
+    }
   }
 
   return (
@@ -124,7 +135,7 @@ export default function BulkImportSeriesModal({ onClose, onAddVariants }: BulkIm
           </div>
         )}
 
-        {stage === 'preview' && (
+        {(stage === 'preview' || stage === 'saving') && (
           <>
             <div className="border-b border-slate-100 p-5">
               <div className="flex items-center justify-between">
@@ -152,15 +163,23 @@ export default function BulkImportSeriesModal({ onClose, onAddVariants }: BulkIm
                 ))}
               </div>
             </div>
+            {error && stage !== 'saving' && <p className="px-5 pt-3 text-sm text-red-600">{error}</p>}
             <div className="flex gap-2 border-t border-slate-100 p-4">
               <button
                 onClick={confirm}
-                disabled={selected.size === 0}
+                disabled={selected.size === 0 || stage === 'saving'}
                 className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-[#9B1B1B] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#7A1515] disabled:opacity-50"
               >
-                Добавить {selected.size} вариантов в карточку
+                {stage === 'saving' ? (
+                  <>
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                    Сохраняю фото...
+                  </>
+                ) : (
+                  `Добавить ${selected.size} вариантов в карточку`
+                )}
               </button>
-              <button onClick={() => setStage('input')} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50">
+              <button onClick={() => setStage('input')} disabled={stage === 'saving'} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50">
                 Назад
               </button>
             </div>

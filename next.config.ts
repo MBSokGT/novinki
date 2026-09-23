@@ -1,4 +1,16 @@
 import type { NextConfig } from 'next'
+import { execSync } from 'child_process'
+
+// Короткий хэш коммита виден в футере и в /api/health — чтобы после деплоя
+// сразу было видно, какая версия реально запущена.
+function resolveAppVersion() {
+  if (process.env.APP_VERSION) return process.env.APP_VERSION
+  try {
+    return execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim()
+  } catch {
+    return 'unknown'
+  }
+}
 
 const publicBasePath = process.env.NEXT_PUBLIC_BASE_PATH || ''
 
@@ -21,6 +33,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   env: {
     NEXT_PUBLIC_BASE_PATH: publicBasePath,
+    NEXT_PUBLIC_APP_VERSION: resolveAppVersion(),
   },
   images: {
     remotePatterns: [

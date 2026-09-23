@@ -2,6 +2,7 @@ import crypto from 'crypto'
 import type { NextRequest } from 'next/server'
 import { hashPassword, sanitizeInput, verifyPassword } from './security'
 import { getLocalD1, type LocalD1Database } from './sqlite'
+import { purgeOldTrash } from './maintenance'
 
 export const SESSION_COOKIE_NAME = 'novinki_session'
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30
@@ -899,8 +900,7 @@ export async function executeRpc(request: NextRequest, functionName: string, par
         return { data: null, error: { message: 'Forbidden' } }
       }
 
-      const threshold = new Date(Date.now() - 1000 * 60 * 60 * 24 * 14).toISOString()
-      await db.prepare('DELETE FROM deleted_products WHERE deleted_at <= ?').bind(threshold).run()
+      await purgeOldTrash()
       return { data: true, error: null }
     }
 
@@ -909,8 +909,7 @@ export async function executeRpc(request: NextRequest, functionName: string, par
         return { data: null, error: { message: 'Forbidden' } }
       }
 
-      const threshold = new Date(Date.now() - 1000 * 60 * 60 * 24 * 14).toISOString()
-      await db.prepare('DELETE FROM deleted_vendors WHERE deleted_at <= ?').bind(threshold).run()
+      await purgeOldTrash()
       return { data: true, error: null }
     }
 

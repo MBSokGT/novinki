@@ -12,6 +12,9 @@ ARG NEXT_PUBLIC_BASE_PATH=""
 ARG NEXT_PUBLIC_STORAGE_DRIVER="filesystem"
 ENV NEXT_PUBLIC_BASE_PATH=$NEXT_PUBLIC_BASE_PATH
 ENV NEXT_PUBLIC_STORAGE_DRIVER=$NEXT_PUBLIC_STORAGE_DRIVER
+# .git не попадает в образ (.dockerignore), поэтому версию передаёт update-docker.sh
+ARG APP_VERSION=""
+ENV APP_VERSION=$APP_VERSION
 
 RUN npm run build
 

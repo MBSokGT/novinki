@@ -6,6 +6,7 @@ import { openFileInNewTab } from '@/lib/openFile'
 import { isTemperatureCategory } from '@/lib/constants'
 import { normalizeLink, safeHref } from '@/lib/url'
 import { Product, ProductVariant } from '@/types/product'
+import { toTrashRecord } from '@/lib/trashPayload'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -475,32 +476,7 @@ export default function AdminPage() {
         const product = products.find(p => p.id === id)
         if (product) {
           // Перемещаем в корзину
-          const { error: insertError } = await apiClient.from('deleted_products').insert({
-            original_product_id: product.id,
-            name: product.name,
-            brand: product.brand,
-            article_number: product.article_number,
-            description: product.description,
-            image_url: product.image_url,
-            images: product.images || [],
-            flyer_url: product.flyer_url,
-            price_list_url: product.price_list_url,
-            advantages: product.advantages,
-            attention_points: product.attention_points,
-            website_link: product.website_link,
-            category: (product as any).category || '',
-            year: product.year || '',
-            tags: product.tags || '',
-            order_multiple: product.order_multiple || '',
-            variants: product.variants || [],
-            price: product.price ?? null,
-            is_supplier_novelty: Boolean(product.is_supplier_novelty),
-            is_dishwasher_safe: Boolean(product.is_dishwasher_safe),
-            is_microwave_safe: Boolean(product.is_microwave_safe),
-            temp_min: product.temp_min ?? null,
-            temp_max: product.temp_max ?? null,
-            deleted_at: new Date().toISOString(),
-          })
+          const { error: insertError } = await apiClient.from('deleted_products').insert(toTrashRecord(product))
 
           if (insertError) {
             console.error('Error inserting to deleted_products:', insertError)
@@ -611,31 +587,7 @@ export default function AdminPage() {
     let failedCount = 0
     for (const product of toDelete) {
       try {
-        const { error: insertError } = await apiClient.from('deleted_products').insert({
-          original_product_id: product.id,
-          name: product.name,
-          brand: product.brand,
-          article_number: product.article_number,
-          description: product.description,
-          image_url: product.image_url,
-          images: product.images || [],
-          flyer_url: product.flyer_url,
-          price_list_url: product.price_list_url,
-          advantages: product.advantages,
-          attention_points: product.attention_points,
-          website_link: product.website_link,
-          category: (product as any).category || '',
-          year: product.year || '',
-          tags: product.tags || '',
-          order_multiple: product.order_multiple || '',
-          variants: product.variants || [],
-          is_supplier_novelty: Boolean(product.is_supplier_novelty),
-          is_dishwasher_safe: Boolean(product.is_dishwasher_safe),
-          is_microwave_safe: Boolean(product.is_microwave_safe),
-          temp_min: product.temp_min ?? null,
-          temp_max: product.temp_max ?? null,
-          deleted_at: new Date().toISOString(),
-        })
+        const { error: insertError } = await apiClient.from('deleted_products').insert(toTrashRecord(product))
         if (insertError) throw insertError
         const { error: deleteError } = await apiClient.from('products').delete().eq('id', product.id)
         if (deleteError) throw deleteError
