@@ -135,6 +135,7 @@ const PRODUCT_COLUMNS = [
   'link_checked_at',
   'site_price',
   'site_currency',
+  'availability_checked_at',
   'rating',
   'price',
   'created_by',
@@ -863,6 +864,7 @@ function withProductAttribution(operation: DataOperation, user: SessionUser | nu
 const HISTORY_IGNORED_FIELDS = new Set([
   'id', 'created_at', 'created_by', 'updated_at', 'updated_by', 'rating',
   'availability', 'availability_label', 'link_broken', 'link_checked_at', 'site_price', 'site_currency',
+  'availability_checked_at',
 ])
 const HISTORY_KEEP_VERSIONS = 30
 

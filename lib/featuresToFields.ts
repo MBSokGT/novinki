@@ -50,8 +50,25 @@ export function featuresToFields(features: Record<string, string>): FieldsFromFe
   }
   if (attention.length > 0) result.attention_points = attention.join(' ').replace(/\.\.$/, '.')
 
-  const tags = TAG_LABELS.map((label) => features[label]?.trim().toLowerCase()).filter((t): t is string => Boolean(t))
+  // Теги перечисляются через запятую — запятые внутри значения ("Syrup 0,75L") ломали бы список
+  const tags = TAG_LABELS.map((label) =>
+    features[label]?.trim().toLowerCase().replace(/(\d),(\d)/g, '$1.$2').replace(/\s*,\s*/g, ' ')
+  ).filter((t): t is string => Boolean(t))
   if (tags.length > 0) result.tags = [...new Set(tags)].join(', ')
 
   return result
+}
+
+// Дописывает новые теги к существующим, не дублируя (без учёта регистра).
+export function mergeTags(existing: string, added: string): string {
+  const split = (text: string) => text.split(',').map((t) => t.trim()).filter(Boolean)
+  const result = split(existing)
+  const seen = new Set(result.map((t) => t.toLowerCase()))
+  for (const tag of split(added)) {
+    if (!seen.has(tag.toLowerCase())) {
+      seen.add(tag.toLowerCase())
+      result.push(tag)
+    }
+  }
+  return result.join(', ')
 }

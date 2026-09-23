@@ -18,7 +18,7 @@ import { fuzzyMatches } from '@/lib/fuzzySearch'
 import { productSearchFields } from '@/lib/productSearch'
 import { shortVariantNames } from '@/lib/variantName'
 import { isNewSince, useLastVisit } from '@/lib/useLastVisit'
-import AvailabilityBadge, { AVAILABILITY_SOURCE_HINT, formatPrice, productAvailabilitySummary, productPriceSummary } from '@/components/AvailabilityBadge'
+import AvailabilityBadge, { AVAILABILITY_SOURCE_HINT, availabilityHint, formatCheckedAt, formatPrice, productAvailabilitySummary, productPriceSummary, variantsCheckedAt } from '@/components/AvailabilityBadge'
 import { safeHref } from '@/lib/url'
 import { localizeComplexbarLink } from '@/lib/complexbar-cities'
 import ImageWithFallback from '@/components/ImageWithFallback'
@@ -605,7 +605,7 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
                   {product.is_microwave_safe && <span className="text-[10px] font-medium text-blue-600 border border-blue-200 rounded px-1.5 py-px">СВЧ</span>}
                   {(() => {
                     const summary = productAvailabilitySummary(product)
-                    return summary && <AvailabilityBadge kind={summary.kind} label={summary.label} title={AVAILABILITY_SOURCE_HINT} />
+                    return summary && <AvailabilityBadge kind={summary.kind} label={summary.label} title={availabilityHint(product.availability_checked_at || variantsCheckedAt(product))} />
                   })()}
                   {(() => {
                     const price = productPriceSummary(product)
@@ -914,12 +914,15 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
                       <AvailabilityBadge variant="inline" kind="broken" label="Страница пропала с complexbar.ru" title={AVAILABILITY_SOURCE_HINT} />
                     ) : (
                       (selectedProduct.availability_label || selectedProduct.site_price) && (
-                        <span className="inline-flex items-center gap-2" title={AVAILABILITY_SOURCE_HINT}>
+                        <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-0.5" title={availabilityHint(selectedProduct.availability_checked_at)}>
                           {selectedProduct.availability && selectedProduct.availability_label && (
                             <AvailabilityBadge variant="inline" kind={selectedProduct.availability} label={selectedProduct.availability_label} />
                           )}
                           {formatPrice(selectedProduct.site_price, selectedProduct.site_currency) && (
                             <span className="text-sm font-semibold text-slate-800">{formatPrice(selectedProduct.site_price, selectedProduct.site_currency)}</span>
+                          )}
+                          {formatCheckedAt(selectedProduct.availability_checked_at) && (
+                            <span className="text-[11px] text-slate-400">по состоянию на {formatCheckedAt(selectedProduct.availability_checked_at)}</span>
                           )}
                         </span>
                       )
@@ -940,6 +943,11 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
                         </button>
                       )}
                     </div>
+                    {formatCheckedAt(variantsCheckedAt(selectedProduct)) && (
+                      <p className="-mt-2 mb-3 text-[11px] text-slate-400" title={availabilityHint(variantsCheckedAt(selectedProduct))}>
+                        Наличие и цены — по состоянию на {formatCheckedAt(variantsCheckedAt(selectedProduct))}
+                      </p>
+                    )}
                     <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                       {selectedProduct.variants.map((v, i) => {
                         const href = safeHref(v.website_link)
@@ -961,7 +969,7 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
                                 {v.link_broken ? (
                                   <AvailabilityBadge variant="inline" kind="broken" label="Нет на сайте" title="Страница этого товара пропала с complexbar.ru" />
                                 ) : (
-                                  <AvailabilityBadge variant="inline" kind={v.availability || 'other'} label={v.availability_label!} title={AVAILABILITY_SOURCE_HINT} />
+                                  <AvailabilityBadge variant="inline" kind={v.availability || 'other'} label={v.availability_label!} title={availabilityHint(v.checked_at || selectedProduct.link_checked_at)} />
                                 )}
                               </div>
                             )}

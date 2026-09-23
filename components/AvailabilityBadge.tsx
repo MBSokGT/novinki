@@ -76,3 +76,28 @@ export function productPriceSummary(product: Pick<Product, 'site_price' | 'site_
   const allSame = priced.every((v) => v.price === cheapest.price)
   return allSame ? text : `от ${text}`
 }
+
+export function formatCheckedAt(iso: string | null | undefined): string | null {
+  if (!iso) return null
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return null
+  const day = date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })
+  const time = date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+  return `${day}, ${time}`
+}
+
+// Самое старое время среди вариантов со статусом: "по состоянию на" не должно
+// выдавать за свежие данные те варианты, которые в последний раз не проверились.
+// Для данных до появления отметки у вариантов — время проверки карточки.
+export function variantsCheckedAt(product: Pick<Product, 'variants' | 'link_checked_at'>): string | null {
+  const checked = (product.variants || []).filter((v) => v.availability || v.price)
+  if (checked.length === 0) return null
+  const times = checked.map((v) => v.checked_at || product.link_checked_at).filter((t): t is string => Boolean(t))
+  if (times.length === 0) return null
+  return times.reduce((min, t) => (t < min ? t : min))
+}
+
+export function availabilityHint(checkedAt: string | null | undefined): string {
+  const when = formatCheckedAt(checkedAt)
+  return when ? `По данным complexbar.ru (Москва) на ${when}. Обновляется раз в сутки` : AVAILABILITY_SOURCE_HINT
+}

@@ -12,6 +12,8 @@ export interface ProductVariant {
   link_broken?: boolean
   price?: number | null
   currency?: string | null
+  // Когда наличие и цена этого варианта в последний раз успешно получены
+  checked_at?: string | null
 }
 
 export interface Product {
@@ -44,6 +46,7 @@ export interface Product {
   link_checked_at?: string | null
   site_price?: number | null
   site_currency?: string | null
+  availability_checked_at?: string | null
   rating?: number
   price?: number
   created_by?: string

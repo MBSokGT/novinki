@@ -59,10 +59,11 @@ function parseVariants(raw: string | null): ProductVariant[] {
   }
 }
 
-function applyToVariant(variant: ProductVariant, result: LinkCheckResult): ProductVariant {
+function applyToVariant(variant: ProductVariant, result: LinkCheckResult, checkedAt: string): ProductVariant {
   if (result.broken) return { ...variant, link_broken: true }
   return {
     ...variant,
+    checked_at: checkedAt,
     link_broken: false,
     availability: result.status?.availability ?? null,
     availability_label: result.status?.label ?? null,
@@ -123,19 +124,21 @@ export async function checkAllLinks({ force = false } = {}) {
         .first<{ website_link: string | null; variants: string | null }>()
       if (!fresh) continue
 
+      const checkedAt = new Date().toISOString()
       const assignments: string[] = ['link_checked_at = ?']
-      const values: unknown[] = [new Date().toISOString()]
+      const values: unknown[] = [checkedAt]
 
       const mainResult = isCheckableLink(fresh.website_link) ? cache.get(fresh.website_link!) : undefined
       if (mainResult) {
         const ok = mainResult.broken ? null : mainResult
-        assignments.push('link_broken = ?', 'availability = ?', 'availability_label = ?', 'site_price = ?', 'site_currency = ?')
+        assignments.push('link_broken = ?', 'availability = ?', 'availability_label = ?', 'site_price = ?', 'site_currency = ?', 'availability_checked_at = ?')
         values.push(
           mainResult.broken ? 1 : 0,
           ok?.status?.availability ?? null,
           ok?.status?.label ?? null,
           ok?.price?.price ?? null,
-          ok?.price?.currency ?? null
+          ok?.price?.currency ?? null,
+          checkedAt
         )
       }
 
@@ -143,7 +146,7 @@ export async function checkAllLinks({ force = false } = {}) {
       if (freshVariants.length > 0) {
         const updated = freshVariants.map((variant) => {
           const result = isCheckableLink(variant.website_link) ? cache.get(variant.website_link) : undefined
-          return result ? applyToVariant(variant, result) : variant
+          return result ? applyToVariant(variant, result, checkedAt) : variant
         })
         assignments.push('variants = ?')
         values.push(JSON.stringify(updated))

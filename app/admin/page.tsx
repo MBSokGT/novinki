@@ -9,7 +9,7 @@ import { Product, ProductVariant } from '@/types/product'
 import { toTrashRecord } from '@/lib/trashPayload'
 import LinkAttentionPanel from '@/components/LinkAttentionPanel'
 import ProductHistoryModal from '@/components/ProductHistoryModal'
-import type { FieldsFromFeatures } from '@/lib/featuresToFields'
+import { mergeTags, type FieldsFromFeatures } from '@/lib/featuresToFields'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -328,18 +328,18 @@ export default function AdminPage() {
       setExistingImages([items[0].image_url])
     }
     showToast(`Добавлено вариантов: ${items.length}`, 'success')
-    const source = items.find((item) => item.website_link)?.website_link
-    if (source) autofillFromComplexbar(source)
+    const links = items.map((item) => item.website_link).filter(Boolean)
+    if (links.length > 0) autofillFromComplexbar(links)
   }
 
-  // Характеристики со страницы товара на complexbar.ru — в пустые поля формы.
-  // Уже заполненное админом не трогаем.
-  const autofillFromComplexbar = async (url: string) => {
+  // Характеристики со страниц товаров complexbar.ru — в пустые поля формы;
+  // теги дописываются к уже введённым. Заполненное админом не перезаписываем.
+  const autofillFromComplexbar = async (urls: string[]) => {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/internal/complexbar-details`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ urls }),
       })
       const fields: FieldsFromFeatures | undefined = (await res.json()).data?.fields
       if (!fields) return
@@ -351,7 +351,10 @@ export default function AdminPage() {
       if (fields.temp_min !== undefined && !current.temp_min) { patch.temp_min = String(fields.temp_min); filled.push('температура от') }
       if (fields.temp_max !== undefined && !current.temp_max) { patch.temp_max = String(fields.temp_max); filled.push('температура до') }
       if (fields.attention_points && !current.attention_points.trim()) { patch.attention_points = fields.attention_points; filled.push('на что обратить внимание') }
-      if (fields.tags && !current.tags.trim()) { patch.tags = fields.tags; filled.push('теги') }
+      if (fields.tags) {
+        const merged = mergeTags(current.tags, fields.tags)
+        if (merged !== current.tags.trim()) { patch.tags = merged; filled.push('теги') }
+      }
       setForm((prev) => ({ ...prev, ...patch }))
       if (filled.length > 0) showToast(`Из характеристик complexbar.ru заполнено: ${filled.join(', ')}`, 'success')
     } catch {

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { parseProductFeatures, parseProductPrice } from '@/lib/complexbarParser'
-import { featuresToFields } from '@/lib/featuresToFields'
+import { featuresToFields, mergeTags } from '@/lib/featuresToFields'
 import { changedProductFields } from '@/lib/db'
-import { formatPrice, productPriceSummary } from '@/components/AvailabilityBadge'
+import { formatCheckedAt, formatPrice, productPriceSummary, variantsCheckedAt } from '@/components/AvailabilityBadge'
 
 const feature = (label: string, value: string) =>
   `<div class="ty-product-feature"><div class="ty-product-feature__label"><span>${label}</span></div><div class="ty-product-feature__value">\n  <input type="checkbox"> <a>Найти похожие</a>\n ${value} </div></div>`
@@ -43,6 +43,10 @@ describe('характеристики → поля карточки', () => {
     })
   })
 
+  it('запятая внутри значения не разбивает тег', () => {
+    expect(featuresToFields({ 'Серия': 'Syrup 0,75L', 'Вкус': 'Агава' }).tags).toBe('агава, syrup 0.75l')
+  })
+
   it('понимает температуру диапазоном и по отдельности', () => {
     expect(featuresToFields({ 'Температурный режим (°C)': 'от −20 до +250' })).toMatchObject({ temp_min: -20, temp_max: 250 })
     expect(featuresToFields({ 'Термостойкость (°C)': '300' })).toMatchObject({ temp_max: 300 })
@@ -71,5 +75,26 @@ describe('формат цены', () => {
     expect(productPriceSummary({ variants: [v(1253), v(470), v(900)] })).toBe(`от ${formatPrice(470, 'RUB')}`)
     expect(productPriceSummary({ variants: [v(500), v(500)] })).toBe(formatPrice(500, 'RUB'))
     expect(productPriceSummary({ site_price: 1646, site_currency: 'RUB', variants: [v(1)] })).toBe(formatPrice(1646, 'RUB'))
+  })
+})
+
+describe('теги при добавлении по ссылке', () => {
+  it('дописывает новые теги к существующим без дублей', () => {
+    expect(mergeTags('сироп, Агава', 'агава, пандан, стекло')).toBe('сироп, Агава, пандан, стекло')
+    expect(mergeTags('', 'стекло, стекло')).toBe('стекло')
+    expect(mergeTags('бокалы', '')).toBe('бокалы')
+  })
+})
+
+describe('«по состоянию на»', () => {
+  it('берёт самое старое время среди вариантов со статусом', () => {
+    const v = (checked_at: string | null, availability: 'in_stock' | null = 'in_stock') => ({ image_url: '', article_number: '1', website_link: '', availability, checked_at })
+    expect(variantsCheckedAt({ variants: [v('2026-09-23T12:00:00Z'), v('2026-09-22T12:00:00Z'), v('2026-09-21T00:00:00Z', null)] })).toBe('2026-09-22T12:00:00Z')
+    expect(variantsCheckedAt({ variants: [v(null)], link_checked_at: '2026-09-20T10:00:00Z' })).toBe('2026-09-20T10:00:00Z')
+    expect(variantsCheckedAt({ variants: [] })).toBeNull()
+  })
+  it('пишет дату словами и время', () => {
+    expect(formatCheckedAt('2026-09-23T12:33:00')).toMatch(/^23 сентября, 12:33$/)
+    expect(formatCheckedAt(null)).toBeNull()
   })
 })
