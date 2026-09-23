@@ -15,8 +15,12 @@ import Breadcrumbs from './Breadcrumbs'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { isTemperatureCategory } from '@/lib/constants'
 import { fuzzyMatches } from '@/lib/fuzzySearch'
+import { productSearchFields } from '@/lib/productSearch'
+import { shortVariantNames } from '@/lib/variantName'
+import { isNewSince, useLastVisit } from '@/lib/useLastVisit'
 import { safeHref } from '@/lib/url'
 import { localizeComplexbarLink } from '@/lib/complexbar-cities'
+import ImageWithFallback from '@/components/ImageWithFallback'
 
 interface ProductsTableProps {
   isAdmin: boolean
@@ -34,6 +38,8 @@ const MICROWAVE_SAFE_KEY = 'novinki:microwaveSafeOnly'
 
 export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSupplierNoveltiesOnly, cityHost }: ProductsTableProps) {
   const [products, setProducts] = useState<Product[]>([])
+  const lastVisit = useLastVisit()
+  const [onlyNew, setOnlyNew] = useState(false)
   // Лёгкий список всех товаров: автодополнение, категории, похожие товары
   const [productsMeta, setProductsMeta] = useState<Product[]>([])
   const [search, setSearch] = useState('')
@@ -278,7 +284,7 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
   const fetchProductsMeta = async () => {
     let query = apiClient
       .from('products')
-      .select('id, name, brand, category, year, article_number, image_url, description, advantages, is_supplier_novelty, tags')
+      .select('id, name, brand, category, year, article_number, image_url, description, advantages, is_supplier_novelty, tags, variants, created_at')
       .eq('is_archived', false)
     query = query.order('created_at', { ascending: false })
     const { data } = await query
@@ -331,7 +337,7 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
     if (data) {
       const filtered = debouncedSearch
         ? (data as Product[]).filter((p) =>
-            fuzzyMatches([p.name, p.brand, p.description, p.tags, p.article_number], debouncedSearch)
+            fuzzyMatches(productSearchFields(p), debouncedSearch)
           )
         : (data as Product[])
       setProducts(filtered)
@@ -428,6 +434,12 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
     [selectedProduct, productsMeta]
   )
 
+  const selectedVariantNames = useMemo(
+    () => shortVariantNames(selectedProduct?.variants || [], selectedProduct?.brand),
+    [selectedProduct]
+  )
+  const searchedArticle = /^\d{4,}$/.test(debouncedSearch.trim()) ? debouncedSearch.trim() : ''
+
   const clearAllFilters = () => {
     // supplierNoveltiesOnly сюда намеренно не входит — это вкладка
     // "Новинки на складе" / "Новинки поставщиков" в верхней панели,
@@ -463,10 +475,14 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
   )
 
   // Группировка по годам: текущий год — первым без заголовка, остальные — с красным заголовком
+  const newCount = useMemo(() => products.filter((p) => isNewSince(p.created_at, lastVisit)).length, [products, lastVisit])
+  const showOnlyNew = onlyNew && newCount > 0
+
   const productsByYear = useMemo(() => {
     const currentYear = new Date().getFullYear().toString()
     const map = new Map<string, Product[]>()
-    for (const p of products) {
+    const visible = showOnlyNew ? products.filter((p) => isNewSince(p.created_at, lastVisit)) : products
+    for (const p of visible) {
       const yr = p.year || ''
       if (!map.has(yr)) map.set(yr, [])
       map.get(yr)!.push(p)
@@ -480,7 +496,7 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
       return b.localeCompare(a)
     })
     return { currentYear, groups: sorted }
-  }, [products])
+  }, [products, showOnlyNew, lastVisit])
 
   // Показывать год-разделители только когда нет фильтра по году и есть несколько лет
   const showYearDividers = !selectedYear && productsByYear.groups.length > 1
@@ -524,6 +540,18 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
         onClearFilters={clearAllFilters}
       />
 
+      {newCount > 0 && (
+        <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-[#9B1B1B]/15 bg-[#9B1B1B]/[0.04] px-3 py-2 text-sm">
+          <span className="inline-flex items-center gap-1.5 text-slate-700">
+            <span className="h-2 w-2 rounded-full bg-[#9B1B1B]" />
+            {newCount} {pluralNew(newCount)} с вашего прошлого визита
+          </span>
+          <button onClick={() => setOnlyNew((v) => !v)} className="text-sm font-medium text-[#9B1B1B] hover:underline">
+            {showOnlyNew ? 'Показать все' : 'Показать только их'}
+          </button>
+        </div>
+      )}
+
       <div className={`transition-opacity duration-200 ${loading ? 'opacity-50' : 'opacity-100'}`}>
       {viewMode === 'cards' ? (
         <div className="space-y-10">
@@ -545,7 +573,10 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
               style={{ animationDelay: `${idx * 40}ms` }}
             >
               <div className="relative h-40 bg-slate-50 overflow-hidden">
-                <Image src={product.image_url || (process.env.NEXT_PUBLIC_BASE_PATH||'')+'/placeholder.svg'} alt={product.name} fill className="object-cover group-hover:scale-[1.02] transition-transform duration-300" loading="lazy" />
+                <ImageWithFallback src={product.image_url} alt={product.name} label={product.brand || product.name} className="object-cover group-hover:scale-[1.02] transition-transform duration-300" loading="lazy" />
+                {isNewSince(product.created_at, lastVisit) && (
+                  <span className="absolute left-2 top-2 rounded-md bg-[#9B1B1B] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm">Новое</span>
+                )}
                 <button
                   onClick={(e) => { e.stopPropagation(); toggleCompare(product); }}
                   className={`absolute top-2 right-2 p-1.5 rounded-lg transition opacity-0 group-hover:opacity-100 ${compareProducts.find(p => p.id === product.id) ? 'opacity-100 bg-[#9B1B1B] text-white' : 'bg-white/95 text-slate-500 hover:text-slate-800 shadow-sm'}`}
@@ -616,11 +647,14 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
                   className="relative w-16 h-16 shrink-0 overflow-hidden bg-slate-100 rounded-lg"
                   onClick={(e) => { e.stopPropagation(); product.image_url && setSelectedImage(product.image_url) }}
                 >
-                  <Image src={product.image_url || (process.env.NEXT_PUBLIC_BASE_PATH||'')+'/placeholder.svg'} alt={product.name} fill className="object-cover" loading="lazy" />
+                  <ImageWithFallback src={product.image_url} alt={product.name} label={product.brand || product.name} size="sm" loading="lazy" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
-                    <div className="font-semibold text-slate-900 text-sm leading-snug line-clamp-2">{product.name}</div>
+                    <div className="font-semibold text-slate-900 text-sm leading-snug line-clamp-2">
+                      {isNewSince(product.created_at, lastVisit) && <span className="mr-1.5 inline-block rounded bg-[#9B1B1B] px-1 py-px align-middle text-[9px] font-semibold uppercase text-white">Новое</span>}
+                      {product.name}
+                    </div>
                     <button
                       onClick={(e) => { e.stopPropagation(); toggleCompare(product); }}
                       className={`shrink-0 p-1.5 transition ${compareProducts.find(p => p.id === product.id) ? 'bg-[#9B1B1B] text-white' : 'text-slate-300 hover:text-slate-600'}`}
@@ -663,11 +697,14 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
                         className="relative w-20 h-20 overflow-hidden bg-slate-50 rounded-lg"
                         onClick={(e) => { e.stopPropagation(); product.image_url && setSelectedImage(product.image_url) }}
                       >
-                        <Image src={product.image_url || (process.env.NEXT_PUBLIC_BASE_PATH||'')+'/placeholder.svg'} alt={product.name} fill className="object-cover" loading="lazy" />
+                        <ImageWithFallback src={product.image_url} alt={product.name} label={product.brand || product.name} size="sm" loading="lazy" />
                       </div>
                     </td>
                     <td className="sticky left-[128px] z-10 bg-white group-hover:bg-slate-100 px-6 py-4">
-                      <div className="font-semibold text-slate-900">{product.name}</div>
+                      <div className="font-semibold text-slate-900">
+                        {isNewSince(product.created_at, lastVisit) && <span className="mr-1.5 inline-block rounded bg-[#9B1B1B] px-1 py-px align-middle text-[9px] font-semibold uppercase text-white">Новое</span>}
+                        {product.name}
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <button onClick={(e) => { e.stopPropagation(); setSelectedBrand(product.brand) }} className="text-sm font-medium text-slate-600 hover:text-[#9B1B1B] hover:underline underline-offset-2 transition">{product.brand}</button>
@@ -712,7 +749,7 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
       {products.length === 0 && debouncedSearch && (
         <div className="text-center py-16">
           <svg className="mx-auto h-12 w-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-          <p className="mt-4 text-slate-400 text-lg">Ничего не найдено по запросу "{debouncedSearch}"</p>
+          <p className="mt-4 text-slate-400 text-lg">Ничего не найдено по запросу «{debouncedSearch}»</p>
           <button 
             onClick={() => setSearch('')}
             className="mt-2 text-slate-800 hover:text-slate-900 font-medium"
@@ -786,6 +823,7 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
                 alt={selectedProduct.name}
                 className="w-full h-full"
                 onImageClick={(url) => setSelectedImage(url)}
+                fallbackLabel={selectedProduct.brand || selectedProduct.name}
               />
             </div>
             <div className="p-5 sm:p-7 overflow-y-auto max-h-[calc(90vh-9rem)] sm:max-h-[calc(90vh-11rem)]">
@@ -863,12 +901,19 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
                     <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                       {selectedProduct.variants.map((v, i) => {
                         const href = safeHref(v.website_link)
+                        const shortName = selectedVariantNames[i]
+                        // Карточку нашли поиском по артикулу варианта — подсвечиваем
+                        // этот вариант, чтобы не искать его глазами среди остальных.
+                        const isSearched = Boolean(searchedArticle && v.article_number?.includes(searchedArticle))
                         const content = (
                           <>
-                            <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-slate-100">
-                              {v.image_url && <Image src={v.image_url} alt={v.article_number} fill className="object-cover" unoptimized />}
+                            <div className={`relative aspect-square w-full overflow-hidden rounded-lg bg-slate-100 ${isSearched ? 'ring-2 ring-[#9B1B1B] ring-offset-1' : ''}`}>
+                              {v.image_url && <Image src={v.image_url} alt={v.name || v.article_number} fill className="object-cover" unoptimized />}
                             </div>
-                            <p className="mt-1 truncate text-center text-[11px] text-slate-500">{v.article_number || '—'}</p>
+                            {shortName && (
+                              <p className="mt-1 line-clamp-2 text-center text-[11px] leading-tight text-slate-700" title={v.name}>{shortName}</p>
+                            )}
+                            <p className={`mt-0.5 truncate text-center text-[11px] ${isSearched ? 'font-semibold text-[#9B1B1B]' : 'text-slate-400'}`}>{v.article_number || '—'}</p>
                           </>
                         )
                         return href ? (
@@ -893,7 +938,7 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
                           className="flex items-center gap-2 p-2 rounded-lg border border-slate-100 hover:border-slate-300 hover:bg-slate-50 transition text-left"
                         >
                           <div className="relative w-10 h-10 overflow-hidden bg-slate-100 flex-shrink-0">
-                            <Image src={similar.image_url || (process.env.NEXT_PUBLIC_BASE_PATH||'')+'/placeholder.svg'} alt={similar.name} fill className="object-cover" />
+                            <ImageWithFallback src={similar.image_url} alt={similar.name} label={similar.brand || similar.name} size="md" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="text-xs font-medium text-slate-900 line-clamp-2 leading-snug">{similar.name}</div>
@@ -930,4 +975,12 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
       />
     </div>
   )
+}
+
+function pluralNew(n: number) {
+  const mod10 = n % 10
+  const mod100 = n % 100
+  if (mod10 === 1 && mod100 !== 11) return 'новинка'
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 'новинки'
+  return 'новинок'
 }

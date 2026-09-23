@@ -9,6 +9,10 @@
 // уже локальные ссылки (начинаются с /api/uploads или НЕ начинаются с http)
 // просто пропускаются.
 //
+// Заодно заполняет пустые названия вариантов (варианты, добавленные до того,
+// как название стало сохраняться) — берёт заголовок со страницы товара на
+// complexbar.ru по сохранённой ссылке варианта.
+//
 // Запуск на сервере: node scripts/backfill-variant-images.js
 const path = require('path')
 const fs = require('fs/promises')
@@ -46,11 +50,37 @@ async function mirrorImage(url) {
   }
 }
 
+function decodeEntities(text) {
+  return text
+    .replace(/&laquo;/g, '«').replace(/&raquo;/g, '»').replace(/&quot;/g, '"')
+    .replace(/&#0?39;/g, "'").replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&')
+}
+
+async function fetchVariantName(link) {
+  let url
+  try {
+    url = new URL(link)
+  } catch {
+    return ''
+  }
+  const host = url.hostname.toLowerCase()
+  if (url.protocol !== 'https:' || !(host === 'complexbar.ru' || host.endsWith('.complexbar.ru'))) return ''
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(15000), headers: { 'User-Agent': 'Mozilla/5.0' } })
+    if (!res.ok) return ''
+    const match = (await res.text()).match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)
+    return match ? decodeEntities(match[1].replace(/<[^>]+>/g, '')).replace(/\s+/g, ' ').trim() : ''
+  } catch {
+    return ''
+  }
+}
+
 async function processTable(db, table) {
   const rows = db.prepare(`SELECT id, variants FROM ${table} WHERE variants IS NOT NULL AND variants != '[]'`).all()
   let touchedRows = 0
   let touchedImages = 0
   let failedImages = 0
+  let namedVariants = 0
 
   for (const row of rows) {
     let variants
@@ -63,6 +93,14 @@ async function processTable(db, table) {
 
     let rowChanged = false
     for (const v of variants) {
+      if (!v.name && v.website_link) {
+        const name = await fetchVariantName(v.website_link)
+        if (name) {
+          v.name = name
+          rowChanged = true
+          namedVariants++
+        }
+      }
       const { url, changed, failed } = await mirrorImage(v.image_url)
       if (changed) {
         v.image_url = url
@@ -79,7 +117,7 @@ async function processTable(db, table) {
     }
   }
 
-  return { touchedRows, touchedImages, failedImages, totalRows: rows.length }
+  return { touchedRows, touchedImages, failedImages, namedVariants, totalRows: rows.length }
 }
 
 async function main() {
@@ -88,7 +126,8 @@ async function main() {
     const stats = await processTable(db, table)
     console.log(
       `==> ${table}: ${stats.totalRows} строк с вариантами, обновлено строк: ${stats.touchedRows}, ` +
-      `скачано картинок: ${stats.touchedImages}, не удалось скачать: ${stats.failedImages}`
+      `скачано картинок: ${stats.touchedImages}, не удалось скачать: ${stats.failedImages}, ` +
+      `заполнено названий вариантов: ${stats.namedVariants}`
     )
   }
   db.close()

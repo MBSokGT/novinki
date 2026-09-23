@@ -11,6 +11,7 @@ import VendorsExcelImport from '@/components/VendorsExcelImport'
 import ExportCatalogButton from '@/components/ExportCatalogButton'
 import { normalizeLink } from '@/lib/url'
 import { Vendor } from '@/types/vendor'
+import ImageWithFallback from '@/components/ImageWithFallback'
 
 const EMPTY_FORM = {
   name: '',
@@ -511,7 +512,7 @@ export default function VendorsPage() {
                       className="w-4 h-4 shrink-0 accent-[#9B1B1B]"
                     />
                     <div className="relative w-14 h-14 shrink-0 rounded-lg overflow-hidden bg-slate-100 border border-slate-200">
-                      <Image src={vendor.image_url || (process.env.NEXT_PUBLIC_BASE_PATH || '') + '/placeholder.svg'} alt={vendor.name} fill className="object-cover" />
+                      <ImageWithFallback src={vendor.image_url} alt={vendor.name} label={vendor.name} size="md" />
                     </div>
                     <div className="min-w-0">
                       <div className="font-medium text-slate-900 truncate">{vendor.name}</div>

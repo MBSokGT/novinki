@@ -10,6 +10,7 @@ import { Product } from '@/types/product'
 import { Vendor } from '@/types/vendor'
 import { downloadFilesAsZip, type ZipFileEntry } from '@/lib/downloadZip'
 import { showToast } from '@/components/Toast'
+import ImageWithFallback from '@/components/ImageWithFallback'
 
 function fileLabel(url: string) {
   const name = url.split('/').pop() || 'Файл'
@@ -194,7 +195,7 @@ export default function FlyersLibraryPage() {
                 <div key={vendor.id} className="bg-white rounded-lg border border-slate-200 p-4">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="relative w-12 h-12 shrink-0 rounded-lg overflow-hidden bg-slate-100 border border-slate-200">
-                      <Image src={vendor.image_url || (process.env.NEXT_PUBLIC_BASE_PATH || '') + '/placeholder.svg'} alt={vendor.name} fill className="object-cover" />
+                      <ImageWithFallback src={vendor.image_url} alt={vendor.name} label={vendor.name} size="md" />
                     </div>
                     <div className="min-w-0 font-medium text-slate-900 truncate">{vendor.name}</div>
                   </div>
@@ -226,7 +227,7 @@ export default function FlyersLibraryPage() {
                 {list.map((product) => (
                   <div key={product.id} className="bg-white rounded-lg border border-slate-200 overflow-hidden">
                     <div className="relative h-32 bg-slate-50">
-                      <Image src={product.image_url || (process.env.NEXT_PUBLIC_BASE_PATH || '') + '/placeholder.svg'} alt={product.name} fill className="object-cover" />
+                      <ImageWithFallback src={product.image_url} alt={product.name} label={product.brand || product.name} size="md" />
                     </div>
                     <div className="p-3">
                       <div className="font-medium text-slate-900 text-sm truncate">{product.name}</div>

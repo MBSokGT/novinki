@@ -2,17 +2,27 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
+import ImageWithFallback from '@/components/ImageWithFallback'
 
 interface ImageCarouselProps {
   images: string[]
   alt: string
   className?: string
   onImageClick?: (url: string) => void
+  // Инициалы на фоне вместо серой заглушки, если фото нет
+  fallbackLabel?: string
 }
 
-export default function ImageCarousel({ images, alt, className, onImageClick }: ImageCarouselProps) {
+export default function ImageCarousel({ images, alt, className, onImageClick, fallbackLabel }: ImageCarouselProps) {
   const [index, setIndex] = useState(0)
-  const slides = images.length > 0 ? images : [(process.env.NEXT_PUBLIC_BASE_PATH || '') + '/placeholder.svg']
+  if (images.length === 0) {
+    return (
+      <div className={`relative ${className || ''}`}>
+        <ImageWithFallback alt={alt} label={fallbackLabel || alt} />
+      </div>
+    )
+  }
+  const slides = images
   const current = slides[Math.min(index, slides.length - 1)]
 
   const goTo = (next: number) => {

@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { apiClient } from '@/lib/api-client'
 import { openFileInNewTab } from '@/lib/openFile'
@@ -9,6 +8,7 @@ import { safeHref } from '@/lib/url'
 import { fuzzyMatches } from '@/lib/fuzzySearch'
 import { showToast } from './Toast'
 import { Vendor } from '@/types/vendor'
+import ImageWithFallback from '@/components/ImageWithFallback'
 
 interface VendorsListProps {
   isAdmin?: boolean
@@ -135,7 +135,7 @@ export default function VendorsList({ isAdmin }: VendorsListProps) {
       {filteredVendors.length === 0 && (
         <div className="py-16 text-center">
           <svg className="mx-auto h-12 w-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-          <p className="mt-4 text-lg text-slate-400">Ничего не найдено по запросу "{search}"</p>
+          <p className="mt-4 text-lg text-slate-400">Ничего не найдено по запросу «{search}»</p>
         </div>
       )}
 
@@ -147,7 +147,7 @@ export default function VendorsList({ isAdmin }: VendorsListProps) {
             className="relative flex flex-col bg-white border border-slate-200 rounded-lg overflow-hidden hover:border-slate-300 hover:shadow-md transition-all duration-200 cursor-pointer"
           >
             <div className="relative h-40 bg-slate-50 overflow-hidden shrink-0">
-              <Image src={vendor.image_url || (process.env.NEXT_PUBLIC_BASE_PATH || '') + '/placeholder.svg'} alt={vendor.name} fill className="object-cover" loading="lazy" />
+              <ImageWithFallback src={vendor.image_url} alt={vendor.name} label={vendor.name} loading="lazy" />
             </div>
             <div className="flex flex-col flex-1 p-4">
               <h3 className="font-bold text-slate-900 leading-snug">{vendor.name}</h3>
@@ -204,7 +204,7 @@ export default function VendorsList({ isAdmin }: VendorsListProps) {
               </button>
             </div>
             <div className="relative h-36 sm:h-44 bg-slate-100 shrink-0">
-              <Image src={selectedVendor.image_url || (process.env.NEXT_PUBLIC_BASE_PATH || '') + '/placeholder.svg'} alt={selectedVendor.name} fill className="object-cover" />
+              <ImageWithFallback src={selectedVendor.image_url} alt={selectedVendor.name} label={selectedVendor.name} />
             </div>
             <div className="p-5 sm:p-7 overflow-y-auto max-h-[calc(90vh-9rem)] sm:max-h-[calc(90vh-11rem)]">
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Вендор</p>

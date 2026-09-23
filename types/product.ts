@@ -1,4 +1,5 @@
 export interface ProductVariant {
+  name?: string
   image_url: string
   article_number: string
   website_link: string

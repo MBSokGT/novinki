@@ -242,7 +242,10 @@ export default function AdminPage() {
     return (
       product.name.toLowerCase().includes(searchText) ||
       product.brand.toLowerCase().includes(searchText) ||
-      (product.article_number || '').toLowerCase().includes(searchText)
+      (product.article_number || '').toLowerCase().includes(searchText) ||
+      (product.variants || []).some((v) =>
+        (v.article_number || '').toLowerCase().includes(searchText) || (v.name || '').toLowerCase().includes(searchText)
+      )
     )
   })
 
@@ -303,7 +306,7 @@ export default function AdminPage() {
       const existingArticles = new Set(prev.variants.map((v) => v.article_number))
       const newVariants = items
         .filter((item) => !existingArticles.has(item.article_number))
-        .map((item) => ({ image_url: item.image_url, article_number: item.article_number, website_link: item.website_link }))
+        .map((item) => ({ name: item.name, image_url: item.image_url, article_number: item.article_number, website_link: item.website_link }))
       const brands = new Set(items.map((item) => item.brand).filter(Boolean))
       return {
         ...prev,
@@ -316,6 +319,10 @@ export default function AdminPage() {
       setExistingImages([items[0].image_url])
     }
     showToast(`Добавлено вариантов: ${items.length}`, 'success')
+  }
+
+  const updateVariantName = (index: number, name: string) => {
+    setForm((prev) => ({ ...prev, variants: prev.variants.map((v, i) => (i === index ? { ...v, name } : v)) }))
   }
 
   const removeVariant = (index: number) => {
@@ -1010,10 +1017,23 @@ export default function AdminPage() {
                         {v.image_url && <Image src={v.image_url} alt={v.article_number} fill className="object-cover" unoptimized />}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-xs font-medium text-slate-700">Арт. {v.article_number || '—'}</p>
-                        {safeHref(v.website_link) && (
-                          <a href={v.website_link} target="_blank" rel="noopener noreferrer" className="truncate text-xs text-slate-400 hover:text-[#9B1B1B] hover:underline block">Ссылка</a>
-                        )}
+                        <input
+                          type="text"
+                          value={v.name || ''}
+                          onChange={(e) => updateVariantName(i, e.target.value)}
+                          placeholder="Название варианта"
+                          title={v.name}
+                          className="w-full truncate rounded border border-transparent px-1 text-xs font-medium text-slate-700 hover:border-slate-200 focus:border-slate-300 focus:outline-none"
+                        />
+                        <p className="truncate px-1 text-[11px] text-slate-400">
+                          Арт. {v.article_number || '—'}
+                          {safeHref(v.website_link) && (
+                            <>
+                              {' · '}
+                              <a href={v.website_link} target="_blank" rel="noopener noreferrer" className="hover:text-[#9B1B1B] hover:underline">ссылка</a>
+                            </>
+                          )}
+                        </p>
                       </div>
                       <button type="button" onClick={() => removeVariant(i)} className="shrink-0 text-slate-300 hover:text-red-600">
                         <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>

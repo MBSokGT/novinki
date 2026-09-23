@@ -41,6 +41,7 @@ export default function CityLocationPrompt({ cityHost, setCityHost }: CityLocati
       // localStorage недоступен — просто не показываем окно
       return
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- флаг из localStorage доступен только после монтирования
     if (!asked) setStage('offer')
   }, [cityHost])
 
@@ -103,62 +104,50 @@ export default function CityLocationPrompt({ cityHost, setCityHost }: CityLocati
 
   if (stage === 'hidden') return null
 
+  const primaryBtn = 'rounded-md bg-[#9B1B1B] px-3 py-1 text-xs font-medium text-white transition hover:bg-[#7A1515]'
+  const secondaryBtn = 'rounded-md px-2 py-1 text-xs font-medium text-slate-500 transition hover:bg-slate-200/60 hover:text-slate-700'
+
+  // Не модальное окно, а тонкая плашка под шапкой: сайтом можно пользоваться
+  // сразу, не отвечая на вопрос, — плашка просто остаётся, пока её не закрыть.
   return (
-    <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/40 p-4 backdrop-blur-sm sm:items-center" onClick={dismiss}>
-      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+    <div className="border-b border-slate-200 bg-[#FAF6F5]">
+      <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-3 gap-y-1.5 px-4 py-2 text-sm text-slate-600 sm:px-6">
+        <svg className="h-4 w-4 shrink-0 text-[#9B1B1B]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+
         {stage === 'offer' && (
           <>
-            <div className="mb-1 flex items-center gap-2 text-slate-900">
-              <svg className="h-5 w-5 shrink-0 text-[#9B1B1B]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-              <h3 className="text-lg font-bold">Определить ваш город?</h3>
-            </div>
-            <p className="mb-4 text-sm text-slate-500">
-              Тогда ссылки «Посмотреть товар» будут сразу вести на страницу вашего города на complexbar.ru. Можно и не сейчас — город всегда можно выбрать вручную в верхнем левом углу сайта.
-            </p>
-            <div className="flex gap-2">
-              <button onClick={locate} className="flex-1 rounded-xl bg-[#9B1B1B] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#7A1515]">
-                Определить
-              </button>
-              <button onClick={dismiss} className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50">
-                Не сейчас
-              </button>
-            </div>
+            <span className="min-w-0 flex-1">
+              <span className="sm:hidden">Определить ваш город для ссылок на сайт?</span>
+              <span className="hidden sm:inline">Определить ваш город, чтобы ссылки на товары вели на complexbar.ru вашего города?</span>
+            </span>
+            <button onClick={locate} className={primaryBtn}>Определить</button>
           </>
         )}
 
         {stage === 'locating' && (
-          <div className="flex items-center justify-center gap-3 py-4">
-            <span className="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-[#9B1B1B]" />
-            <span className="text-sm text-slate-600">Определяем город…</span>
-          </div>
+          <span className="flex min-w-0 flex-1 items-center gap-2">
+            <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-200 border-t-[#9B1B1B]" />
+            Определяем город…
+          </span>
         )}
 
         {stage === 'confirm' && detected && (
           <>
-            <h3 className="mb-1 text-lg font-bold text-slate-900">Ваш город — {detected.name}?</h3>
-            <p className="mb-4 text-sm text-slate-500">Ссылки на товары будут вести на страницу этого города.</p>
-            <div className="flex gap-2">
-              <button onClick={confirmYes} className="flex-1 rounded-xl bg-[#9B1B1B] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#7A1515]">
-                Да, верно
-              </button>
-              <button onClick={() => setStage('not_found')} className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50">
-                Другой город
-              </button>
-            </div>
+            <span className="min-w-0 flex-1">Ваш город — <b className="font-semibold text-slate-800">{detected.name}</b>?</span>
+            <button onClick={confirmYes} className={primaryBtn}>Да, верно</button>
+            <button onClick={() => setStage('not_found')} className={secondaryBtn}>Другой город</button>
           </>
         )}
 
         {(stage === 'not_found' || stage === 'error') && (
-          <>
-            <h3 className="mb-1 text-lg font-bold text-slate-900">
-              {stage === 'not_found' ? 'Не нашли ваш город в списке Комплекс-Бар' : 'Не получилось определить город'}
-            </h3>
-            <p className="mb-4 text-sm text-slate-500">Выберите его вручную — «Ваш город» есть в верхнем левом углу сайта.</p>
-            <button onClick={dismiss} className="w-full rounded-xl bg-[#9B1B1B] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#7A1515]">
-              Понятно
-            </button>
-          </>
+          <span className="min-w-0 flex-1">
+            {stage === 'not_found' ? 'Не нашли ваш город в списке Комплекс-Бар.' : 'Не получилось определить город.'} Выберите его вручную — «Ваш город» слева вверху.
+          </span>
         )}
+
+        <button onClick={dismiss} aria-label="Закрыть" className="shrink-0 rounded-md p-1 text-slate-400 transition hover:bg-slate-200/60 hover:text-slate-600">
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
       </div>
     </div>
   )
