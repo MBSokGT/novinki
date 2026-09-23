@@ -80,6 +80,15 @@ export default function VendorsList({ isAdmin }: VendorsListProps) {
     )
   }
 
+  const purchaseNotice = (
+    <p className="mb-4 flex gap-2 rounded-lg bg-slate-50 px-3 py-2 text-xs leading-relaxed text-slate-500">
+      <svg className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+      <span>
+        Товары от вендоров мы закупаем только по 100% предоплате, и товары надлежащего качества возврату не подлежат. Исключение — форс-мажорные ситуации: о них нужно сообщить своему руководителю и согласовать возврат с отделом закупки.
+      </span>
+    </p>
+  )
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24">
@@ -90,15 +99,19 @@ export default function VendorsList({ isAdmin }: VendorsListProps) {
 
   if (vendors.length === 0) {
     return (
+      <div>
+      {purchaseNotice}
       <div className="text-center py-16">
         <svg className="mx-auto h-12 w-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4M9 9h.01M9 12h.01M9 15h.01" /></svg>
         <p className="mt-4 text-slate-400 text-lg">Вендоров пока нет</p>
+      </div>
       </div>
     )
   }
 
   return (
     <div>
+      {purchaseNotice}
       <div className="relative mb-4 w-full">
         <svg className="pointer-events-none absolute left-4 top-1/2 w-5 h-5 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
