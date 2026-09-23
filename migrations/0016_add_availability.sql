@@ -1,0 +1,12 @@
+ALTER TABLE products ADD COLUMN availability TEXT;
+ALTER TABLE products ADD COLUMN availability_label TEXT;
+ALTER TABLE products ADD COLUMN link_broken INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE products ADD COLUMN link_checked_at TEXT;
+ALTER TABLE deleted_products ADD COLUMN availability TEXT;
+ALTER TABLE deleted_products ADD COLUMN availability_label TEXT;
+ALTER TABLE deleted_products ADD COLUMN link_broken INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE deleted_products ADD COLUMN link_checked_at TEXT;
+ALTER TABLE archived_products ADD COLUMN availability TEXT;
+ALTER TABLE archived_products ADD COLUMN availability_label TEXT;
+ALTER TABLE archived_products ADD COLUMN link_broken INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE archived_products ADD COLUMN link_checked_at TEXT;

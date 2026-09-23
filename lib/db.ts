@@ -129,6 +129,10 @@ const PRODUCT_COLUMNS = [
   'tags',
   'order_multiple',
   'variants',
+  'availability',
+  'availability_label',
+  'link_broken',
+  'link_checked_at',
   'rating',
   'price',
   'created_by',
@@ -160,7 +164,7 @@ const COLLECTIONS: Record<string, CollectionConfig> = {
   products: {
     table: 'products',
     columns: [...PRODUCT_COLUMNS],
-    booleanFields: ['is_archived', 'is_supplier_novelty', 'is_dishwasher_safe', 'is_microwave_safe'],
+    booleanFields: ['is_archived', 'is_supplier_novelty', 'is_dishwasher_safe', 'is_microwave_safe', 'link_broken'],
     publicRead: true,
     requiresAdmin: true,
   },
@@ -200,7 +204,7 @@ const COLLECTIONS: Record<string, CollectionConfig> = {
       ...PRODUCT_COLUMNS.filter((column) => column !== 'id' && column !== 'updated_at' && column !== 'is_archived'),
       'deleted_at',
     ],
-    booleanFields: ['is_supplier_novelty', 'is_dishwasher_safe', 'is_microwave_safe'],
+    booleanFields: ['is_supplier_novelty', 'is_dishwasher_safe', 'is_microwave_safe', 'link_broken'],
     requiresAdmin: true,
   },
   archived_products: {
@@ -210,7 +214,7 @@ const COLLECTIONS: Record<string, CollectionConfig> = {
       ...PRODUCT_COLUMNS.filter((column) => column !== 'id' && column !== 'updated_at' && column !== 'is_archived'),
       'deleted_at',
     ],
-    booleanFields: ['is_supplier_novelty', 'is_dishwasher_safe', 'is_microwave_safe'],
+    booleanFields: ['is_supplier_novelty', 'is_dishwasher_safe', 'is_microwave_safe', 'link_broken'],
     requiresAdmin: true,
   },
   categories: {

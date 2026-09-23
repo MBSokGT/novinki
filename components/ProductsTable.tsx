@@ -18,6 +18,7 @@ import { fuzzyMatches } from '@/lib/fuzzySearch'
 import { productSearchFields } from '@/lib/productSearch'
 import { shortVariantNames } from '@/lib/variantName'
 import { isNewSince, useLastVisit } from '@/lib/useLastVisit'
+import AvailabilityBadge, { AVAILABILITY_SOURCE_HINT, productAvailabilitySummary } from '@/components/AvailabilityBadge'
 import { safeHref } from '@/lib/url'
 import { localizeComplexbarLink } from '@/lib/complexbar-cities'
 import ImageWithFallback from '@/components/ImageWithFallback'
@@ -376,6 +377,14 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
     window.history.replaceState(null, '', query ? `${base}?${query}` : base)
   }
 
+  const copyVariantArticles = (product: Product) => {
+    const articles = (product.variants || []).map((v) => v.article_number).filter(Boolean)
+    navigator.clipboard.writeText(articles.join(', ')).then(
+      () => showToast(`Скопировано артикулов: ${articles.length}`, 'success'),
+      () => showToast('Не удалось скопировать', 'error')
+    )
+  }
+
   const copyProductLink = (product: Product) => {
     const params = new URLSearchParams(searchParams.toString())
     params.set('p', product.id)
@@ -594,6 +603,10 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
                   {product.year && <span className="text-[11px] text-slate-400">{product.year}</span>}
                   {product.is_dishwasher_safe && <span className="text-[10px] font-medium text-blue-600 border border-blue-200 rounded px-1.5 py-px">ПММ</span>}
                   {product.is_microwave_safe && <span className="text-[10px] font-medium text-blue-600 border border-blue-200 rounded px-1.5 py-px">СВЧ</span>}
+                  {(() => {
+                    const summary = productAvailabilitySummary(product)
+                    return summary && <AvailabilityBadge kind={summary.kind} label={summary.label} title={AVAILABILITY_SOURCE_HINT} />
+                  })()}
                 </div>
                 <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed mb-3">{product.description}</p>
                 <div className="mt-auto flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
@@ -829,6 +842,11 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
             <div className="p-5 sm:p-7 overflow-y-auto max-h-[calc(90vh-9rem)] sm:max-h-[calc(90vh-11rem)]">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-3">
                 <button onClick={() => { setSelectedBrand(selectedProduct.brand); closeProduct(); }} className="text-xs font-semibold text-slate-500 uppercase tracking-wide hover:text-[#9B1B1B] transition">{selectedProduct.brand}</button>
+                {selectedProduct.link_broken ? (
+                  <AvailabilityBadge kind="broken" label="Страница пропала с complexbar.ru" title={AVAILABILITY_SOURCE_HINT} />
+                ) : selectedProduct.availability && selectedProduct.availability_label ? (
+                  <AvailabilityBadge kind={selectedProduct.availability} label={selectedProduct.availability_label} title={AVAILABILITY_SOURCE_HINT} />
+                ) : null}
                 {selectedProduct.is_dishwasher_safe && <span className="text-[10px] font-medium text-blue-600 border border-blue-200 rounded px-1.5 py-px">Подходит для ПММ</span>}
                 {selectedProduct.is_microwave_safe && <span className="text-[10px] font-medium text-blue-600 border border-blue-200 rounded px-1.5 py-px">Подходит для СВЧ</span>}
                 {(selectedProduct.temp_min != null || selectedProduct.temp_max != null) && (
@@ -897,7 +915,18 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
                 )}
                 {selectedProduct.variants && selectedProduct.variants.length > 0 && (
                   <div className="py-4">
-                    <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-3">Варианты ({selectedProduct.variants.length})</p>
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest">Варианты ({selectedProduct.variants.length})</p>
+                      {selectedProduct.variants.some((v) => v.article_number) && (
+                        <button
+                          onClick={() => copyVariantArticles(selectedProduct)}
+                          className="inline-flex items-center gap-1 text-xs font-medium text-slate-500 transition hover:text-[#9B1B1B]"
+                        >
+                          <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                          Скопировать артикулы
+                        </button>
+                      )}
+                    </div>
                     <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                       {selectedProduct.variants.map((v, i) => {
                         const href = safeHref(v.website_link)
@@ -914,6 +943,15 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
                               <p className="mt-1 line-clamp-2 text-center text-[11px] leading-tight text-slate-700" title={v.name}>{shortName}</p>
                             )}
                             <p className={`mt-0.5 truncate text-center text-[11px] ${isSearched ? 'font-semibold text-[#9B1B1B]' : 'text-slate-400'}`}>{v.article_number || '—'}</p>
+                            {(v.link_broken || v.availability_label) && (
+                              <div className="mt-0.5 flex justify-center">
+                                {v.link_broken ? (
+                                  <AvailabilityBadge variant="inline" kind="broken" label="Нет на сайте" title="Страница этого товара пропала с complexbar.ru" />
+                                ) : (
+                                  <AvailabilityBadge variant="inline" kind={v.availability || 'other'} label={v.availability_label!} title={AVAILABILITY_SOURCE_HINT} />
+                                )}
+                              </div>
+                            )}
                           </>
                         )
                         return href ? (

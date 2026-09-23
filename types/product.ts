@@ -1,8 +1,15 @@
+// Коды наличия по данным complexbar.ru; сам текст статуса хранится как есть
+// (availability_label) — его и показываем, чтобы совпадать с сайтом.
+export type Availability = 'in_stock' | 'out_of_stock' | 'on_order' | 'showroom' | 'other'
+
 export interface ProductVariant {
   name?: string
   image_url: string
   article_number: string
   website_link: string
+  availability?: Availability | null
+  availability_label?: string | null
+  link_broken?: boolean
 }
 
 export interface Product {
@@ -29,6 +36,10 @@ export interface Product {
   tags?: string
   order_multiple?: string
   variants?: ProductVariant[]
+  availability?: Availability | null
+  availability_label?: string | null
+  link_broken?: boolean
+  link_checked_at?: string | null
   rating?: number
   price?: number
   created_by?: string

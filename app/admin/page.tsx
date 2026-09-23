@@ -7,6 +7,7 @@ import { isTemperatureCategory } from '@/lib/constants'
 import { normalizeLink, safeHref } from '@/lib/url'
 import { Product, ProductVariant } from '@/types/product'
 import { toTrashRecord } from '@/lib/trashPayload'
+import LinkAttentionPanel from '@/components/LinkAttentionPanel'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -351,7 +352,12 @@ export default function AdminPage() {
       const productData = buildProductPayload(images, flyerUrl, priceListUrl)
 
       if (editId) {
-        const { data, error } = await apiClient.from('products').update(productData).eq('id', editId).select()
+        // Ссылку поправили — старая отметка "пропал с сайта" и статус наличия
+        // относятся к прежней ссылке; свежие придут со следующей проверки.
+        const original = products.find((p) => p.id === editId)
+        const linkChanged = (original?.website_link || '') !== productData.website_link
+        const payload = linkChanged ? { ...productData, link_broken: false, availability: null, availability_label: null } : productData
+        const { data, error } = await apiClient.from('products').update(payload).eq('id', editId).select()
         if (error) throw error
         if (data?.[0]) {
           setProducts((prev) => prev.map((p) => (p.id === editId ? (data[0] as Product) : p)))
@@ -802,6 +808,8 @@ export default function AdminPage() {
           </Link>
         </div>
 
+        <LinkAttentionPanel products={products} onEdit={handleEdit} onChecked={fetchProducts} />
+
         <div className="mb-8 rounded-lg border border-slate-200 bg-white p-4 sm:p-6 lg:p-8">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 bg-[#9B1B1B] rounded-lg flex items-center justify-center text-white">
@@ -1012,7 +1020,7 @@ export default function AdminPage() {
               {form.variants.length > 0 && (
                 <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                   {form.variants.map((v, i) => (
-                    <div key={`${v.article_number}-${i}`} className="flex items-center gap-2 rounded-xl border border-slate-200 p-2">
+                    <div key={`${v.article_number}-${i}`} className={`flex items-center gap-2 rounded-xl border p-2 ${v.link_broken ? 'border-red-300 bg-red-50/50' : 'border-slate-200'}`} title={v.link_broken ? 'Страница этого товара пропала с complexbar.ru' : undefined}>
                       <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-slate-100">
                         {v.image_url && <Image src={v.image_url} alt={v.article_number} fill className="object-cover" unoptimized />}
                       </div>
@@ -1027,6 +1035,7 @@ export default function AdminPage() {
                         />
                         <p className="truncate px-1 text-[11px] text-slate-400">
                           Арт. {v.article_number || '—'}
+                          {v.link_broken && <span className="font-medium text-red-600"> · нет на сайте</span>}
                           {safeHref(v.website_link) && (
                             <>
                               {' · '}

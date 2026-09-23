@@ -1,6 +1,7 @@
 import fs from 'fs/promises'
 import path from 'path'
 import { getLocalD1 } from './sqlite'
+import { checkAllLinks } from './linkCheck'
 
 const TRASH_RETENTION_MS = 1000 * 60 * 60 * 24 * 14
 // Файл, на который пока никто не ссылается, может быть только что загружен
@@ -80,6 +81,11 @@ export async function runMaintenance() {
     console.log(`[maintenance] корзина очищена от записей старше 14 дней, удалено неиспользуемых файлов: ${removed}`)
   } catch (error) {
     console.error('[maintenance] ошибка обслуживания:', error)
+  }
+  try {
+    await checkAllLinks()
+  } catch (error) {
+    console.error('[link-check] ошибка проверки ссылок:', error)
   }
 }
 

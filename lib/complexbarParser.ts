@@ -73,3 +73,44 @@ export function parseComplexbarPage(html: string, baseUrl: string): ScrapedProdu
   const products = parseListing($, baseUrl)
   return products.length > 0 ? products : parseSingleProduct($, baseUrl)
 }
+
+export interface ProductStatus {
+  availability: 'in_stock' | 'out_of_stock' | 'on_order' | 'showroom' | 'other'
+  label: string
+}
+
+export function classifyAvailability(label: string): ProductStatus['availability'] {
+  const text = label.toLowerCase()
+  if (text.includes('нет в наличии')) return 'out_of_stock'
+  if (text.includes('витрин')) return 'showroom'
+  if (text.includes('заказ') || text.includes('ожида')) return 'on_order'
+  if (text.includes('в наличии')) return 'in_stock'
+  return 'other'
+}
+
+// Статус наличия самого товара со страницы complexbar.ru. На странице есть и
+// чужие статусы (блоки "похожие товары" и т.п.), поэтому берём именно тот,
+// что привязан к складской доступности этого товара; если вёрстка поменялась —
+// откатываемся на разметку schema.org.
+export function parseProductStatus(html: string): ProductStatus | null {
+  const $ = cheerio.load(html)
+  const stockId = $('[data-ca-warehouses-stock-availability-product-id]').first().attr('data-ca-warehouses-stock-availability-product-id')
+  if (stockId) {
+    const label = $(`#stock_info_${stockId}`).first().text().replace(/\s+/g, ' ').trim()
+    if (label) return { availability: classifyAvailability(label), label }
+  }
+
+  const schema = html.match(/"availability"\s*:\s*"(?:https?:\\?\/\\?\/schema\.org\\?\/)?(\w+)"/)
+  if (schema) {
+    return schema[1] === 'InStock'
+      ? { availability: 'in_stock', label: 'В наличии' }
+      : { availability: 'out_of_stock', label: 'Нет в наличии' }
+  }
+  return null
+}
+
+// Похоже ли это на живую страницу товара (а не на заглушку/каталог, куда
+// сайт может перекинуть вместо удалённого товара).
+export function looksLikeProductPage(html: string): boolean {
+  return /id="product_code_\d+"/.test(html) || /"@type"\s*:\s*"(?:[^"]*\/)?Product"/.test(html)
+}

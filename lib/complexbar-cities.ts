@@ -82,7 +82,7 @@ export const COMPLEXBAR_CITIES: ComplexbarCity[] = [
 // городской поддомен — ссылку на посторонний сайт трогать нельзя.
 const COMPLEXBAR_BASE_HOSTS = ['complexbar.ru', 'complex-bar.kz', 'complexbar.kg', 'complexbar.am', 'complexbar.by']
 
-function isComplexbarHost(hostname: string): boolean {
+export function isComplexbarHost(hostname: string): boolean {
   const lower = hostname.toLowerCase()
   return COMPLEXBAR_BASE_HOSTS.some((base) => lower === base || lower.endsWith(`.${base}`))
 }
