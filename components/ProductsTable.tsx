@@ -530,7 +530,8 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  // Категории текущей вкладки плашками — с количеством товаров в каждой
+  // Категории текущей вкладки плашками — с количеством товаров в каждой.
+  // Только на компьютере: на телефоне ряд занимал слишком много места.
   const categoryChips = useMemo(() => {
     const counts = new Map<string, number>()
     for (const p of productsMetaForTab) {
@@ -585,7 +586,7 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
       />
 
       {showCategoryChips && (
-        <div className="-mx-4 mb-3 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden">
+        <div className="mb-3 hidden flex-wrap gap-2 sm:flex">
           <button
             onClick={() => setSelectedCategory(null)}
             className={`shrink-0 rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${!selectedCategory ? 'border-[#9B1B1B] bg-[#9B1B1B] text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}`}
