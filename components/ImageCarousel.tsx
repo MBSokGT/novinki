@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import ImageWithFallback from '@/components/ImageWithFallback'
 
@@ -15,6 +15,19 @@ interface ImageCarouselProps {
 
 export default function ImageCarousel({ images, alt, className, onImageClick, fallbackLabel }: ImageCarouselProps) {
   const [index, setIndex] = useState(0)
+  // ← → листают фото, пока окно товара открыто
+  useEffect(() => {
+    if (images.length < 2) return
+    const onKey = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
+      if (event.key === 'ArrowLeft') setIndex((i) => (i - 1 + images.length) % images.length)
+      if (event.key === 'ArrowRight') setIndex((i) => (i + 1) % images.length)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [images.length])
+
   if (images.length === 0) {
     return (
       <div className={`relative ${className || ''}`}>
@@ -36,6 +49,7 @@ export default function ImageCarousel({ images, alt, className, onImageClick, fa
           src={current}
           alt={alt}
           fill
+          sizes="(min-width: 768px) 720px, 100vw"
           className="object-contain cursor-pointer bg-white p-2"
           onClick={() => onImageClick?.(current)}
         />

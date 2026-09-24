@@ -369,7 +369,7 @@ export default function VendorsPage() {
                 <label className="block text-xs font-medium text-slate-500 mb-1">Фото</label>
                 {(existingPhoto || newPhoto) && (
                   <div className="relative w-20 h-20 mb-2 rounded-lg overflow-hidden border border-slate-200 bg-slate-100">
-                    <Image src={newPhoto ? URL.createObjectURL(newPhoto) : existingPhoto} alt="Фото вендора" fill className="object-cover" />
+                    <Image src={newPhoto ? URL.createObjectURL(newPhoto) : existingPhoto} alt="Фото вендора" fill sizes="200px" className="object-cover" />
                     <button
                       type="button"
                       onClick={() => { setExistingPhoto(''); setNewPhoto(null) }}

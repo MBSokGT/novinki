@@ -48,6 +48,33 @@ export default function AdminPage() {
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([])
   const [years, setYears] = useState<{ id: string; name: string }[]>([])
   const [form, setForm] = useState(EMPTY_FORM)
+  // Ctrl/Cmd+V с картинкой в буфере — фото сразу в карточку (скриншот,
+  // «Копировать изображение» в браузере); Ctrl/Cmd+S — сохранить карточку.
+  useEffect(() => {
+    const onPaste = (event: ClipboardEvent) => {
+      const images = Array.from(event.clipboardData?.files || []).filter((file) => file.type.startsWith('image/'))
+      if (images.length === 0) return
+      event.preventDefault()
+      const stamp = Date.now()
+      const files = images.map((file, i) => new File([file], `iz-bufera-${stamp}-${i + 1}.${file.type.split('/')[1] || 'png'}`, { type: file.type }))
+      setNewImages((prev) => [...prev, ...files])
+      showToast(files.length === 1 ? 'Фото из буфера добавлено' : `Добавлено фото из буфера: ${files.length}`, 'success')
+    }
+    const onKey = (event: KeyboardEvent) => {
+      // по коду клавиши, а не по букве — на русской раскладке это «ы»
+      if ((event.metaKey || event.ctrlKey) && event.code === 'KeyS') {
+        event.preventDefault()
+        formRef.current?.requestSubmit()
+      }
+    }
+    window.addEventListener('paste', onPaste)
+    window.addEventListener('keydown', onKey)
+    return () => {
+      window.removeEventListener('paste', onPaste)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [])
+
   // Актуальная форма для асинхронного автозаполнения (оно приходит позже клика)
   const formSnapshotRef = useRef(form)
   useEffect(() => {
@@ -80,6 +107,7 @@ export default function AdminPage() {
   const searchParams = useSearchParams()
   const formRef = useRef<HTMLFormElement>(null)
   const articleInputRef = useRef<HTMLInputElement>(null)
+  const [articleLookup, setArticleLookup] = useState(false)
 
   const autoResize = (e: React.FormEvent<HTMLTextAreaElement>) => {
     const el = e.currentTarget
@@ -330,6 +358,50 @@ export default function AdminPage() {
     showToast(`Добавлено вариантов: ${items.length}`, 'success')
     const links = items.map((item) => item.website_link).filter(Boolean)
     if (links.length > 0) autofillFromComplexbar(links)
+  }
+
+  // Артикул → товар на complexbar.ru: пустые поля формы, крупное фото и
+  // характеристики — без отдельного окна «Загрузить по ссылке».
+  const fillFromArticle = async () => {
+    const article = form.article_number.trim()
+    if (!article || articleLookup) return
+    setArticleLookup(true)
+    const base = process.env.NEXT_PUBLIC_BASE_PATH || ''
+    const post = async (path: string, body: unknown) =>
+      (await fetch(`${base}${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })).json()
+    try {
+      const search = await post('/api/internal/scrape-complexbar', {
+        url: `https://complexbar.ru/index.php?dispatch=products.search&search_performed=Y&q=${encodeURIComponent(article)}`,
+      })
+      const found: Array<{ name: string; brand: string; article_number: string; image_url: string; website_link: string }> = search.data?.products || []
+      const norm = (a: string) => a.replace(/^0+/, '')
+      const item = found.find((f) => norm(f.article_number) === norm(article)) || (found.length === 1 ? found[0] : null)
+      if (!item) {
+        showToast(found.length > 1 ? 'По артикулу нашлось несколько товаров — уточните или используйте «Загрузить по ссылке»' : 'Товар с таким артикулом на complexbar.ru не найден', 'error')
+        return
+      }
+
+      // Крупное фото — со страницы самого товара; в поиске только миниатюра
+      const page = await post('/api/internal/scrape-complexbar', { url: item.website_link })
+      const bigImage: string = page.data?.products?.[0]?.image_url || item.image_url
+      const needPhoto = existingImages.length === 0 && newImages.length === 0
+      const mirrored = needPhoto && bigImage ? (await post('/api/internal/mirror-images', { urls: [bigImage] })).data?.urls?.[0] : null
+
+      const current = formSnapshotRef.current
+      const filled: string[] = []
+      const patch: Partial<typeof current> = {}
+      if (!current.name.trim()) { patch.name = item.name; filled.push('название') }
+      if (!current.brand.trim() && item.brand) { patch.brand = item.brand; filled.push('бренд') }
+      if (!current.website_link.trim()) { patch.website_link = item.website_link; filled.push('ссылка') }
+      setForm((prev) => ({ ...prev, ...patch }))
+      if (mirrored) { setExistingImages([mirrored]); filled.push('фото') }
+      showToast(filled.length > 0 ? `С complexbar.ru заполнено: ${filled.join(', ')}` : 'Товар найден, основные поля уже заполнены', 'success')
+      autofillFromComplexbar([item.website_link])
+    } catch {
+      showToast('Не удалось связаться с complexbar.ru', 'error')
+    } finally {
+      setArticleLookup(false)
+    }
   }
 
   // Характеристики со страниц товаров complexbar.ru — в пустые поля формы;
@@ -903,14 +975,31 @@ export default function AdminPage() {
                   Артикул <span className="text-slate-400 font-normal">(если есть)</span>
                   {highlightArticle && <span className="ml-1.5 font-medium text-amber-600">— не забудьте поменять</span>}
                 </label>
-                <input
-                  ref={articleInputRef}
-                  type="text"
-                  placeholder="Например: 123456"
-                  value={form.article_number}
-                  onChange={(e) => { setForm({...form, article_number: e.target.value}); setHighlightArticle(false) }}
-                  className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition ${highlightArticle ? 'border-amber-300 bg-amber-50 ring-2 ring-amber-200 focus:ring-amber-300' : 'border-slate-200 focus:ring-[#9B1B1B]'}`}
-                />
+                <div className="relative">
+                  <input
+                    ref={articleInputRef}
+                    type="text"
+                    placeholder="Например: 123456"
+                    value={form.article_number}
+                    onChange={(e) => { setForm({...form, article_number: e.target.value}); setHighlightArticle(false) }}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && form.article_number.trim()) { e.preventDefault(); fillFromArticle() } }}
+                    className={`w-full py-3 pl-4 pr-28 border rounded-xl focus:outline-none focus:ring-2 transition ${highlightArticle ? 'border-amber-300 bg-amber-50 ring-2 ring-amber-200 focus:ring-amber-300' : 'border-slate-200 focus:ring-[#9B1B1B]'}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={fillFromArticle}
+                    disabled={!form.article_number.trim() || articleLookup}
+                    className="absolute right-2 top-1/2 inline-flex -translate-y-1/2 items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-200 disabled:opacity-40"
+                    title="Найти товар по артикулу на complexbar.ru и заполнить пустые поля"
+                  >
+                    {articleLookup ? (
+                      <span className="h-3 w-3 animate-spin rounded-full border-2 border-slate-300 border-t-[#9B1B1B]" />
+                    ) : (
+                      <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                    )}
+                    Подтянуть
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -1131,7 +1220,7 @@ export default function AdminPage() {
                 <div className="flex flex-wrap gap-2">
                   {existingImages.map((url, idx) => (
                     <div key={`existing-${idx}`} className="relative w-16 h-16 rounded-lg overflow-hidden border border-slate-200 bg-slate-100">
-                      <Image src={url} alt={`Фото ${idx + 1}`} fill className="object-cover" />
+                      <Image src={url} alt={`Фото ${idx + 1}`} fill sizes="160px" className="object-cover" />
                       <button
                         type="button"
                         onClick={() => setExistingImages((prev) => prev.filter((_, i) => i !== idx))}
@@ -1143,7 +1232,7 @@ export default function AdminPage() {
                   ))}
                   {newImages.map((file, idx) => (
                     <div key={`new-${idx}`} className="relative w-16 h-16 rounded-lg overflow-hidden border border-slate-200 bg-slate-100">
-                      <Image src={URL.createObjectURL(file)} alt={file.name} fill className="object-cover" />
+                      <Image src={URL.createObjectURL(file)} alt={file.name} fill sizes="160px" className="object-cover" />
                       <button
                         type="button"
                         onClick={() => setNewImages((prev) => prev.filter((_, i) => i !== idx))}
@@ -1171,6 +1260,7 @@ export default function AdminPage() {
                   <div className="text-center">
                     <svg className="w-6 h-6 mx-auto mb-1 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M14 8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                     <div className="text-sm text-slate-600">Добавить фото (можно несколько)</div>
+                    <div className="mt-0.5 text-xs text-slate-400">или вставьте из буфера — Ctrl+V</div>
                   </div>
                 </label>
               </div>
@@ -1260,6 +1350,7 @@ export default function AdminPage() {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                 )}
                 {submitLoading ? 'Сохранение...' : editId ? 'Обновить' : 'Добавить'}
+                {!submitLoading && <kbd className="ml-1 hidden rounded bg-white/15 px-1.5 py-0.5 font-sans text-[10px] font-medium text-white/80 sm:inline">Ctrl+S</kbd>}
               </button>
               {editId && (
                 <button

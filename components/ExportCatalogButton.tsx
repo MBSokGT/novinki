@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { apiClient } from '@/lib/api-client'
-import { exportCatalogToExcel } from '@/lib/export'
 import { showToast } from './Toast'
 import { Product } from '@/types/product'
 import { Vendor } from '@/types/vendor'
@@ -29,6 +28,8 @@ export default function ExportCatalogButton({ variant = 'footer' }: ExportCatalo
       const all = (products || []) as Product[]
       const stock = all.filter((p) => !p.is_supplier_novelty)
       const supplier = all.filter((p) => p.is_supplier_novelty)
+      // Библиотека Excel тяжёлая — грузим её только по клику, а не с каждой страницей
+      const { exportCatalogToExcel } = await import('@/lib/export')
       exportCatalogToExcel(stock, supplier, (vendors || []) as Vendor[])
       showToast('Файл Excel сформирован', 'success')
     } catch (error: any) {

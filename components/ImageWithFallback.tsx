@@ -38,10 +38,15 @@ interface ImageWithFallbackProps {
   size?: keyof typeof SIZES
   className?: string
   loading?: 'lazy' | 'eager'
+  // Реальная ширина показа — без неё браузер качает фото под ширину всего экрана
+  sizes?: string
 }
 
-export default function ImageWithFallback({ src, alt, label, size = 'lg', className = 'object-cover', loading }: ImageWithFallbackProps) {
-  if (src) return <Image src={src} alt={alt} fill className={className} loading={loading} />
+// Сетка карточек: 1 колонка на телефоне, 2 на планшете, 3–4 на компьютере
+const CARD_SIZES = '(min-width: 1280px) 320px, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw'
+
+export default function ImageWithFallback({ src, alt, label, size = 'lg', className = 'object-cover', loading, sizes }: ImageWithFallbackProps) {
+  if (src) return <Image src={src} alt={alt} fill className={className} loading={loading} sizes={sizes ?? (size === 'lg' ? CARD_SIZES : '96px')} />
   const [bg, fg] = colorFor(label)
   return (
     <div

@@ -38,14 +38,13 @@ const DISHWASHER_SAFE_KEY = 'novinki:dishwasherSafeOnly'
 const MICROWAVE_SAFE_KEY = 'novinki:microwaveSafeOnly'
 
 export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSupplierNoveltiesOnly, cityHost }: ProductsTableProps) {
-  const [products, setProducts] = useState<Product[]>([])
+  // Все опубликованные товары — загружаются одним запросом, дальше фильтры,
+  // поиск и сортировка считаются на месте без повторных запросов к серверу.
+  const [productsMeta, setProductsMeta] = useState<Product[]>([])
   const lastVisit = useLastVisit()
   const [onlyNew, setOnlyNew] = useState(false)
-  // Лёгкий список всех товаров: автодополнение, категории, похожие товары
-  const [productsMeta, setProductsMeta] = useState<Product[]>([])
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
-  const [loading, setLoading] = useState(true)
   const [initialLoading, setInitialLoading] = useState(true)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
@@ -59,8 +58,8 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
   const [tempMax, setTempMax] = useState('')
   const [sortBy, setSortBy] = useState<'date' | 'name'>('date')
   const [compareProducts, setCompareProducts] = useState<Product[]>([])
+  const searchStickyRef = useRef<HTMLDivElement>(null)
   const [isUrlStateReady, setIsUrlStateReady] = useState(false)
-  const [showScrollTop, setShowScrollTop] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -244,23 +243,8 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
   }, [selectedCategory])
 
   useEffect(() => {
-    const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 520)
-    }
-
-    handleScroll()
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
-
-  // Инициализация: загружаем мета-список (все товары, лёгкие поля)
-  useEffect(() => {
-    fetchProductsMeta()
+    fetchAllProducts()
   }, [isAdmin])
-
-  useEffect(() => {
-    fetchProducts()
-  }, [debouncedSearch, selectedBrand, selectedCategory, selectedYear, supplierNoveltiesOnly, dishwasherSafeOnly, microwaveSafeOnly, tempMin, tempMax, sortBy])
 
   // Открытие карточки по прямой ссылке ?p=<id> (кнопка «Скопировать ссылку»
   // в модалке товара). Грузим товар отдельным запросом по id, а не берём из
@@ -281,71 +265,45 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
 
-  // Полный список товаров с базовыми полями — для автодополнения и похожих товаров
-  const fetchProductsMeta = async () => {
-    let query = apiClient
-      .from('products')
-      .select('id, name, brand, category, year, article_number, image_url, description, advantages, is_supplier_novelty, tags, variants, created_at')
-      .eq('is_archived', false)
-    query = query.order('created_at', { ascending: false })
-    const { data } = await query
-    if (data) setProductsMeta(data as Product[])
-  }
-
-  // Серверная фильтрация + пагинация
-  const fetchProducts = async () => {
-    setLoading(true)
-
-    let query = apiClient
-      .from('products')
-      .select('*', { count: 'exact' })
-
+  const fetchAllProducts = async () => {
     // Публичным посетителям неопубликованные (в том числе черновики после
     // импорта из Excel) и архивные товары показывать нельзя.
-    query = query.eq('is_archived', false)
-
-    // Текстовый поиск теперь не в SQL (обычный ILIKE не прощает опечатки),
-    // а на клиенте, ниже — с допуском на опечатки, неверную раскладку
-    // клавиатуры и транслит. Здесь остаются только точные фильтры.
-    if (selectedBrand) query = query.eq('brand', selectedBrand)
-    if (selectedCategory) query = query.eq('category', selectedCategory)
-    if (selectedYear) query = query.eq('year', selectedYear)
-    // Вкладка "Новинки на складе" / "Новинки поставщиков" — взаимоисключающие
-    // режимы, а не доп.фильтр: по умолчанию склад (не поставщик), иначе только поставщик.
-    query = query.eq('is_supplier_novelty', supplierNoveltiesOnly)
-    if (dishwasherSafeOnly) query = query.eq('is_dishwasher_safe', true)
-    if (microwaveSafeOnly) query = query.eq('is_microwave_safe', true)
-    if (isTemperatureCategory(selectedCategory)) {
-      // Пересечение диапазонов: товар подходит, если его температурный
-      // диапазон хранения пересекается с диапазоном, заданным в фильтре.
-      // Если "от" больше "до" (человек перепутал местами), меняем их местами,
-      // а не молча возвращаем пустой список.
-      let [effMin, effMax] = [tempMin, tempMax]
-      if (effMin && effMax && parseFloat(effMin) > parseFloat(effMax)) {
-        ;[effMin, effMax] = [effMax, effMin]
-      }
-      if (effMin) query = query.gte('temp_max', parseFloat(effMin))
-      if (effMax) query = query.lte('temp_min', parseFloat(effMax))
-    }
-
-    if (sortBy === 'name') {
-      query = query.order('name', { ascending: true })
-    } else {
-      query = query.order('created_at', { ascending: false })
-    }
-
-    const { data } = await query
-    if (data) {
-      const filtered = debouncedSearch
-        ? (data as Product[]).filter((p) =>
-            fuzzyMatches(productSearchFields(p), debouncedSearch)
-          )
-        : (data as Product[])
-      setProducts(filtered)
-    }
-    setLoading(false)
+    const { data } = await apiClient
+      .from('products')
+      .select('*')
+      .eq('is_archived', false)
+      .order('created_at', { ascending: false })
+    if (data) setProductsMeta(data as Product[])
     setInitialLoading(false)
   }
+
+  // Точные фильтры, поиск с допуском на опечатки/раскладку/транслит и
+  // сортировка — на месте, по уже загруженному списку: переключение
+  // фильтров мгновенное и не качает каталог заново.
+  const products = useMemo(() => {
+    let [effMin, effMax] = [tempMin, tempMax]
+    if (effMin && effMax && parseFloat(effMin) > parseFloat(effMax)) {
+      ;[effMin, effMax] = [effMax, effMin]
+    }
+    const useTemp = isTemperatureCategory(selectedCategory)
+    const list = productsMeta.filter((p) => {
+      // "Новинки на складе" / "Новинки поставщиков" — взаимоисключающие вкладки
+      if (Boolean(p.is_supplier_novelty) !== supplierNoveltiesOnly) return false
+      if (selectedBrand && p.brand !== selectedBrand) return false
+      if (selectedCategory && p.category !== selectedCategory) return false
+      if (selectedYear && p.year !== selectedYear) return false
+      if (dishwasherSafeOnly && !p.is_dishwasher_safe) return false
+      if (microwaveSafeOnly && !p.is_microwave_safe) return false
+      // Пересечение диапазонов: товар подходит, если его температурный
+      // диапазон пересекается с диапазоном из фильтра
+      if (useTemp && effMin && !(p.temp_max != null && p.temp_max >= parseFloat(effMin))) return false
+      if (useTemp && effMax && !(p.temp_min != null && p.temp_min <= parseFloat(effMax))) return false
+      if (debouncedSearch && !fuzzyMatches(productSearchFields(p), debouncedSearch)) return false
+      return true
+    })
+    if (sortBy === 'name') return [...list].sort((x, y) => x.name.localeCompare(y.name, 'ru'))
+    return list
+  }, [productsMeta, supplierNoveltiesOnly, selectedBrand, selectedCategory, selectedYear, dishwasherSafeOnly, microwaveSafeOnly, tempMin, tempMax, sortBy, debouncedSearch])
 
   const toggleCompare = (product: Product) => {
     setCompareProducts(prev => {
@@ -372,6 +330,7 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
     setSelectedProduct(null)
     const params = new URLSearchParams(searchParams.toString())
     params.delete('p')
+    params.delete('v')
     const query = params.toString()
     const base = window.location.pathname
     window.history.replaceState(null, '', query ? `${base}?${query}` : base)
@@ -385,10 +344,38 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
     )
   }
 
-  const copyProductLink = (product: Product) => {
-    const params = new URLSearchParams(searchParams.toString())
-    params.set('p', product.id)
-    const url = `${window.location.origin}${window.location.pathname}?${params.toString()}`
+  // Выгрузить в Excel ровно то, что сейчас показано (с учётом фильтров и поиска)
+  const exportSelection = async () => {
+    try {
+      const { exportProductsToExcel } = await import('@/lib/export')
+      const tab = supplierNoveltiesOnly ? 'postavshchiki' : 'sklad'
+      exportProductsToExcel(products, `novinki_${tab}_${new Date().toISOString().slice(0, 10)}.xlsx`)
+      showToast(`Выгружено товаров: ${products.length}`, 'success')
+    } catch {
+      showToast('Не удалось сформировать Excel', 'error')
+    }
+  }
+
+  // Чистая ссылка на товар (без фильтров отправителя); с артикулом — сразу
+  // подсвечивает нужный вариант серии.
+  const productLink = (product: Product, article?: string) => {
+    const params = new URLSearchParams({ p: product.id })
+    if (article) params.set('v', article)
+    return `${window.location.origin}${window.location.pathname}?${params.toString()}`
+  }
+
+  // На телефоне — системное меню «Поделиться» (сразу в Telegram, WhatsApp…),
+  // на компьютере — копирование ссылки.
+  const shareOrCopy = async (url: string, title: string) => {
+    const isPhone = window.matchMedia('(pointer: coarse)').matches
+    if (isPhone && typeof navigator.share === 'function') {
+      try {
+        await navigator.share({ title, url })
+        return
+      } catch (error) {
+        if ((error as DOMException)?.name === 'AbortError') return
+      }
+    }
     navigator.clipboard.writeText(url).then(
       () => showToast('Ссылка скопирована', 'success'),
       () => showToast('Не удалось скопировать ссылку', 'error')
@@ -447,6 +434,36 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
     () => shortVariantNames(selectedProduct?.variants || [], selectedProduct?.brand),
     [selectedProduct]
   )
+  // Горячие клавиши: "/" — в поиск, Esc — закрыть просмотр фото или товара
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null
+      const typing = !!target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable)
+      if (event.key === '/' && !typing && !selectedProduct) {
+        const input = searchStickyRef.current?.querySelector('input')
+        if (input) {
+          event.preventDefault()
+          input.focus()
+        }
+      } else if (event.key === 'Escape') {
+        if (selectedImage) setSelectedImage(null)
+        else if (selectedProduct) closeProduct()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedProduct, selectedImage])
+
+  // ?v=<артикул> в ссылке — подсветить вариант и прокрутить к нему
+  const linkedArticle = selectedProduct ? searchParams.get('v') : null
+  useEffect(() => {
+    if (!selectedProduct || !linkedArticle) return
+    const timer = setTimeout(() => {
+      document.getElementById(`variant-${linkedArticle}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [selectedProduct, linkedArticle])
   const searchedArticle = /^\d{4,}$/.test(debouncedSearch.trim()) ? debouncedSearch.trim() : ''
 
   const clearAllFilters = () => {
@@ -511,7 +528,6 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
   const showYearDividers = !selectedYear && productsByYear.groups.length > 1
 
   // Высота прилипшего поиска — чтобы заголовки годов прилипали сразу под ним
-  const searchStickyRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const el = searchStickyRef.current
     if (!el) return
@@ -583,6 +599,7 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
         activeFiltersCount={activeFiltersCount}
         totalCount={products.length}
         onClearFilters={clearAllFilters}
+        onExportSelection={exportSelection}
       />
 
       {showCategoryChips && (
@@ -628,7 +645,7 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
         </button>
       )}
 
-      <div className={`transition-opacity duration-200 ${loading ? 'opacity-50' : 'opacity-100'}`}>
+      <div>
       {viewMode === 'cards' ? (
         <div className="space-y-10">
           {productsByYear.groups.map(([year, yearProducts]) => (
@@ -888,9 +905,10 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
           <div onClick={(e) => e.stopPropagation()} className="relative bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 cursor-default">
             <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5">
               <button
-                onClick={() => copyProductLink(selectedProduct)}
+                onClick={() => shareOrCopy(productLink(selectedProduct), selectedProduct.name)}
                 className="bg-white rounded-lg p-1.5 text-slate-700 hover:bg-slate-100 transition shadow-md"
-                title="Скопировать ссылку на товар"
+                title="Поделиться / скопировать ссылку на товар"
+                aria-label="Поделиться ссылкой на товар"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 01-5.656-5.656l1.5-1.5M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 015.656 5.656l-1.5 1.5" /></svg>
               </button>
@@ -1025,9 +1043,11 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
                       {selectedProduct.variants.map((v, i) => {
                         const href = safeHref(v.website_link)
                         const shortName = selectedVariantNames[i]
-                        // Карточку нашли поиском по артикулу варианта — подсвечиваем
-                        // этот вариант, чтобы не искать его глазами среди остальных.
-                        const isSearched = Boolean(searchedArticle && v.article_number?.includes(searchedArticle))
+                        // Карточку нашли поиском по артикулу варианта или открыли по ссылке
+                        // на вариант — подсвечиваем его, чтобы не искать глазами.
+                        const isSearched = Boolean(
+                          (searchedArticle && v.article_number?.includes(searchedArticle)) || (linkedArticle && v.article_number === linkedArticle)
+                        )
                         const content = (
                           <>
                             <div className={`relative aspect-square w-full overflow-hidden rounded-lg bg-slate-100 ${isSearched ? 'ring-2 ring-[#9B1B1B] ring-offset-1' : ''}`}>
@@ -1051,12 +1071,26 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
                             )}
                           </>
                         )
-                        return href ? (
-                          <a key={`${v.article_number}-${i}`} href={localizeComplexbarLink(href, cityHost)} target="_blank" rel="noopener noreferrer" className="block transition hover:opacity-80">
-                            {content}
-                          </a>
-                        ) : (
-                          <div key={`${v.article_number}-${i}`}>{content}</div>
+                        return (
+                          <div key={`${v.article_number}-${i}`} id={v.article_number ? `variant-${v.article_number}` : undefined} className="group/variant relative">
+                            {href ? (
+                              <a href={localizeComplexbarLink(href, cityHost)} target="_blank" rel="noopener noreferrer" className="block transition hover:opacity-80">
+                                {content}
+                              </a>
+                            ) : (
+                              content
+                            )}
+                            {v.article_number && (
+                              <button
+                                onClick={() => shareOrCopy(productLink(selectedProduct, v.article_number), v.name || selectedProduct.name)}
+                                className="absolute right-1 top-1 rounded-md bg-white/90 p-1 text-slate-500 shadow-sm transition hover:text-[#9B1B1B] sm:opacity-0 sm:group-hover/variant:opacity-100"
+                                title="Поделиться ссылкой на этот вариант"
+                                aria-label={`Поделиться ссылкой на вариант ${v.article_number}`}
+                              >
+                                <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 01-5.656-5.656l1.5-1.5M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 015.656 5.656l-1.5 1.5" /></svg>
+                              </button>
+                            )}
+                          </div>
                         )
                       })}
                     </div>
@@ -1090,19 +1124,6 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
         </div>
       )}
 
-      {showScrollTop && (
-        <button
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="fixed bottom-6 right-6 z-40 bg-[#9B1B1B] p-3 text-white shadow-lg hover:bg-[#7A1515] transition"
-          aria-label="Наверх"
-          title="Наверх"
-        >
-          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-          </svg>
-        </button>
-      )}
-      
       <CompareBar 
         compareProducts={compareProducts}
         onRemove={(id) => setCompareProducts(prev => prev.filter(p => p.id !== id))}
