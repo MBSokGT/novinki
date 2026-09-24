@@ -3,13 +3,14 @@
 import ProductsTable from '@/components/ProductsTable'
 import VendorsList from '@/components/VendorsList'
 import RequestForm from '@/components/RequestForm'
+import MobileBottomNav from '@/components/MobileBottomNav'
 import Footer from '@/components/Footer'
 import ToastContainer from '@/components/Toast'
 import CityBadge from '@/components/CityBadge'
 import CityLocationPrompt from '@/components/CityLocationPrompt'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { apiClient } from '@/lib/api-client'
 import { useRouter } from 'next/navigation'
 import { useComplexbarCity } from '@/lib/useComplexbarCity'
@@ -102,6 +103,27 @@ export default function Home() {
     router.push('/')
   }
 
+  // Высота прилипшей шапки — для прилипающих под ней поиска и заголовков годов.
+  // На телефоне шапка уезжает при прокрутке (разделы переключаются нижней
+  // панелью), поэтому там отступ 0.
+  const navRef = useRef<HTMLElement>(null)
+  useEffect(() => {
+    const nav = navRef.current
+    if (!nav) return
+    const desktop = window.matchMedia('(min-width: 640px)')
+    const update = () => {
+      document.documentElement.style.setProperty('--header-h', desktop.matches ? `${nav.offsetHeight}px` : '0px')
+    }
+    update()
+    const observer = new ResizeObserver(update)
+    observer.observe(nav)
+    desktop.addEventListener('change', update)
+    return () => {
+      observer.disconnect()
+      desktop.removeEventListener('change', update)
+    }
+  }, [loading])
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -111,8 +133,8 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <nav className="bg-[#1A1A1A] shadow-lg border-b border-[#333] sticky top-0 z-50">
+    <div className="min-h-screen flex flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] sm:pb-0">
+      <nav ref={navRef} className="bg-[#1A1A1A] shadow-lg border-b border-[#333] sm:sticky sm:top-0 z-50">
         <div className="border-b border-white/10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-1">
             <CityBadge cityHost={cityHost} setCityHost={setCityHost} />
@@ -183,42 +205,12 @@ export default function Home() {
           </div>
           {menuOpen && (
             <div className="sm:hidden mt-4 pb-2 space-y-2 border-t border-white/10 pt-4">
-              <div className="flex items-center rounded-lg border border-white/30 bg-white/10 p-0.5" role="tablist" aria-label="Раздел новинок">
-                <button
-                  role="tab"
-                  aria-selected={activeSection === 'stock'}
-                  onClick={() => { selectSection('stock'); setMenuOpen(false) }}
-                  className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition ${activeSection === 'stock' ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-300 hover:text-white'}`}
-                >
-                  Склад
-                </button>
-                <button
-                  role="tab"
-                  aria-selected={activeSection === 'supplier'}
-                  onClick={() => { selectSection('supplier'); setMenuOpen(false) }}
-                  className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition ${activeSection === 'supplier' ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-300 hover:text-white'}`}
-                >
-                  Поставщики
-                </button>
-                <button
-                  role="tab"
-                  aria-selected={activeSection === 'vendors'}
-                  onClick={() => { selectSection('vendors'); setMenuOpen(false) }}
-                  className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition ${activeSection === 'vendors' ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-300 hover:text-white'}`}
-                >
-                  Вендоры
-                </button>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 [&>button]:w-full">
-                  <RequestForm />
-                </div>
-                {!user && (
-                  <Link href="/login" aria-label="Вход" className="shrink-0 p-2 text-gray-500/40 hover:text-gray-300 transition">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                  </Link>
-                )}
-              </div>
+              {!user && (
+                <Link href="/login" className="flex w-full items-center justify-center gap-2 rounded-lg bg-white/10 px-4 py-3 font-medium text-gray-200 transition hover:bg-white/20">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                  Войти
+                </Link>
+              )}
               {isAdmin && (
                 <Link href="/admin" className="flex items-center gap-2 w-full px-4 py-3 bg-[#9B1B1B] text-white rounded-lg hover:bg-[#7A1515] transition text-center font-medium">
                   Панель администратора
@@ -247,6 +239,7 @@ export default function Home() {
         )}
       </main>
       <Footer />
+      <MobileBottomNav activeSection={activeSection} onSelect={selectSection} />
       <ToastContainer />
     </div>
   )

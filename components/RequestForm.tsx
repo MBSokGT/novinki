@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { DEMO_MODE, apiClient } from '@/lib/api-client'
 
-export default function RequestForm() {
+export default function RequestForm({ variant = 'button' }: { variant?: 'button' | 'bottom-nav' }) {
   const [isOpen, setIsOpen] = useState(false)
   const [form, setForm] = useState({ name: '', product: '', article: '' })
   const [sending, setSending] = useState(false)
@@ -50,14 +50,23 @@ export default function RequestForm() {
 
   return (
     <>
-      <button
-        onClick={() => setIsOpen(true)}
-        className="inline-flex items-center gap-1.5 whitespace-nowrap px-3 py-1.5 text-sm bg-[#9B1B1B] text-white font-medium rounded-lg hover:bg-[#7A1515] transition shadow-sm"
-      >
-        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-        <span className="hidden lg:inline">Сообщить о новинке</span>
-        <span className="lg:hidden">Сообщить</span>
-      </button>
+      {variant === 'bottom-nav' ? (
+        <button onClick={() => setIsOpen(true)} className="flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-medium text-[#9B1B1B]">
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#9B1B1B] text-white">
+            <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+          </span>
+          Сообщить
+        </button>
+      ) : (
+        <button
+          onClick={() => setIsOpen(true)}
+          className="inline-flex items-center gap-1.5 whitespace-nowrap px-3 py-1.5 text-sm bg-[#9B1B1B] text-white font-medium rounded-lg hover:bg-[#7A1515] transition shadow-sm"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+          <span className="hidden lg:inline">Сообщить о новинке</span>
+          <span className="lg:hidden">Сообщить</span>
+        </button>
+      )}
 
       {isOpen && (
         <div onClick={() => setIsOpen(false)} className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200 cursor-pointer">

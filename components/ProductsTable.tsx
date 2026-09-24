@@ -483,7 +483,7 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
     [productsMeta, supplierNoveltiesOnly]
   )
 
-  // Группировка по годам: текущий год — первым без заголовка, остальные — с красным заголовком
+  // Группировка по годам: текущий год — первым; при нескольких годах у каждого прилипающий заголовок
   const newCount = useMemo(() => products.filter((p) => isNewSince(p.created_at, lastVisit)).length, [products, lastVisit])
   const showOnlyNew = onlyNew && newCount > 0
 
@@ -510,12 +510,47 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
   // Показывать год-разделители только когда нет фильтра по году и есть несколько лет
   const showYearDividers = !selectedYear && productsByYear.groups.length > 1
 
+  // Высота прилипшего поиска — чтобы заголовки годов прилипали сразу под ним
+  const searchStickyRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const el = searchStickyRef.current
+    if (!el) return
+    const update = () => document.documentElement.style.setProperty('--search-h', `${el.offsetHeight}px`)
+    update()
+    const observer = new ResizeObserver(update)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [initialLoading])
+
+  const [showBackToTop, setShowBackToTop] = useState(false)
+  useEffect(() => {
+    const onScroll = () => setShowBackToTop(window.scrollY > 700)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  // Категории текущей вкладки плашками — с количеством товаров в каждой
+  const categoryChips = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const p of productsMetaForTab) {
+      if (p.category) counts.set(p.category, (counts.get(p.category) || 0) + 1)
+    }
+    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'ru'))
+  }, [productsMetaForTab])
+  const showCategoryChips = categoryChips.length >= 2
+
+
   if (initialLoading) return <ProductSkeleton viewMode={viewMode} />
 
   return (
     <div>
       <Breadcrumbs />
-      <div className="mb-4">
+      <div
+        ref={searchStickyRef}
+        className="sticky z-30 -mx-4 mb-2 bg-[var(--background)]/95 px-4 py-2 backdrop-blur sm:-mx-6 sm:px-6"
+        style={{ top: 'var(--header-h, 0px)' }}
+      >
         <SearchBar
           products={productsMetaForTab}
           search={search}
@@ -549,6 +584,26 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
         onClearFilters={clearAllFilters}
       />
 
+      {showCategoryChips && (
+        <div className="-mx-4 mb-3 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden">
+          <button
+            onClick={() => setSelectedCategory(null)}
+            className={`shrink-0 rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${!selectedCategory ? 'border-[#9B1B1B] bg-[#9B1B1B] text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}`}
+          >
+            Все
+          </button>
+          {categoryChips.map(([category, count]) => (
+            <button
+              key={category}
+              onClick={() => setSelectedCategory(selectedCategory === category ? null : category)}
+              className={`shrink-0 rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${selectedCategory === category ? 'border-[#9B1B1B] bg-[#9B1B1B] text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}`}
+            >
+              {category} <span className={selectedCategory === category ? 'text-white/70' : 'text-slate-400'}>{count}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
       {newCount > 0 && (
         <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-[#9B1B1B]/15 bg-[#9B1B1B]/[0.04] px-3 py-2 text-sm">
           <span className="inline-flex items-center gap-1.5 text-slate-700">
@@ -561,15 +616,29 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
         </div>
       )}
 
+      {showBackToTop && (
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-4 z-40 flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-lg transition hover:text-[#9B1B1B] sm:bottom-6"
+          aria-label="Наверх"
+          title="Наверх"
+        >
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
+        </button>
+      )}
+
       <div className={`transition-opacity duration-200 ${loading ? 'opacity-50' : 'opacity-100'}`}>
       {viewMode === 'cards' ? (
         <div className="space-y-10">
           {productsByYear.groups.map(([year, yearProducts]) => (
             <div key={year}>
-              {showYearDividers && year !== productsByYear.currentYear && (
-                <div className="mb-5 flex items-center gap-4">
+              {showYearDividers && (
+                <div
+                  className="sticky z-20 -mx-4 mb-4 flex items-center gap-4 bg-[var(--background)]/95 px-4 py-2 backdrop-blur sm:-mx-6 sm:px-6"
+                  style={{ top: 'calc(var(--header-h, 0px) + var(--search-h, 0px))' }}
+                >
                   <div className="h-px flex-1 bg-slate-200" />
-                  <span className="text-2xl font-extrabold tracking-tight text-[#9B1B1B] select-none">{year || 'Без года'}</span>
+                  <span className="text-xl font-extrabold tracking-tight text-[#9B1B1B] select-none">{year || 'Без года'}</span>
                   <div className="h-px flex-1 bg-slate-200" />
                 </div>
               )}
@@ -648,10 +717,13 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
         <div className="space-y-10">
           {productsByYear.groups.map(([year, yearProducts]) => (
             <div key={year}>
-              {showYearDividers && year !== productsByYear.currentYear && (
-                <div className="mb-5 flex items-center gap-4">
+              {showYearDividers && (
+                <div
+                  className="sticky z-20 -mx-4 mb-4 flex items-center gap-4 bg-[var(--background)]/95 px-4 py-2 backdrop-blur sm:-mx-6 sm:px-6"
+                  style={{ top: 'calc(var(--header-h, 0px) + var(--search-h, 0px))' }}
+                >
                   <div className="h-px flex-1 bg-slate-200" />
-                  <span className="text-2xl font-extrabold tracking-tight text-[#9B1B1B] select-none">{year || 'Без года'}</span>
+                  <span className="text-xl font-extrabold tracking-tight text-[#9B1B1B] select-none">{year || 'Без года'}</span>
                   <div className="h-px flex-1 bg-slate-200" />
                 </div>
               )}
@@ -834,7 +906,7 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
-            <div className="relative h-36 sm:h-44 bg-slate-100 shrink-0">
+            <div className="relative h-56 sm:h-72 bg-white shrink-0 border-b border-slate-100">
               <ImageCarousel
                 images={selectedProduct.images?.length ? selectedProduct.images : (selectedProduct.image_url ? [selectedProduct.image_url] : [])}
                 alt={selectedProduct.name}
@@ -843,7 +915,7 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
                 fallbackLabel={selectedProduct.brand || selectedProduct.name}
               />
             </div>
-            <div className="p-5 sm:p-7 overflow-y-auto max-h-[calc(90vh-9rem)] sm:max-h-[calc(90vh-11rem)]">
+            <div className="p-5 sm:p-7 overflow-y-auto max-h-[calc(90vh-14rem)] sm:max-h-[calc(90vh-18rem)]">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-3">
                 <button onClick={() => { setSelectedBrand(selectedProduct.brand); closeProduct(); }} className="text-xs font-semibold text-slate-500 uppercase tracking-wide hover:text-[#9B1B1B] transition">{selectedProduct.brand}</button>
                 {selectedProduct.is_dishwasher_safe && <span className="text-[10px] font-medium text-blue-600 border border-blue-200 rounded px-1.5 py-px">Подходит для ПММ</span>}
