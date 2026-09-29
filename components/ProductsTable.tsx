@@ -344,18 +344,6 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
     )
   }
 
-  // Выгрузить в Excel ровно то, что сейчас показано (с учётом фильтров и поиска)
-  const exportSelection = async () => {
-    try {
-      const { exportProductsToExcel } = await import('@/lib/export')
-      const tab = supplierNoveltiesOnly ? 'postavshchiki' : 'sklad'
-      exportProductsToExcel(products, `novinki_${tab}_${new Date().toISOString().slice(0, 10)}.xlsx`)
-      showToast(`Выгружено товаров: ${products.length}`, 'success')
-    } catch {
-      showToast('Не удалось сформировать Excel', 'error')
-    }
-  }
-
   // Чистая ссылка на товар (без фильтров отправителя); с артикулом — сразу
   // подсвечивает нужный вариант серии.
   const productLink = (product: Product, article?: string) => {
@@ -546,16 +534,6 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  // Категории текущей вкладки плашками — с количеством товаров в каждой.
-  // Только на компьютере: на телефоне ряд занимал слишком много места.
-  const categoryChips = useMemo(() => {
-    const counts = new Map<string, number>()
-    for (const p of productsMetaForTab) {
-      if (p.category) counts.set(p.category, (counts.get(p.category) || 0) + 1)
-    }
-    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'ru'))
-  }, [productsMetaForTab])
-  const showCategoryChips = categoryChips.length >= 2
 
 
   if (initialLoading) return <ProductSkeleton viewMode={viewMode} />
@@ -599,28 +577,7 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
         activeFiltersCount={activeFiltersCount}
         totalCount={products.length}
         onClearFilters={clearAllFilters}
-        onExportSelection={exportSelection}
       />
-
-      {showCategoryChips && (
-        <div className="mb-3 hidden flex-wrap gap-2 sm:flex">
-          <button
-            onClick={() => setSelectedCategory(null)}
-            className={`shrink-0 rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${!selectedCategory ? 'border-[#9B1B1B] bg-[#9B1B1B] text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}`}
-          >
-            Все
-          </button>
-          {categoryChips.map(([category, count]) => (
-            <button
-              key={category}
-              onClick={() => setSelectedCategory(selectedCategory === category ? null : category)}
-              className={`shrink-0 rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${selectedCategory === category ? 'border-[#9B1B1B] bg-[#9B1B1B] text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}`}
-            >
-              {category} <span className={selectedCategory === category ? 'text-white/70' : 'text-slate-400'}>{count}</span>
-            </button>
-          ))}
-        </div>
-      )}
 
       {newCount > 0 && (
         <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-[#9B1B1B]/15 bg-[#9B1B1B]/[0.04] px-3 py-2 text-sm">
