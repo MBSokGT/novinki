@@ -27,6 +27,7 @@ interface FilterBarProps {
   activeFiltersCount: number
   totalCount: number
   onClearFilters: () => void
+  onExportSelection?: () => void
 }
 
 export default function FilterBar({
@@ -53,6 +54,7 @@ export default function FilterBar({
   activeFiltersCount,
   totalCount,
   onClearFilters,
+  onExportSelection,
 }: FilterBarProps) {
   const categories = Array.from(new Set(products.map(p => p.category).filter(Boolean)))
   const years = Array.from(new Set(products.map(p => p.year).filter(Boolean))).sort().reverse()
@@ -259,6 +261,17 @@ export default function FilterBar({
           <p className="text-xs text-slate-500 whitespace-nowrap">
             <span className="font-semibold text-slate-700">{totalCount}</span> товаров
           </p>
+          {onExportSelection && totalCount > 0 && (
+            <button
+              onClick={onExportSelection}
+              className="inline-flex items-center gap-1 rounded-lg bg-gray-100 p-1.5 text-xs font-medium text-emerald-700 transition hover:bg-gray-200 sm:px-2 sm:py-2"
+              title={`Выгрузить в Excel эти ${totalCount} товаров`}
+              aria-label="Выгрузить показанные товары в Excel"
+            >
+              <svg className="h-3.5 w-3.5 sm:h-4 sm:w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H8a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+              <span className="hidden sm:inline">Excel</span>
+            </button>
+          )}
           <div className="flex gap-1">
             <button onClick={() => setViewMode('cards')} className={`p-1.5 sm:p-2 rounded-lg transition-all ${viewMode === 'cards' ? 'bg-[#9B1B1B] text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`} title="Карточки">
               <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>

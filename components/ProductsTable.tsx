@@ -344,6 +344,18 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
     )
   }
 
+  // Выгрузить в Excel ровно то, что сейчас показано (с учётом фильтров и поиска)
+  const exportSelection = async () => {
+    try {
+      const { exportProductsToExcel } = await import('@/lib/export')
+      const tab = supplierNoveltiesOnly ? 'postavshchiki' : 'sklad'
+      exportProductsToExcel(products, `novinki_${tab}_${new Date().toISOString().slice(0, 10)}.xlsx`)
+      showToast(`Выгружено товаров: ${products.length}`, 'success')
+    } catch {
+      showToast('Не удалось сформировать Excel', 'error')
+    }
+  }
+
   // Чистая ссылка на товар (без фильтров отправителя); с артикулом — сразу
   // подсвечивает нужный вариант серии.
   const productLink = (product: Product, article?: string) => {
@@ -577,6 +589,7 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
         activeFiltersCount={activeFiltersCount}
         totalCount={products.length}
         onClearFilters={clearAllFilters}
+        onExportSelection={exportSelection}
       />
 
       {newCount > 0 && (
