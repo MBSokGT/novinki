@@ -156,10 +156,11 @@ export default function ExcelImport({ onSuccess }: ExcelImportProps) {
     <>
       <button
         onClick={() => setShowModal(true)}
-        className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 text-gray-200 rounded-lg hover:bg-white/20 transition"
+        className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/10 text-gray-200 rounded-lg hover:bg-white/20 transition"
+        title="Импорт товаров из Excel"
       >
         <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 16V4m0 12l-4-4m4 4l4-4M4 20h16" /></svg>
-        Импорт из Excel
+        Импорт Excel
       </button>
 
       {showModal && (
