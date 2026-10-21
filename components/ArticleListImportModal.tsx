@@ -83,25 +83,29 @@ export default function ArticleListImportModal({ existingProducts, categoryWordI
       if (cancelRef.current) return
       if (i > 0) await wait(PAUSE_MS)
       let row: Row = { article, status: 'error' }
-      try {
-        const { ok, json } = await post('/api/internal/scrape-complexbar', { url: `${SEARCH_URL}${encodeURIComponent(article)}` })
-        const found: ScrapedProduct[] = json.data?.products || []
-        // Только точное совпадение артикула: поиск сайта ищет и по словам, и на чужой артикул
-        // может вернуть посторонний товар — такой карточки нам не нужно
-        const item = found.find((f) => normalizeArticle(f.article_number) === normalizeArticle(article))
-        if (item) {
-          row = {
-            article,
-            status: 'found',
-            item,
-            duplicate: findDuplicate(duplicateIndex, { article: item.article_number || article, link: item.website_link }),
-            category: suggestCategory(item.name, categoryWordIndex),
+      // Сайт иногда отвечает не с первого раза — не нашли, пробуем ещё раз
+      for (let attempt = 0; attempt < 2 && row.status !== 'found'; attempt++) {
+        if (attempt > 0) await wait(1200)
+        try {
+          const { ok, json } = await post('/api/internal/scrape-complexbar', { url: `${SEARCH_URL}${encodeURIComponent(article)}` })
+          const found: ScrapedProduct[] = json.data?.products || []
+          // Только точное совпадение артикула: поиск сайта ищет и по словам, и на чужой артикул
+          // может вернуть посторонний товар — такой карточки нам не нужно
+          const item = found.find((f) => normalizeArticle(f.article_number) === normalizeArticle(article))
+          if (item) {
+            row = {
+              article,
+              status: 'found',
+              item,
+              duplicate: findDuplicate(duplicateIndex, { article: item.article_number || article, link: item.website_link }),
+              category: suggestCategory(item.name, categoryWordIndex),
+            }
+          } else if (ok) {
+            row = { article, status: 'missing' }
           }
-        } else if (ok) {
-          row = { article, status: 'missing' }
+        } catch {
+          // остаётся status: 'error'
         }
-      } catch {
-        // остаётся status: 'error'
       }
       result.push(row)
       setProgress({ done: i + 1, total: articles.length })

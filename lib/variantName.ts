@@ -1,6 +1,6 @@
 import type { ProductVariant } from '@/types/product'
 
-const DIMENSIONS = /\s*\b[DHLWВ]=\d[\d.,]*(?:\s*,\s*[DHLWВ]=\d[\d.,]*)*\s*(?:мм|см|м)?\.?/gi
+const DIMENSIONS = /\s*\b[DHLWBВ]=\d+(?:[.,]\d+)?(?:\s*,\s*[DHLWBВ]=\d+(?:[.,]\d+)?)*\s*(?:мм|см|м)?\.?/gi
 
 function escapeRegExp(text: string) {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')

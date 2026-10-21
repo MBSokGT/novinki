@@ -99,6 +99,8 @@ let started = false
 
 export function startMaintenanceSchedule() {
   if (started) return
+  // Для автотестов и локальной отладки: не ходить на complexbar.ru и не чистить данные
+  if (process.env.NOVINKI_DISABLE_MAINTENANCE === '1') return
   started = true
   setTimeout(runMaintenance, 60 * 1000).unref()
   setInterval(runMaintenance, MAINTENANCE_INTERVAL_MS).unref()

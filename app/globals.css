@@ -1,25 +1,85 @@
 @import "tailwindcss";
 
+/* Движение: одна кривая, три длительности, один приём появления (немного
+   вверх + проявление). Короче — для откликов на нажатие, длиннее — для окон.
+   Всё отключается у тех, кто выключил анимации в системе (см. внизу). */
+:root {
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+  --dur-quick: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 300ms;
+}
+
 @keyframes fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
-@keyframes slide-in-from-bottom {
-  from { transform: translateY(20px); opacity: 0; }
+@keyframes rise-in {
+  from { transform: translateY(8px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
 
-.animate-in {
-  animation: fade-in 0.3s ease-out;
+@keyframes pop-in {
+  from { transform: translateY(8px) scale(0.98); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
 }
 
+@keyframes slide-in-from-right {
+  from { transform: translateX(16px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* Классы ниже уже стоят в разметке окон и уведомлений */
+.animate-in,
 .fade-in {
-  animation: fade-in 0.3s ease-out;
+  animation: fade-in var(--dur-base) var(--ease-out) backwards;
 }
 
-.slide-in-from-bottom-4 {
-  animation: slide-in-from-bottom 0.4s ease-out;
+.zoom-in-95 {
+  animation: pop-in var(--dur-slow) var(--ease-out) backwards;
+}
+
+.slide-in-from-right {
+  animation: slide-in-from-right var(--dur-slow) var(--ease-out) backwards;
+}
+
+.slide-in-from-bottom-4,
+.rise-in {
+  animation: rise-in var(--dur-slow) var(--ease-out) backwards;
+}
+
+/* Карточки каталога: при первой загрузке появляются волной, не дольше ~0,4 с
+   (задержку задаёт --i, у остальных карточек её нет) */
+.card-in {
+  animation: rise-in var(--dur-slow) var(--ease-out) backwards;
+  animation-delay: calc(min(var(--i, 0), 10) * 30ms);
+}
+
+/* Отклик на нажатие: кнопка чуть «вдавливается». Свойство scale не
+   конфликтует с translate/transform, которыми позиционированы кнопки. */
+@layer base {
+  button:not(:disabled),
+  [role="button"] {
+    transition: scale var(--dur-quick) var(--ease-out);
+  }
+
+  button:not(:disabled):active,
+  [role="button"]:active {
+    scale: 0.97;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 :root {

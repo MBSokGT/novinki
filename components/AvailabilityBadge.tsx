@@ -77,6 +77,45 @@ export function productPriceSummary(product: Pick<Product, 'site_price' | 'site_
   return allSame ? text : `от ${text}`
 }
 
+const PRICE_DROP_WINDOW_MS = 7 * 24 * 60 * 60 * 1000
+
+export interface PriceDrop {
+  percent: number
+  from: number
+  to: number
+  currency: string | null
+  changedAt: string
+}
+
+// Цена упала за последнюю неделю: у самого товара или у любого его варианта —
+// берём самое заметное снижение. Подорожание на сайте не показываем.
+export function productPriceDrop(
+  product: Pick<Product, 'site_price' | 'site_currency' | 'price_prev' | 'price_changed_at' | 'variants'>,
+  now: number = Date.now()
+): PriceDrop | null {
+  const candidates: Array<{ prev?: number | null; price?: number | null; at?: string | null; currency?: string | null }> = [
+    { prev: product.price_prev, price: product.site_price, at: product.price_changed_at, currency: product.site_currency },
+    ...(product.variants || []).map((v) => ({ prev: v.price_prev, price: v.price, at: v.price_changed_at, currency: v.currency })),
+  ]
+  let best: PriceDrop | null = null
+  for (const c of candidates) {
+    if (!c.prev || !c.price || !c.at || c.price >= c.prev) continue
+    const changed = new Date(c.at).getTime()
+    if (Number.isNaN(changed) || now - changed > PRICE_DROP_WINDOW_MS) continue
+    const percent = Math.round(((c.prev - c.price) / c.prev) * 100)
+    if (percent < 1) continue
+    if (!best || percent > best.percent) best = { percent, from: c.prev, to: c.price, currency: c.currency ?? null, changedAt: c.at }
+  }
+  return best
+}
+
+export function priceDropHint(drop: PriceDrop): string {
+  const was = formatPrice(drop.from, drop.currency)
+  const now = formatPrice(drop.to, drop.currency)
+  const when = formatCheckedAt(drop.changedAt)
+  return `Было ${was}, стало ${now}${when ? ` (изменилась ${when})` : ''}`
+}
+
 export function formatCheckedAt(iso: string | null | undefined): string | null {
   if (!iso) return null
   const date = new Date(iso)
