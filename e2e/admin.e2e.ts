@@ -18,7 +18,7 @@ describe('админка', () => {
 
   test('окно «Список артикулов» считает артикулы в любом тексте', { session: 'admin' }, async ({ app, screen }) => {
     await app.open('/admin')
-    await screen.getByRole('button', 'Список артикулов').tap()
+    await screen.getByRole('button', 'Артикулы').tap()
     await screen.getByRole('textbox').last().fill('Probar Premium:\n2030586, 2030587; 2110341\n2030587 ещё раз и 123')
     await expect(screen.getByText('Найдено артикулов: 3')).toBeVisible()
   })
