@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { apiClient } from '@/lib/api-client'
+import { loadOffline, saveOffline } from '@/lib/offlineCache'
 import { openFileInNewTab } from '@/lib/openFile'
 import { safeHref } from '@/lib/url'
 import { fuzzyMatches } from '@/lib/fuzzySearch'
@@ -36,8 +37,20 @@ export default function VendorsList({ isAdmin }: VendorsListProps) {
   useEffect(() => {
     let cancelled = false
     const fetchVendors = async () => {
-      const { data } = await apiClient.from('vendors').select('*').order('name', { ascending: true })
-      if (!cancelled && data) setVendors(data as Vendor[])
+      // Без связи показываем сохранённую копию списка вендоров
+      try {
+        const { data } = await apiClient.from('vendors').select('*').order('name', { ascending: true })
+        if (data) {
+          if (!cancelled) setVendors(data as Vendor[])
+          saveOffline('vendors', data as Vendor[])
+        } else {
+          const saved = await loadOffline<Vendor[]>('vendors')
+          if (!cancelled && saved) setVendors(saved.data)
+        }
+      } catch {
+        const saved = await loadOffline<Vendor[]>('vendors')
+        if (!cancelled && saved) setVendors(saved.data)
+      }
       if (!cancelled) setLoading(false)
     }
     fetchVendors()

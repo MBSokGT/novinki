@@ -1,4 +1,6 @@
-import Image from 'next/image'
+import { useState } from 'react'
+
+import OfflineImage from '@/components/OfflineImage'
 
 // Мягкие фоны в гамме бренда: цвет выбирается по названию, чтобы одинаковые
 // бренды выглядели одинаково, а соседние карточки без фото не сливались.
@@ -46,7 +48,22 @@ interface ImageWithFallbackProps {
 const CARD_SIZES = '(min-width: 1280px) 320px, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw'
 
 export default function ImageWithFallback({ src, alt, label, size = 'lg', className = 'object-cover', loading, sizes }: ImageWithFallbackProps) {
-  if (src) return <Image src={src} alt={alt} fill className={className} loading={loading} sizes={sizes ?? (size === 'lg' ? CARD_SIZES : '96px')} />
+  // Фото не загрузилось (например, нет связи и его нет в сохранённой копии) —
+  // показываем инициалы, а не значок битой картинки
+  const [failedSrc, setFailedSrc] = useState<string | null>(null)
+  if (src && failedSrc !== src) {
+    return (
+      <OfflineImage
+        src={src}
+        alt={alt}
+        fill
+        className={className}
+        loading={loading}
+        sizes={sizes ?? (size === 'lg' ? CARD_SIZES : '96px')}
+        onError={() => setFailedSrc(src)}
+      />
+    )
+  }
   const [bg, fg] = colorFor(label)
   return (
     <div

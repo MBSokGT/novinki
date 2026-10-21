@@ -8,6 +8,9 @@ export interface FieldsFromFeatures {
   temp_max?: number
   attention_points?: string
   tags?: string
+  // Текст по характеристикам — заполняется отдельно (lib/autoDescription.ts)
+  description?: string
+  advantages?: string
 }
 
 const TAG_LABELS = ['Материал', 'Вкус', 'Тип чая', 'Вид чая', 'Серия', 'Назначение', 'Форма']

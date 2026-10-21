@@ -22,6 +22,7 @@ import AvailabilityBadge, { AVAILABILITY_SOURCE_HINT, availabilityHint, formatCh
 import { safeHref } from '@/lib/url'
 import { localizeComplexbarLink } from '@/lib/complexbar-cities'
 import ImageWithFallback from '@/components/ImageWithFallback'
+import { loadOffline, saveOffline, setOfflineMode, syncOfflineFiles, useOfflineMode, type SavedList } from '@/lib/offlineCache'
 
 interface ProductsTableProps {
   isAdmin: boolean
@@ -46,6 +47,9 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [initialLoading, setInitialLoading] = useState(true)
+  // Когда сохранена копия каталога, которую сейчас показываем вместо свежих данных (нет связи)
+  const [offlineSavedAt, setOfflineSavedAt] = useState<string | null>(null)
+  const offlineMode = useOfflineMode()
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
@@ -266,16 +270,66 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
   }, [searchParams])
 
   const fetchAllProducts = async () => {
-    // Публичным посетителям неопубликованные (в том числе черновики после
-    // импорта из Excel) и архивные товары показывать нельзя.
-    const { data } = await apiClient
-      .from('products')
-      .select('*')
-      .eq('is_archived', false)
-      .order('created_at', { ascending: false })
-    if (data) setProductsMeta(data as Product[])
-    setInitialLoading(false)
+    // Копия на случай, если связи нет или она слабая: на складе или в зале
+    // каталог всё равно должен открываться.
+    const saved = await loadOffline<Product[]>('catalog')
+    const showSaved = (copy: SavedList<Product[]>) => {
+      setProductsMeta(copy.data)
+      setOfflineSavedAt(copy.savedAt)
+      setOfflineMode(true)
+      setInitialLoading(false)
+    }
+    if (saved && !navigator.onLine) {
+      showSaved(saved)
+      return
+    }
+    // Связь есть, но ответа долго нет — показываем копию, пока ждём свежие данные
+    let answered = false
+    const slowTimer = saved ? setTimeout(() => { if (!answered) showSaved(saved) }, 6000) : null
+
+    try {
+      // Публичным посетителям неопубликованные (в том числе черновики после
+      // импорта из Excel) и архивные товары показывать нельзя.
+      const { data, error } = await apiClient
+        .from('products')
+        .select('*')
+        .eq('is_archived', false)
+        .order('created_at', { ascending: false })
+      answered = true
+      if (data) {
+        setProductsMeta(data as Product[])
+        setOfflineSavedAt(null)
+        setOfflineMode(false)
+        saveOffline('catalog', data as Product[]).then(() => syncOfflineFiles(data as Product[]))
+      } else if (saved && error?.message !== 'Authentication required' && error?.message !== 'Forbidden') {
+        showSaved(saved)
+      }
+    } catch {
+      answered = true
+      if (saved) showSaved(saved)
+    } finally {
+      if (slowTimer) clearTimeout(slowTimer)
+      setInitialLoading(false)
+    }
   }
+
+  // Связь вернулась — подтягиваем свежий каталог вместо сохранённой копии
+  useEffect(() => {
+    if (!offlineSavedAt) return
+    const reload = () => fetchAllProducts()
+    window.addEventListener('online', reload)
+    return () => window.removeEventListener('online', reload)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [offlineSavedAt])
+
+  // Ссылка на товар (?p=) без связи: берём его из сохранённого каталога
+  useEffect(() => {
+    const productId = searchParams.get('p')
+    if (!offlineMode || !productId || selectedProduct) return
+    const product = productsMeta.find((p) => p.id === productId)
+    if (product) setSelectedProduct(product)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [offlineMode, productsMeta, searchParams])
 
   // Точные фильтры, поиск с допуском на опечатки/раскладку/транслит и
   // сортировка — на месте, по уже загруженному списку: переключение
@@ -565,6 +619,15 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
           onSelectProduct={viewProduct}
         />
       </div>
+
+      {offlineSavedAt && (
+        <div role="status" className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          <span>
+            Нет связи — показан каталог, сохранённый {new Date(offlineSavedAt).toLocaleString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}. Цены и наличие могли измениться.
+          </span>
+          <button onClick={fetchAllProducts} className="font-medium underline hover:text-amber-700">Обновить</button>
+        </div>
+      )}
       <FilterBar
         products={productsMetaForTab}
         selectedBrand={selectedBrand}

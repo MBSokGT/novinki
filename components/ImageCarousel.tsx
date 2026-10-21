@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Image from 'next/image'
+import OfflineImage from '@/components/OfflineImage'
 import ImageWithFallback from '@/components/ImageWithFallback'
 
 interface ImageCarouselProps {
@@ -45,7 +45,7 @@ export default function ImageCarousel({ images, alt, className, onImageClick, fa
   return (
     <div className={`relative ${className || ''}`}>
       <div className={`absolute inset-x-0 top-0 ${slides.length > 1 ? 'bottom-14' : 'bottom-0'}`}>
-        <Image
+        <OfflineImage
           src={current}
           alt={alt}
           fill
@@ -81,7 +81,7 @@ export default function ImageCarousel({ images, alt, className, onImageClick, fa
                 className={`relative h-11 w-11 shrink-0 overflow-hidden rounded-md border-2 bg-white transition ${thumbIndex === index ? 'border-[#9B1B1B]' : 'border-slate-200 opacity-70 hover:opacity-100'}`}
                 aria-label={`Фото ${thumbIndex + 1}`}
               >
-                <Image src={src} alt="" fill className="object-contain p-0.5" sizes="44px" />
+                <OfflineImage src={src} alt="" fill className="object-contain p-0.5" sizes="44px" />
               </button>
             ))}
           </div>

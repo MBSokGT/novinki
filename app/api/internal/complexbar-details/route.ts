@@ -4,6 +4,7 @@ import { getCurrentUser } from '@/lib/db'
 import { isCheckableLink } from '@/lib/linkCheck'
 import { parseProductFeatures } from '@/lib/complexbarParser'
 import { featuresToFields, mergeTags } from '@/lib/featuresToFields'
+import { describeFromFeatures } from '@/lib/autoDescription'
 
 const MAX_PAGES = 10
 const PAUSE_MS = 400
@@ -56,5 +57,8 @@ export async function POST(request: NextRequest) {
   const tags = pages.reduce((acc, features) => mergeTags(acc, featuresToFields(features).tags || ''), '')
   if (tags) fields.tags = tags
   else delete fields.tags
+  const text = describeFromFeatures(pages)
+  if (text.description) fields.description = text.description
+  if (text.advantages) fields.advantages = text.advantages
   return NextResponse.json({ data: { fields }, error: null }, { headers: { 'Cache-Control': 'no-store' } })
 }

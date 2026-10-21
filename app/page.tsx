@@ -12,6 +12,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 import { apiClient } from '@/lib/api-client'
+import { clearOfflineData } from '@/lib/offlineCache'
 import { useRouter } from 'next/navigation'
 import { useComplexbarCity } from '@/lib/useComplexbarCity'
 
@@ -97,6 +98,7 @@ export default function Home() {
 
   const handleLogout = async () => {
     await apiClient.auth.signOut()
+    await clearOfflineData()
     setUser(null)
     setIsAdmin(false)
     setMenuOpen(false)

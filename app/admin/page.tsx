@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { apiClient } from '@/lib/api-client'
+import { clearOfflineData } from '@/lib/offlineCache'
 import { openFileInNewTab } from '@/lib/openFile'
 import { isTemperatureCategory } from '@/lib/constants'
 import { normalizeLink, safeHref } from '@/lib/url'
@@ -17,6 +18,8 @@ import ExcelImport from '@/components/ExcelImport'
 import ExportCatalogButton from '@/components/ExportCatalogButton'
 import RequestMatchModal from '@/components/RequestMatchModal'
 import BulkImportSeriesModal from '@/components/BulkImportSeriesModal'
+import ArticleListImportModal from '@/components/ArticleListImportModal'
+import { buildDuplicateIndex, findDuplicate } from '@/lib/articles'
 import { showToast } from '@/components/Toast'
 import { findMatchingRequests } from '@/lib/matchRequests'
 import { buildCategoryWordIndex, suggestCategory } from '@/lib/suggestCategory'
@@ -102,6 +105,8 @@ export default function AdminPage() {
   const [showYearDrop, setShowYearDrop] = useState(false)
   const [matchedRequests, setMatchedRequests] = useState<{ productName: string; requests: { id: string; name: string; product: string; article?: string | null }[] } | null>(null)
   const [showBulkImport, setShowBulkImport] = useState(false)
+  const [showArticleImport, setShowArticleImport] = useState(false)
+  const [describeLoading, setDescribeLoading] = useState(false)
   const [highlightArticle, setHighlightArticle] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -256,6 +261,18 @@ export default function AdminPage() {
   }, [highlightArticle])
 
   const categoryWordIndex = useMemo(() => buildCategoryWordIndex(products), [products])
+  // Такой артикул или ссылка уже есть в базе (включая архив и варианты серий)
+  const duplicateIndex = useMemo(() => buildDuplicateIndex(products), [products])
+  const duplicate = useMemo(
+    () => findDuplicate(duplicateIndex, { article: form.article_number, link: form.website_link }, editId),
+    [duplicateIndex, form.article_number, form.website_link, editId]
+  )
+  const openDuplicate = () => {
+    const product = duplicate && products.find((p) => p.id === duplicate.id)
+    if (!product) return
+    if (form.name.trim() && !confirm('Открыть найденную карточку? Введённое в форме сейчас будет заменено.')) return
+    handleEdit(product)
+  }
   const suggestedCategory = useMemo(
     () => (form.category ? null : suggestCategory(form.name, categoryWordIndex)),
     [form.name, form.category, categoryWordIndex]
@@ -356,6 +373,12 @@ export default function AdminPage() {
       setExistingImages([items[0].image_url])
     }
     showToast(`Добавлено вариантов: ${items.length}`, 'success')
+    const known = items
+      .map((item) => ({ item, hit: findDuplicate(duplicateIndex, { article: item.article_number }, editId) }))
+      .filter((x) => x.hit)
+    if (known.length > 0) {
+      showToast(`Уже есть в других карточках: ${known.slice(0, 3).map((x) => `${x.item.article_number} («${x.hit!.name}»)`).join(', ')}${known.length > 3 ? ` и ещё ${known.length - 3}` : ''}`, 'error')
+    }
     const links = items.map((item) => item.website_link).filter(Boolean)
     if (links.length > 0) autofillFromComplexbar(links)
   }
@@ -375,7 +398,7 @@ export default function AdminPage() {
       })
       const found: Array<{ name: string; brand: string; article_number: string; image_url: string; website_link: string }> = search.data?.products || []
       const norm = (a: string) => a.replace(/^0+/, '')
-      const item = found.find((f) => norm(f.article_number) === norm(article)) || (found.length === 1 ? found[0] : null)
+      const item = found.find((f) => norm(f.article_number) === norm(article)) || (found.length === 1 && !found[0].article_number ? found[0] : null)
       if (!item) {
         showToast(found.length > 1 ? 'По артикулу нашлось несколько товаров — уточните или используйте «Загрузить по ссылке»' : 'Товар с таким артикулом на complexbar.ru не найден', 'error')
         return
@@ -406,7 +429,7 @@ export default function AdminPage() {
 
   // Характеристики со страниц товаров complexbar.ru — в пустые поля формы;
   // теги дописываются к уже введённым. Заполненное админом не перезаписываем.
-  const autofillFromComplexbar = async (urls: string[]) => {
+  const autofillFromComplexbar = async (urls: string[], options: { overwriteText?: boolean; announceEmpty?: boolean } = {}) => {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/internal/complexbar-details`, {
         method: 'POST',
@@ -414,7 +437,10 @@ export default function AdminPage() {
         body: JSON.stringify({ urls }),
       })
       const fields: FieldsFromFeatures | undefined = (await res.json()).data?.fields
-      if (!fields) return
+      if (!fields) {
+        if (options.announceEmpty) showToast('Не удалось получить характеристики с complexbar.ru', 'error')
+        return
+      }
       const current = formSnapshotRef.current
       const patch: Partial<typeof current> = {}
       const filled: string[] = []
@@ -422,6 +448,8 @@ export default function AdminPage() {
       if (fields.is_microwave_safe && !current.is_microwave_safe) { patch.is_microwave_safe = true; filled.push('СВЧ') }
       if (fields.temp_min !== undefined && !current.temp_min) { patch.temp_min = String(fields.temp_min); filled.push('температура от') }
       if (fields.temp_max !== undefined && !current.temp_max) { patch.temp_max = String(fields.temp_max); filled.push('температура до') }
+      if (fields.description && (options.overwriteText || !current.description.trim())) { patch.description = fields.description; filled.push('описание') }
+      if (fields.advantages && (options.overwriteText || !current.advantages.trim())) { patch.advantages = fields.advantages; filled.push('преимущества') }
       if (fields.attention_points && !current.attention_points.trim()) { patch.attention_points = fields.attention_points; filled.push('на что обратить внимание') }
       if (fields.tags) {
         const merged = mergeTags(current.tags, fields.tags)
@@ -429,9 +457,25 @@ export default function AdminPage() {
       }
       setForm((prev) => ({ ...prev, ...patch }))
       if (filled.length > 0) showToast(`Из характеристик complexbar.ru заполнено: ${filled.join(', ')}`, 'success')
+      else if (options.announceEmpty) showToast('На странице товара нет характеристик для описания', 'error')
     } catch {
+      if (options.announceEmpty) showToast('Не удалось связаться с complexbar.ru', 'error')
       // автозаполнение — приятный бонус, без него форма работает как обычно
     }
+  }
+
+  // «Составить по характеристикам»: заново пишет описание и преимущества по
+  // страницам товара и его вариантов, заменяя то, что в форме сейчас.
+  const describeFromSite = async () => {
+    const urls = [form.website_link, ...form.variants.map((v) => v.website_link)].map((u) => (u || '').trim()).filter(Boolean)
+    if (urls.length === 0) {
+      showToast('Сначала укажите ссылку на товар с complexbar.ru или артикул и нажмите «Подтянуть»', 'error')
+      return
+    }
+    if ((form.description.trim() || form.advantages.trim()) && !confirm('Заменить текущие описание и преимущества текстом по характеристикам сайта?')) return
+    setDescribeLoading(true)
+    await autofillFromComplexbar(urls, { overwriteText: true, announceEmpty: true })
+    setDescribeLoading(false)
   }
 
   const updateVariantName = (index: number, name: string) => {
@@ -454,6 +498,7 @@ export default function AdminPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (submitLoading) return
+    if (duplicate && !confirm(`Такой товар уже есть: «${duplicate.name}»${duplicate.isArchived ? ' (в архиве)' : ''}.\nВсё равно сохранить эту карточку?`)) return
     setSubmitLoading(true)
 
     try {
@@ -839,6 +884,7 @@ export default function AdminPage() {
 
   const handleLogout = async () => {
     await apiClient.auth.signOut()
+    await clearOfflineData()
     router.push('/login')
   }
 
@@ -872,6 +918,13 @@ export default function AdminPage() {
             >
               <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 01-5.656-5.656l1.5-1.5M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 015.656 5.656l-1.5 1.5" /></svg>
               Загрузить по ссылке
+            </button>
+            <button
+              onClick={() => setShowArticleImport(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 text-gray-200 rounded-lg hover:bg-white/20 transition"
+            >
+              <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+              Список артикулов
             </button>
             <ExportCatalogButton variant="toolbar" />
             <Link href="/admin/trash" className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#9B1B1B] text-white rounded-lg hover:bg-[#7A1515] transition">
@@ -1000,6 +1053,13 @@ export default function AdminPage() {
                     Подтянуть
                   </button>
                 </div>
+                {duplicate && (
+                  <p className="mt-1.5 text-xs text-amber-700">
+                    Такой товар уже есть: «{duplicate.name}»{duplicate.isArchived ? ' (в архиве)' : ''}
+                    {duplicate.via === 'variant' ? ' — как вариант серии' : duplicate.via === 'link' ? ' — по той же ссылке' : ''}.{' '}
+                    <button type="button" onClick={openDuplicate} className="font-medium underline hover:text-amber-900">Открыть</button>
+                  </p>
+                )}
               </div>
             </div>
 
@@ -1145,7 +1205,19 @@ export default function AdminPage() {
 
             {/* Текстовые поля */}
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Описание <span className="text-slate-400 font-normal">— объём, упаковка, вкус, применение</span></label>
+              <div className="mb-1 flex items-center justify-between gap-3">
+                <label className="block text-xs font-medium text-slate-500">Описание <span className="text-slate-400 font-normal">— объём, упаковка, вкус, применение</span></label>
+                <button
+                  type="button"
+                  onClick={describeFromSite}
+                  disabled={describeLoading}
+                  className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-[#9B1B1B] hover:underline disabled:opacity-50"
+                  title="Описание и преимущества по характеристикам со страницы товара на complexbar.ru — потом можно поправить"
+                >
+                  {describeLoading && <span className="h-3 w-3 animate-spin rounded-full border-2 border-red-200 border-t-[#9B1B1B]" />}
+                  Составить по характеристикам сайта
+                </button>
+              </div>
               <textarea placeholder="Например: Сироп 1 л, пластик. Спелая клубника с ягодной кислинкой + сливочно-ванильные ноты пломбира. Подходит для горячих и холодных напитков." value={form.description} onChange={(e) => setForm({...form, description: e.target.value})} onInput={autoResize} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B1B1B] transition" style={{resize: 'none', overflow: 'hidden', minHeight: '80px'}} />
             </div>
             <div>
@@ -1767,6 +1839,16 @@ export default function AdminPage() {
             setHistoryProduct(null)
             if (editId === restored.id) handleEdit(restored)
           }}
+        />
+      )}
+      {showArticleImport && (
+        <ArticleListImportModal
+          existingProducts={products}
+          categoryWordIndex={categoryWordIndex}
+          years={years}
+          onClose={() => setShowArticleImport(false)}
+          onOpenProduct={(product) => { setShowArticleImport(false); handleEdit(product) }}
+          onCreated={fetchProducts}
         />
       )}
       {showBulkImport && (
