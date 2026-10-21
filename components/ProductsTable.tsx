@@ -706,8 +706,8 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
             <div
               key={product.id}
               onClick={() => viewProduct(product)}
-              className="relative flex flex-col bg-white border border-slate-200 rounded-lg overflow-hidden hover:border-slate-300 hover:shadow-md transition-all duration-200 group cursor-pointer"
-              style={{ animationDelay: `${idx * 40}ms` }}
+              className="card-in relative flex flex-col bg-white border border-slate-200 rounded-lg overflow-hidden hover:border-slate-300 hover:shadow-md transition-all duration-200 group cursor-pointer"
+              style={{ '--i': idx } as React.CSSProperties}
             >
               <div className="relative h-48 bg-white overflow-hidden border-b border-slate-100">
                 <ImageWithFallback src={product.image_url} alt={product.name} label={product.brand || product.name} className="object-contain p-3 group-hover:scale-[1.03] transition-transform duration-300" loading="lazy" />

@@ -77,7 +77,7 @@ export default function SelectionBar({ products }: { products: Product[] }) {
 
   return (
     <>
-      <div className="fixed left-1/2 z-40 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] sm:bottom-4 sm:w-auto sm:max-w-none">
+      <div className="rise-in fixed left-1/2 z-40 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] sm:bottom-4 sm:w-auto sm:max-w-none">
         <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white py-2 pl-2 pr-2 shadow-xl">
           <div className="flex -space-x-2">
             {items.slice(0, 3).map((p) => (
