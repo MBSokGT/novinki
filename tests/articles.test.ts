@@ -61,3 +61,11 @@ describe('описание по характеристикам', () => {
     expect(describeFromFeatures([{ Артикул: '1' }])).toEqual({ description: '', advantages: '' })
   })
 })
+
+describe('названия для листовки', () => {
+  it('убирает размеры с сайта целиком, в том числе «L=230,B=89мм»', async () => {
+    const { cleanProductName } = await import('@/lib/flyerPdf')
+    expect(cleanProductName('Сквизер «Пробар Премиум» сталь нерж. ,L=230,B=89мм серебрист.')).toBe('Сквизер «Пробар Премиум» сталь нерж. серебрист.')
+    expect(cleanProductName('Питчер «Пробар Премиум» сталь нерж. 0,6л ,H=119,L=128,B=87мм серебрист.')).toBe('Питчер «Пробар Премиум» сталь нерж. 0,6л серебрист.')
+  })
+})

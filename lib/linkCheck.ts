@@ -59,10 +59,30 @@ function parseVariants(raw: string | null): ProductVariant[] {
   }
 }
 
-function applyToVariant(variant: ProductVariant, result: LinkCheckResult, checkedAt: string): ProductVariant {
+// Цена изменилась по сравнению с сохранённой (копейки и округление не считаем)
+export function priceChanged(oldPrice: number | null | undefined, newPrice: number | null | undefined): oldPrice is number {
+  return typeof oldPrice === 'number' && typeof newPrice === 'number' && oldPrice > 0 && newPrice > 0 && Math.abs(oldPrice - newPrice) >= 0.01
+}
+
+interface PriceChangeLog {
+  article: string | null
+  oldPrice: number
+  newPrice: number
+  currency: string | null
+}
+
+function applyToVariant(variant: ProductVariant, result: LinkCheckResult, checkedAt: string, changes: PriceChangeLog[] = []): ProductVariant {
   if (result.broken) return { ...variant, link_broken: true }
+  const newPrice = result.price?.price ?? null
+  const priceMemo: Partial<ProductVariant> = {}
+  if (priceChanged(variant.price, newPrice)) {
+    priceMemo.price_prev = variant.price
+    priceMemo.price_changed_at = checkedAt
+    changes.push({ article: variant.article_number || null, oldPrice: variant.price as number, newPrice: newPrice as number, currency: result.price?.currency ?? null })
+  }
   return {
     ...variant,
+    ...priceMemo,
     checked_at: checkedAt,
     link_broken: false,
     availability: result.status?.availability ?? null,
@@ -119,15 +139,16 @@ export async function checkAllLinks({ force = false } = {}) {
       // Проверка идёт минутами — за это время админ мог отредактировать карточку.
       // Перечитываем её и применяем результаты к свежей версии, а не к снимку.
       const fresh = await db
-        .prepare('SELECT website_link, variants FROM products WHERE id = ?')
+        .prepare('SELECT name, article_number, site_price, website_link, variants FROM products WHERE id = ?')
         .bind(row.id)
-        .first<{ website_link: string | null; variants: string | null }>()
+        .first<{ name: string; article_number: string | null; site_price: number | null; website_link: string | null; variants: string | null }>()
       if (!fresh) continue
 
       const checkedAt = new Date().toISOString()
       const assignments: string[] = ['link_checked_at = ?']
       const values: unknown[] = [checkedAt]
 
+      const priceChanges: PriceChangeLog[] = []
       const mainResult = isCheckableLink(fresh.website_link) ? cache.get(fresh.website_link!) : undefined
       if (mainResult) {
         const ok = mainResult.broken ? null : mainResult
@@ -140,19 +161,30 @@ export async function checkAllLinks({ force = false } = {}) {
           ok?.price?.currency ?? null,
           checkedAt
         )
+        if (!mainResult.broken && priceChanged(fresh.site_price, mainResult.price?.price)) {
+          assignments.push('price_prev = ?', 'price_changed_at = ?')
+          values.push(fresh.site_price, checkedAt)
+          priceChanges.push({ article: fresh.article_number || null, oldPrice: fresh.site_price as number, newPrice: mainResult.price!.price, currency: mainResult.price!.currency ?? null })
+        }
       }
 
       const freshVariants = parseVariants(fresh.variants)
       if (freshVariants.length > 0) {
         const updated = freshVariants.map((variant) => {
           const result = isCheckableLink(variant.website_link) ? cache.get(variant.website_link) : undefined
-          return result ? applyToVariant(variant, result, checkedAt) : variant
+          return result ? applyToVariant(variant, result, checkedAt, priceChanges) : variant
         })
         assignments.push('variants = ?')
         values.push(JSON.stringify(updated))
       }
 
       await db.prepare(`UPDATE products SET ${assignments.join(', ')} WHERE id = ?`).bind(...values, row.id).run()
+      for (const change of priceChanges) {
+        await db
+          .prepare('INSERT INTO price_changes (id, product_id, product_name, article, old_price, new_price, currency, changed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+          .bind(crypto.randomUUID().replace(/-/g, ''), row.id, fresh.name, change.article, change.oldPrice, change.newPrice, change.currency, checkedAt)
+          .run()
+      }
     }
 
     console.log(
