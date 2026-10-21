@@ -9,8 +9,9 @@ import type { Product } from '@/types/product'
 // загрузке — со временем оно не разрастается: фото товаров, которых уже нет в
 // каталоге, и старые файлы приложения удаляются при синхронизации.
 //
-// Копия каталога — это данные, видимые только после входа, поэтому при выходе
-// из аккаунта хранилище очищается (clearOfflineData).
+// Каталог на сайте открыт без входа, так что копия — те же данные, что видит
+// любой посетитель. При выходе из аккаунта хранилище всё равно очищается
+// (clearOfflineData) — на случай, если часть данных когда-нибудь закроют.
 
 export const OFFLINE_CACHE = 'novinki-offline-v1'
 
@@ -22,6 +23,10 @@ export interface SavedList<T> {
   data: T
   savedAt: string
 }
+
+// Меняется при выходе из аккаунта: загрузки, начатые до выхода, не должны
+// дописать в хранилище ничего после очистки.
+let epoch = 0
 
 const supported = () => typeof window !== 'undefined' && 'caches' in window
 
@@ -36,8 +41,10 @@ export function optimizedImageUrl(src: string, width = IMAGE_WIDTH): string {
 // Копия списка (каталога или вендоров) под своим именем
 export async function saveOffline<T>(name: string, data: T): Promise<void> {
   if (!supported()) return
+  const startedAt = epoch
   try {
     const cache = await caches.open(OFFLINE_CACHE)
+    if (startedAt !== epoch) return
     const body: SavedList<T> = { data, savedAt: new Date().toISOString() }
     await cache.put(absolute(`${BASE_PATH}/__offline/${name}.json`), new Response(JSON.stringify(body), { headers: { 'Content-Type': 'application/json' } }))
   } catch {
@@ -59,6 +66,7 @@ export async function loadOffline<T>(name: string): Promise<SavedList<T> | null>
 }
 
 export async function clearOfflineData(): Promise<void> {
+  epoch++
   if (!supported()) return
   try {
     await caches.delete(OFFLINE_CACHE)
@@ -91,8 +99,11 @@ export async function syncOfflineFiles(products: Product[]): Promise<void> {
   const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection
   if (connection?.saveData) return
 
+  const startedAt = epoch
+  const stale = () => startedAt !== epoch
   try {
     const cache = await caches.open(OFFLINE_CACHE)
+    if (stale()) return
     const known = new Set((await cache.keys()).map((request) => request.url))
 
     // 1. Файлы приложения, которые страница уже загрузила (скрипты, стили, шрифты)
@@ -109,7 +120,7 @@ export async function syncOfflineFiles(products: Product[]): Promise<void> {
         4,
         async (url) => {
           const response = await fetch(url).catch(() => null)
-          if (response?.ok) await putResponse(cache, url, response)
+          if (response?.ok && !stale()) await putResponse(cache, url, response)
         }
       )
     }
@@ -117,7 +128,7 @@ export async function syncOfflineFiles(products: Product[]): Promise<void> {
     // 2. Сама страница — каждый раз заново: после обновления сайта в ней новые адреса файлов
     const home = absolute(BASE_PATH || '/')
     const page = await fetch(home, { credentials: 'include' }).catch(() => null)
-    if (page?.ok) await putResponse(cache, home, page)
+    if (page?.ok && !stale()) await putResponse(cache, home, page)
 
     // 3. Фото карточек — по одному главному фото на товар
     const sources = [...new Set(products.map((p) => p.images?.[0] || p.image_url).filter((s): s is string => Boolean(s)))].slice(0, MAX_IMAGES)
@@ -138,7 +149,7 @@ export async function syncOfflineFiles(products: Product[]): Promise<void> {
       3,
       async (url) => {
         const response = await fetch(url).catch(() => null)
-        if (response?.ok) await cache.put(url, response)
+        if (response?.ok && !stale()) await cache.put(url, response)
       }
     )
   } catch {

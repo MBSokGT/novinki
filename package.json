@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "eslint",
     "seed:admin": "tsx scripts/seed-admin.ts",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:e2e": "npm run build && e2e run"
   },
   "dependencies": {
     "@pdf-lib/fontkit": "^1.1.1",
@@ -25,11 +26,13 @@
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
+    "@e2e-dev/web": "^0.15.2",
     "@tailwindcss/postcss": "^4",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "e2e": "^0.21.2",
     "eslint": "^9",
     "eslint-config-next": "^16.3.6",
     "tailwindcss": "^4",
