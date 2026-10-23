@@ -9,7 +9,6 @@ import { normalizeLink, safeHref } from '@/lib/url'
 import { Product, ProductVariant } from '@/types/product'
 import { toTrashRecord } from '@/lib/trashPayload'
 import LinkAttentionPanel from '@/components/LinkAttentionPanel'
-import PriceChangesPanel from '@/components/PriceChangesPanel'
 import ProductHistoryModal from '@/components/ProductHistoryModal'
 import { mergeTags, type FieldsFromFeatures } from '@/lib/featuresToFields'
 import Link from 'next/link'
@@ -20,8 +19,6 @@ import ExportCatalogButton from '@/components/ExportCatalogButton'
 import RequestMatchModal from '@/components/RequestMatchModal'
 import BulkImportSeriesModal from '@/components/BulkImportSeriesModal'
 import ArticleListImportModal from '@/components/ArticleListImportModal'
-import FlyerDialog from '@/components/FlyerDialog'
-import { productToFlyerItem } from '@/lib/flyerPdf'
 import { buildDuplicateIndex, findDuplicate } from '@/lib/articles'
 import { showToast } from '@/components/Toast'
 import { findMatchingRequests } from '@/lib/matchRequests'
@@ -109,7 +106,6 @@ export default function AdminPage() {
   const [matchedRequests, setMatchedRequests] = useState<{ productName: string; requests: { id: string; name: string; product: string; article?: string | null }[] } | null>(null)
   const [showBulkImport, setShowBulkImport] = useState(false)
   const [showArticleImport, setShowArticleImport] = useState(false)
-  const [showFlyer, setShowFlyer] = useState(false)
   const [describeLoading, setDescribeLoading] = useState(false)
   const [highlightArticle, setHighlightArticle] = useState(false)
   const router = useRouter()
@@ -996,7 +992,6 @@ export default function AdminPage() {
         </div>
 
         <LinkAttentionPanel products={products} onEdit={handleEdit} onChecked={fetchProducts} />
-        <PriceChangesPanel products={products} onEdit={handleEdit} />
 
         <div className="mb-8 rounded-lg border border-slate-200 bg-white p-4 sm:p-6 lg:p-8">
           <div className="flex items-center gap-3 mb-6">
@@ -1572,14 +1567,6 @@ export default function AdminPage() {
                         {categories.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
                       </select>
                       <button
-                        onClick={() => setShowFlyer(true)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#9B1B1B] bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition"
-                        title="Листовка-анонс в PDF из выбранных товаров"
-                      >
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
-                        Анонс PDF
-                      </button>
-                      <button
                         onClick={handleBulkDuplicate}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition"
                       >
@@ -1856,18 +1843,6 @@ export default function AdminPage() {
           }}
         />
       )}
-      {showFlyer && (() => {
-        const chosen = products.filter((p) => selectedIds.has(p.id))
-        const brands = [...new Set(chosen.map((p) => p.brand).filter(Boolean))]
-        return (
-          <FlyerDialog
-            mode="announce"
-            items={chosen.map(productToFlyerItem)}
-            defaultTitle={brands.length === 1 ? `Новинки ${brands[0]} в «Комплекс-Бар»` : 'Новинки «Комплекс-Бар»'}
-            onClose={() => setShowFlyer(false)}
-          />
-        )
-      })()}
       {showArticleImport && (
         <ArticleListImportModal
           existingProducts={products}

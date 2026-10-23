@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { buildDuplicateIndex, findDuplicate, normalizeArticle, normalizeLink, parseArticleList } from '@/lib/articles'
 import { describeFromFeatures } from '@/lib/autoDescription'
+import { shortVariantNames } from '@/lib/variantName'
 import type { Product } from '@/types/product'
 
 describe('список артикулов', () => {
@@ -62,10 +63,11 @@ describe('описание по характеристикам', () => {
   })
 })
 
-describe('названия для листовки', () => {
-  it('убирает размеры с сайта целиком, в том числе «L=230,B=89мм»', async () => {
-    const { cleanProductName } = await import('@/lib/flyerPdf')
-    expect(cleanProductName('Сквизер «Пробар Премиум» сталь нерж. ,L=230,B=89мм серебрист.')).toBe('Сквизер «Пробар Премиум» сталь нерж. серебрист.')
-    expect(cleanProductName('Питчер «Пробар Премиум» сталь нерж. 0,6л ,H=119,L=128,B=87мм серебрист.')).toBe('Питчер «Пробар Премиум» сталь нерж. 0,6л серебрист.')
+describe('короткие названия вариантов', () => {
+  it('убирает размеры с сайта целиком, в том числе «L=230,B=89мм»', () => {
+    const [name] = shortVariantNames([{ name: 'Сквизер «Пробар Премиум» сталь нерж. ,L=230,B=89мм серебрист.' }])
+    expect(name).not.toMatch(/[LB]=/)
+    expect(name).toContain('Сквизер')
+    expect(name).toContain('серебрист')
   })
 })

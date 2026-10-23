@@ -45,7 +45,6 @@ const FIELD_LABELS: Record<string, string> = {
 const NOT_RESTORED = new Set([
   'id', 'created_at', 'created_by', 'updated_at', 'updated_by', 'rating',
   'availability', 'availability_label', 'link_broken', 'link_checked_at', 'site_price', 'site_currency',
-  'price_prev', 'price_changed_at',
 ])
 
 function describeValue(field: string, value: unknown): string {

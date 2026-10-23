@@ -75,7 +75,7 @@ const photo = (i) => `/api/uploads/products/e2e-${i % photos.length}.png`
 const now = Date.now()
 const iso = (ms) => new Date(ms).toISOString()
 const products = [
-  { id: 'e2e-1', name: 'Стрейнер «Пробар Премиум Оникс» (лапа) сталь нерж. ,L=18,4,B=19,8см черный', brand: 'Probar Premium', article: '02030586', category: 'Барный инвентарь', description: 'СЕКРЕТНОЕ_ОПИСАНИЕ_ДЛЯ_СОТРУДНИКОВ нержавеющая сталь, цвет — чёрный.', price: 1249, prev: 1419, changed: iso(now - 86400000) },
+  { id: 'e2e-1', name: 'Стрейнер «Пробар Премиум Оникс» (лапа) сталь нерж. ,L=18,4,B=19,8см черный', brand: 'Probar Premium', article: '02030586', category: 'Барный инвентарь', description: 'СЕКРЕТНОЕ_ОПИСАНИЕ_ДЛЯ_СОТРУДНИКОВ нержавеющая сталь, цвет — чёрный.', price: 1249 },
   { id: 'e2e-2', name: 'Совок для льда «Пробар Премиум» сталь нерж. 250мл серебрист.', brand: 'Probar Premium', article: '02110342', category: 'Барный инвентарь', description: 'Совок для льда.', price: 1425 },
   { id: 'e2e-3', name: 'Питчер «Пробар Премиум» сталь нерж. 0,6л серебрист.', brand: 'Probar Premium', article: '03170876', category: 'Барный инвентарь', description: 'Питчер.', price: 1464 },
   {
@@ -91,15 +91,21 @@ const products = [
 const database = new Database(dbPath)
 const insert = database.prepare(
   `INSERT INTO products (id, name, brand, article_number, description, advantages, attention_points, image_url, images, is_archived, category, year, tags, variants,
-     availability, availability_label, site_price, site_currency, price_prev, price_changed_at, created_at, updated_at)
-   VALUES (?, ?, ?, ?, ?, '', '', ?, ?, ?, ?, '2026', '', ?, ?, ?, ?, 'RUB', ?, ?, ?, ?)`
+     availability, availability_label, site_price, site_currency, created_at, updated_at)
+   VALUES (?, ?, ?, ?, ?, '', '', ?, ?, ?, ?, '2026', '', ?, ?, ?, ?, 'RUB', ?, ?)`
 )
 products.forEach((p, i) => {
   const created = iso(now - i * 60000)
   insert.run(
     p.id, p.name, p.brand, p.article, p.description, photo(i), JSON.stringify([photo(i)]), p.archived || 0, p.category,
-    JSON.stringify(p.variants || []), p.price ? 'in_stock' : null, p.price ? 'В наличии' : null, p.price ?? null, p.prev ?? null, p.changed ?? null, created, created
+    JSON.stringify(p.variants || []), p.price ? 'in_stock' : null, p.price ? 'В наличии' : null, p.price ?? null, created, created
   )
+})
+// Вендоры: добавлялись в таком порядке — от старого к новому (на сайте должен быть новый сверху)
+const addVendor = database.prepare('INSERT INTO vendors (id, name, product, created_at, updated_at) VALUES (?, ?, ?, ?, ?)')
+;['Alpha', 'Bravo', 'Charlie'].forEach((name, i) => {
+  const at = iso(now - (3 - i) * 3600000)
+  addVendor.run(`e2e-v${i}`, `Вендор ${name}`, 'Тестовый вендор', at, at)
 })
 database.close()
 

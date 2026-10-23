@@ -18,12 +18,10 @@ import { fuzzyMatches } from '@/lib/fuzzySearch'
 import { productSearchFields } from '@/lib/productSearch'
 import { shortVariantNames } from '@/lib/variantName'
 import { isNewSince, useLastVisit } from '@/lib/useLastVisit'
-import AvailabilityBadge, { AVAILABILITY_SOURCE_HINT, availabilityHint, formatCheckedAt, formatPrice, priceDropHint, productAvailabilitySummary, productPriceDrop, productPriceSummary, variantsCheckedAt } from '@/components/AvailabilityBadge'
+import AvailabilityBadge, { AVAILABILITY_SOURCE_HINT, availabilityHint, formatCheckedAt, formatPrice, productAvailabilitySummary, productPriceSummary, variantsCheckedAt } from '@/components/AvailabilityBadge'
 import { safeHref } from '@/lib/url'
 import { localizeComplexbarLink } from '@/lib/complexbar-cities'
 import ImageWithFallback from '@/components/ImageWithFallback'
-import SelectionBar from '@/components/SelectionBar'
-import { MAX_SELECTION, useSelection } from '@/lib/selectionStore'
 import { loadOffline, saveOffline, setOfflineMode, syncOfflineFiles, useOfflineMode, type SavedList } from '@/lib/offlineCache'
 
 interface ProductsTableProps {
@@ -52,12 +50,6 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
   // Когда сохранена копия каталога, которую сейчас показываем вместо свежих данных (нет связи)
   const [offlineSavedAt, setOfflineSavedAt] = useState<string | null>(null)
   const offlineMode = useOfflineMode()
-  const selection = useSelection()
-  const toggleSelection = (product: Product) => {
-    const result = selection.toggle(product.id)
-    // О добавлении и удалении говорит сама панель подборки внизу — тосты не нужны
-    if (result === 'full') showToast(`В подборке уже ${MAX_SELECTION} товаров — это максимум`, 'error')
-  }
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
@@ -715,15 +707,6 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
                   <span className="absolute left-2 top-2 rounded-md bg-[#9B1B1B] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm">Новое</span>
                 )}
                 <button
-                  onClick={(e) => { e.stopPropagation(); toggleSelection(product); }}
-                  className={`absolute top-2 right-11 p-1.5 rounded-lg transition group-hover:opacity-100 [@media(hover:none)]:opacity-100 ${selection.has(product.id) ? 'opacity-100 bg-[#9B1B1B] text-white' : 'opacity-0 bg-white/95 text-slate-500 hover:text-slate-800 shadow-sm'}`}
-                  title={selection.has(product.id) ? 'Убрать из подборки для клиента' : 'В подборку для клиента'}
-                  aria-label={selection.has(product.id) ? 'Убрать из подборки для клиента' : 'Добавить в подборку для клиента'}
-                  aria-pressed={selection.has(product.id)}
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={selection.has(product.id) ? 'M5 13l4 4L19 7' : 'M12 4v16m8-8H4'} /></svg>
-                </button>
-                <button
                   onClick={(e) => { e.stopPropagation(); toggleCompare(product); }}
                   className={`absolute top-2 right-2 p-1.5 rounded-lg transition opacity-0 group-hover:opacity-100 ${compareProducts.find(p => p.id === product.id) ? 'opacity-100 bg-[#9B1B1B] text-white' : 'bg-white/95 text-slate-500 hover:text-slate-800 shadow-sm'}`}
                   title="Сравнить"
@@ -747,15 +730,6 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
                   {(() => {
                     const price = productPriceSummary(product)
                     return price && <span className="text-[11px] font-semibold text-slate-700" title="Цена на complexbar.ru">{price}</span>
-                  })()}
-                  {(() => {
-                    const drop = productPriceDrop(product)
-                    return drop && (
-                      <span className="inline-flex items-center gap-0.5 rounded bg-emerald-50 px-1.5 py-px text-[10px] font-semibold text-emerald-700" title={`Подешевело за неделю. ${priceDropHint(drop)}`}>
-                        <svg className="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>
-                        подешевело на {drop.percent}%
-                      </span>
-                    )
                   })()}
                 </div>
                 <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed mb-3">{product.description}</p>
@@ -964,13 +938,6 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
           <div onClick={(e) => e.stopPropagation()} className="relative bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 cursor-default">
             <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5">
               <button
-                onClick={() => toggleSelection(selectedProduct)}
-                className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition shadow-md ${selection.has(selectedProduct.id) ? 'bg-[#9B1B1B] text-white' : 'bg-white text-slate-700 hover:bg-slate-100'}`}
-                aria-pressed={selection.has(selectedProduct.id)}
-              >
-                {selection.has(selectedProduct.id) ? '✓ В подборке' : '+ В подборку'}
-              </button>
-              <button
                 onClick={() => shareOrCopy(productLink(selectedProduct), selectedProduct.name)}
                 className="bg-white rounded-lg p-1.5 text-slate-700 hover:bg-slate-100 transition shadow-md"
                 title="Поделиться / скопировать ссылку на товар"
@@ -1078,15 +1045,6 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
                           {formatPrice(selectedProduct.site_price, selectedProduct.site_currency) && (
                             <span className="text-sm font-semibold text-slate-800">{formatPrice(selectedProduct.site_price, selectedProduct.site_currency)}</span>
                           )}
-                          {(() => {
-                            const drop = productPriceDrop(selectedProduct)
-                            return drop && (
-                              <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700" title={priceDropHint(drop)}>
-                                <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>
-                                подешевело на {drop.percent}% за неделю
-                              </span>
-                            )
-                          })()}
                           {formatCheckedAt(selectedProduct.availability_checked_at) && (
                             <span className="text-[11px] text-slate-400">по состоянию на {formatCheckedAt(selectedProduct.availability_checked_at)}</span>
                           )}
@@ -1204,7 +1162,6 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
         onRemove={(id) => setCompareProducts(prev => prev.filter(p => p.id !== id))}
         onClear={() => setCompareProducts([])}
       />
-      <SelectionBar products={productsMeta} />
     </div>
   )
 }

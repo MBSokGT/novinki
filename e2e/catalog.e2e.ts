@@ -22,12 +22,6 @@ describe('каталог', () => {
     await expect(screen.getByRole('heading', 'Питчер «Пробар Премиум»', { exact: false })).toBeHidden()
   })
 
-  test('значок «подешевело» только у товара, который подешевел', { session: 'admin' }, async ({ app, screen }) => {
-    await app.open('/')
-    await expect(screen.getByText('подешевело на 12%')).toBeVisible()
-    await expect(screen.getByText('подешевело', { exact: false })).toHaveCount(1)
-  })
-
   test('окно товара: подробности и закрытие по Esc', { session: 'admin' }, async ({ app, screen, browser }) => {
     await app.open('/')
     await screen.getByRole('heading', 'Бокал для вина Pasabahce 450 мл').tap()

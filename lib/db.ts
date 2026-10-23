@@ -136,8 +136,6 @@ const PRODUCT_COLUMNS = [
   'site_price',
   'site_currency',
   'availability_checked_at',
-  'price_prev',
-  'price_changed_at',
   'rating',
   'price',
   'created_by',
@@ -250,13 +248,6 @@ const COLLECTIONS: Record<string, CollectionConfig> = {
   product_history: {
     table: 'product_history',
     columns: ['id', 'product_id', 'changed_by', 'changed_at', 'changed_fields', 'snapshot'],
-    requiresAdmin: true,
-    readOnly: true,
-  },
-  // Журнал изменений цены на complexbar.ru; пишет проверка раз в сутки (lib/linkCheck.ts)
-  price_changes: {
-    table: 'price_changes',
-    columns: ['id', 'product_id', 'product_name', 'article', 'old_price', 'new_price', 'currency', 'changed_at'],
     requiresAdmin: true,
     readOnly: true,
   },
@@ -873,7 +864,7 @@ function withProductAttribution(operation: DataOperation, user: SessionUser | nu
 const HISTORY_IGNORED_FIELDS = new Set([
   'id', 'created_at', 'created_by', 'updated_at', 'updated_by', 'rating',
   'availability', 'availability_label', 'link_broken', 'link_checked_at', 'site_price', 'site_currency',
-  'availability_checked_at', 'price_prev', 'price_changed_at',
+  'availability_checked_at',
 ])
 const HISTORY_KEEP_VERSIONS = 30
 

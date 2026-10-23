@@ -88,7 +88,7 @@ export default function VendorsPage() {
   }
 
   const fetchVendors = async () => {
-    const { data } = await apiClient.from('vendors').select('*').order('name', { ascending: true })
+    const { data } = await apiClient.from('vendors').select('*').order('created_at', { ascending: false })
     if (data) setVendors(data as Vendor[])
   }
 

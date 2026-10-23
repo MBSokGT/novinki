@@ -39,7 +39,7 @@ export default function VendorsList({ isAdmin }: VendorsListProps) {
     const fetchVendors = async () => {
       // Без связи показываем сохранённую копию списка вендоров
       try {
-        const { data } = await apiClient.from('vendors').select('*').order('name', { ascending: true })
+        const { data } = await apiClient.from('vendors').select('*').order('created_at', { ascending: false })
         if (data) {
           if (!cancelled) setVendors(data as Vendor[])
           saveOffline('vendors', data as Vendor[])

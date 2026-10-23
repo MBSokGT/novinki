@@ -22,9 +22,4 @@ describe('админка', () => {
     await screen.getByRole('textbox').last().fill('Probar Premium:\n2030586, 2030587; 2110341\n2030587 ещё раз и 123')
     await expect(screen.getByText('Найдено артикулов: 3')).toBeVisible()
   })
-
-  test('цены за неделю: подешевевший товар в списке', { session: 'admin' }, async ({ app, screen }) => {
-    await app.open('/admin')
-    await expect(screen.getByText('Цены за неделю')).toBeVisible()
-  })
 })

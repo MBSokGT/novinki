@@ -12,9 +12,6 @@ export interface ProductVariant {
   link_broken?: boolean
   price?: number | null
   currency?: string | null
-  // Прошлая цена и когда она изменилась — для значка «подешевело»
-  price_prev?: number | null
-  price_changed_at?: string | null
   // Когда наличие и цена этого варианта в последний раз успешно получены
   checked_at?: string | null
 }
@@ -49,8 +46,6 @@ export interface Product {
   link_checked_at?: string | null
   site_price?: number | null
   site_currency?: string | null
-  price_prev?: number | null
-  price_changed_at?: string | null
   availability_checked_at?: string | null
   rating?: number
   price?: number
