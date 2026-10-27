@@ -22,4 +22,19 @@ describe('админка', () => {
     await screen.getByRole('textbox').last().fill('Probar Premium:\n2030586, 2030587; 2110341\n2030587 ещё раз и 123')
     await expect(screen.getByText('Найдено артикулов: 3')).toBeVisible()
   })
+
+  test('артикулы из PDF: перетащили файл — артикулы нашлись, посторонние числа не в счёт', { session: 'admin' }, async ({ app, screen }) => {
+    await app.open('/admin')
+    await screen.getByRole('button', 'Артикулы').tap()
+    await screen.getByLabel('Выбрать файл с артикулами').setInputFiles('e2e/fixtures/anons.pdf')
+    await expect(screen.getByText('Найдено артикулов: 4')).toBeVisible()
+    await expect(screen.getByText('добавлено артикулов: 4', { exact: false })).toBeVisible()
+  })
+
+  test('не PDF и не текст — понятное сообщение', { session: 'admin' }, async ({ app, screen }) => {
+    await app.open('/admin')
+    await screen.getByRole('button', 'Артикулы').tap()
+    await screen.getByLabel('Выбрать файл с артикулами').setInputFiles('e2e/fixtures/not-a-pdf.png')
+    await expect(screen.getByText('Подходят PDF и текстовые файлы', { exact: false })).toBeVisible()
+  })
 })

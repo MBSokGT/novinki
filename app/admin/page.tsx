@@ -9,6 +9,7 @@ import { normalizeLink, safeHref } from '@/lib/url'
 import { Product, ProductVariant } from '@/types/product'
 import { toTrashRecord } from '@/lib/trashPayload'
 import LinkAttentionPanel from '@/components/LinkAttentionPanel'
+import SearchMissesPanel from '@/components/SearchMissesPanel'
 import ProductHistoryModal from '@/components/ProductHistoryModal'
 import { mergeTags, type FieldsFromFeatures } from '@/lib/featuresToFields'
 import Link from 'next/link'
@@ -992,6 +993,7 @@ export default function AdminPage() {
         </div>
 
         <LinkAttentionPanel products={products} onEdit={handleEdit} onChecked={fetchProducts} />
+        <SearchMissesPanel />
 
         <div className="mb-8 rounded-lg border border-slate-200 bg-white p-4 sm:p-6 lg:p-8">
           <div className="flex items-center gap-3 mb-6">

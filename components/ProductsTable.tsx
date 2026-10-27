@@ -15,6 +15,7 @@ import Breadcrumbs from './Breadcrumbs'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { isTemperatureCategory } from '@/lib/constants'
 import { fuzzyMatches } from '@/lib/fuzzySearch'
+import { useSearchMissReporter } from '@/lib/useSearchMissReporter'
 import { productSearchFields } from '@/lib/productSearch'
 import { shortVariantNames } from '@/lib/variantName'
 import { isNewSince, useLastVisit } from '@/lib/useLastVisit'
@@ -553,6 +554,13 @@ export default function ProductsTable({ isAdmin, supplierNoveltiesOnly, setSuppl
     () => productsMeta.filter((product) => Boolean(product.is_supplier_novelty) === supplierNoveltiesOnly),
     [productsMeta, supplierNoveltiesOnly]
   )
+
+  // Запрос, которого нет ни на складе, ни у поставщиков, уходит в журнал «что искали и не нашли»
+  const foundAnywhere = useMemo(
+    () => !debouncedSearch.trim() || productsMeta.some((p) => fuzzyMatches(productSearchFields(p), debouncedSearch)),
+    [productsMeta, debouncedSearch]
+  )
+  useSearchMissReporter(debouncedSearch, foundAnywhere, !initialLoading && !offlineMode)
 
   // Группировка по годам: текущий год — первым; при нескольких годах у каждого прилипающий заголовок
   const newCount = useMemo(() => products.filter((p) => isNewSince(p.created_at, lastVisit)).length, [products, lastVisit])
