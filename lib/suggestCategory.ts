@@ -1,16 +1,9 @@
+import { significantWords } from '@/lib/words'
+
 // Подсказка категории учится на уже существующих товарах, а не на жёстком
 // словаре "тарелка → Посуда" — так она сама подстраивается под то, как
 // конкретно эта компания называет свои категории, и не требует ручного
 // обновления при добавлении новых категорий.
-const MIN_WORD_LENGTH = 4
-
-function significantWords(text: string): string[] {
-  return text
-    .toLowerCase()
-    .split(/[^a-zа-яё0-9]+/i)
-    .filter((w) => w.length >= MIN_WORD_LENGTH)
-}
-
 export interface CategorizedProduct {
   name: string
   category?: string | null

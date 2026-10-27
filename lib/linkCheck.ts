@@ -123,7 +123,8 @@ export function linkCheckState() {
   return { running, startedAt }
 }
 
-export async function checkAllLinks({ force = false } = {}) {
+// delayMs — пауза между запросами к сайту; меняют только тесты
+export async function checkAllLinks({ force = false, delayMs = REQUEST_DELAY_MS } = {}) {
   if (running) return null
   if (!force) {
     const last = await lastLinkCheckAt()
@@ -138,7 +139,7 @@ export async function checkAllLinks({ force = false } = {}) {
 
   const check = async (link: string) => {
     if (cache.has(link)) return cache.get(link)!
-    if (stats.requests > 0) await sleep(REQUEST_DELAY_MS)
+    if (stats.requests > 0) await sleep(delayMs)
     stats.requests++
     const result = await checkLink(link)
     cache.set(link, result)
