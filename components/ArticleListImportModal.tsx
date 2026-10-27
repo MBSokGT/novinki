@@ -4,7 +4,8 @@ import { useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
 
 import { apiClient } from '@/lib/api-client'
-import { buildDuplicateIndex, findDuplicate, normalizeArticle, parseArticleList, type DuplicateHit } from '@/lib/articles'
+import { buildDuplicateIndex, findDuplicate, parseArticleList, type DuplicateHit } from '@/lib/articles'
+import { buildNewProduct, pickExactMatch, preselected } from '@/lib/articleImport'
 import { suggestCategory } from '@/lib/suggestCategory'
 import { showToast } from '@/components/Toast'
 import type { ScrapedProduct } from '@/lib/complexbarParser'
@@ -89,9 +90,7 @@ export default function ArticleListImportModal({ existingProducts, categoryWordI
         try {
           const { ok, json } = await post('/api/internal/scrape-complexbar', { url: `${SEARCH_URL}${encodeURIComponent(article)}` })
           const found: ScrapedProduct[] = json.data?.products || []
-          // Только точное совпадение артикула: поиск сайта ищет и по словам, и на чужой артикул
-          // может вернуть посторонний товар — такой карточки нам не нужно
-          const item = found.find((f) => normalizeArticle(f.article_number) === normalizeArticle(article))
+          const item = pickExactMatch(found, article)
           if (item) {
             row = {
               article,
@@ -112,8 +111,7 @@ export default function ArticleListImportModal({ existingProducts, categoryWordI
     }
 
     setRows(result)
-    // Уже существующие товары по умолчанию не выбираем — чтобы не наплодить копий
-    setSelected(new Set(result.flatMap((r, i) => (r.status === 'found' && !r.duplicate ? [i] : []))))
+    setSelected(new Set(preselected(result)))
     setStage('preview')
   }
 
@@ -140,32 +138,8 @@ export default function ArticleListImportModal({ existingProducts, categoryWordI
     const details = await post('/api/internal/complexbar-details', { urls: [item.website_link] }).catch(() => null)
     const fields: FieldsFromFeatures = details?.json.data?.fields || {}
 
-    const { error } = await apiClient.from('products').insert([
-      {
-        name: item.name,
-        brand: item.brand,
-        article_number: item.article_number || row.article,
-        description: fields.description || '',
-        advantages: fields.advantages || '',
-        attention_points: fields.attention_points || '',
-        website_link: item.website_link,
-        category: row.category || '',
-        year,
-        tags: fields.tags || '',
-        order_multiple: '',
-        is_supplier_novelty: false,
-        is_dishwasher_safe: Boolean(fields.is_dishwasher_safe),
-        is_microwave_safe: Boolean(fields.is_microwave_safe),
-        temp_min: fields.temp_min ?? null,
-        temp_max: fields.temp_max ?? null,
-        variants: [],
-        images: mirrored ? [mirrored] : [],
-        image_url: mirrored,
-        flyer_url: '',
-        price_list_url: '',
-        is_archived: !publishNow,
-      },
-    ])
+    const product = buildNewProduct({ item, article: row.article, fields, category: row.category ?? null, year, photo: mirrored, publish: publishNow })
+    const { error } = await apiClient.from('products').insert([product])
     if (error) throw new Error(error.message)
   }
 
