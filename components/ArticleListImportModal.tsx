@@ -50,6 +50,19 @@ async function post(path: string, body: unknown): Promise<{ ok: boolean; json: A
   return { ok: response.ok, json: (await response.json().catch(() => ({}))) as ApiJson }
 }
 
+// Текст из файла: PDF читает сервер (там же проверяются размер и тип), простой
+// текст — сам браузер. Ошибка несёт понятное админу сообщение.
+async function readSourceFile(file: File): Promise<string> {
+  if (/\.(txt|csv)$/i.test(file.name)) return file.text()
+  if (!/\.pdf$/i.test(file.name) && file.type !== 'application/pdf') throw new Error('Подходят PDF и текстовые файлы (.txt, .csv)')
+  const body = new FormData()
+  body.append('file', file)
+  const response = await fetch(`${BASE_PATH}/api/internal/pdf-text`, { method: 'POST', body })
+  const json = await response.json().catch(() => ({}))
+  if (!response.ok || !json.data) throw new Error(json.error?.message || 'Не удалось прочитать файл')
+  return json.data.text as string
+}
+
 export default function ArticleListImportModal({ existingProducts, categoryWordIndex, years, onClose, onOpenProduct, onCreated }: ArticleListImportModalProps) {
   const [stage, setStage] = useState<Stage>('input')
   const [text, setText] = useState('')
@@ -63,10 +76,35 @@ export default function ArticleListImportModal({ existingProducts, categoryWordI
   const [publishNow, setPublishNow] = useState(false)
   const [failed, setFailed] = useState<string[]>([])
   const [createdCount, setCreatedCount] = useState(0)
+  // Загрузка файла с артикулами: идёт ли чтение, что получилось, тащат ли файл над окном
+  const [reading, setReading] = useState(false)
+  const [fileNote, setFileNote] = useState<{ ok: boolean; message: string } | null>(null)
+  const [dragOver, setDragOver] = useState(false)
   const cancelRef = useRef(false)
 
   const articles = useMemo(() => parseArticleList(text), [text])
   const duplicateIndex = useMemo(() => buildDuplicateIndex(existingProducts), [existingProducts])
+
+  const addFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return
+    setReading(true)
+    setFileNote(null)
+    try {
+      let added = ''
+      for (const file of Array.from(files)) added += `\n${await readSourceFile(file)}`
+      const found = parseArticleList(added).length
+      setText((prev) => `${prev.trim()}\n${added}`.trim())
+      setFileNote(
+        found > 0
+          ? { ok: true, message: `Из ${files.length === 1 ? `«${files[0].name}»` : `файлов (${files.length})`} добавлено артикулов: ${found}` }
+          : { ok: false, message: 'В файле не нашлось артикулов. Если это скан или картинка, текст из него достать не получится — вставьте артикулы вручную.' }
+      )
+    } catch (error) {
+      setFileNote({ ok: false, message: error instanceof Error ? error.message : 'Не удалось прочитать файл' })
+    } finally {
+      setReading(false)
+    }
+  }
 
   const close = () => {
     cancelRef.current = true
@@ -188,9 +226,14 @@ export default function ArticleListImportModal({ existingProducts, categoryWordI
         </div>
 
         {stage === 'input' && (
-          <div className="overflow-y-auto p-5">
+          <div
+            className={`overflow-y-auto p-5 transition ${dragOver ? 'bg-red-50/60' : ''}`}
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={(e) => { e.preventDefault(); setDragOver(false); addFiles(e.dataTransfer.files) }}
+          >
             <p className="mb-3 text-sm text-slate-500">
-              Вставьте артикулы — через запятую, пробел или с новой строки. Можно скопировать целиком из письма, Excel или PDF: лишний текст пропустим, повторы уберём.
+              Вставьте артикулы — через запятую, пробел или с новой строки — или перетащите сюда PDF (анонс, прайс поставщика): артикулы найдём сами. Лишний текст пропустим, повторы уберём.
             </p>
             <textarea
               value={text}
@@ -200,6 +243,13 @@ export default function ArticleListImportModal({ existingProducts, categoryWordI
               placeholder="2030586, 2030587, 2110341, 2110342..."
               className="w-full rounded-xl border border-slate-200 px-4 py-3 font-mono text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#9B1B1B]"
             />
+            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+              <label className={`inline-flex cursor-pointer items-center gap-1.5 font-medium text-[#9B1B1B] hover:underline ${reading ? 'pointer-events-none opacity-60' : ''}`}>
+                <input type="file" accept=".pdf,.txt,.csv,application/pdf" multiple className="sr-only" aria-label="Выбрать файл с артикулами" onChange={(e) => { addFiles(e.target.files); e.target.value = '' }} />
+                {reading ? 'Читаю файл…' : 'Выбрать PDF или файл'}
+              </label>
+              {fileNote && <span className={fileNote.ok ? 'text-emerald-700' : 'text-red-600'}>{fileNote.message}</span>}
+            </div>
             <p className="mt-2 text-sm text-slate-500">
               {articles.length > 0 ? <>Найдено артикулов: <span className="font-semibold text-slate-800">{articles.length}</span></> : 'Артикулы — это 5–8 цифр, например 2030586'}
             </p>
