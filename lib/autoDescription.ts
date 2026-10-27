@@ -86,6 +86,12 @@ interface Facts {
 }
 
 // Что одинаково у всех позиций серии (и что у них различается — цвета)
+// Объём пишем, только если он есть и одинаков у всех позиций
+function sameVolume(volumes: Array<ReturnType<typeof volumeOf>>): ReturnType<typeof volumeOf> {
+  const first = volumes[0]
+  return first && volumes.every((v) => v?.text === first.text) ? first : null
+}
+
 function gatherFacts(pages: Features[]): Facts {
   const volumes = pages.map(volumeOf)
   return {
@@ -95,7 +101,7 @@ function gatherFacts(pages: Features[]): Facts {
     series: common(pages, /^серия/i),
     brand: common(pages, /^бренд/i),
     country: common(pages, /^страна/i),
-    volume: volumes.every((v) => v && v.text === volumes[0]?.text) ? volumes[0] : null,
+    volume: sameVolume(volumes),
     sizes: sizesOf(pages),
   }
 }

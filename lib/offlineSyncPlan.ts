@@ -60,10 +60,9 @@ export function imageSources(products: Array<Pick<Product, 'image_url' | 'images
 // то же фото в другой ширине
 export function pickCachedImage(cachedUrls: readonly string[], source: string, exactUrl: string): string | null {
   if (cachedUrls.includes(exactUrl)) return exactUrl
-  return (
-    cachedUrls.find((url) => {
-      const parsed = new URL(url)
-      return parsed.pathname.endsWith('/_next/image') && parsed.searchParams.get('url') === source
-    }) ?? null
-  )
+  const sameImage = cachedUrls.find((url) => {
+    const parsed = new URL(url)
+    return parsed.pathname.endsWith('/_next/image') && parsed.searchParams.get('url') === source
+  })
+  return sameImage === undefined ? null : sameImage
 }

@@ -21,7 +21,9 @@ const isYes = (value: string) => /^да(?![а-яё])/i.test(value.trim())
 const hasWord = (text: string, word: string) => new RegExp(`(^|[^а-яё])${word}(?![а-яё])`, 'i').test(text)
 
 function numbers(value: string): number[] {
-  return (value.replace(/[−–—]/g, '-').match(/-?\s*\d+(?:[.,]\d+)?/g) || []).map((n) => parseFloat(n.replace(/\s/g, '').replace(',', '.')))
+  // Тире между двумя числами («20 — 100») — разделитель диапазона, а не знак минус
+  const unsigned = value.replace(/(\d)\s*[−–—-]\s*(?=\d)/g, '$1 / ').replace(/[−–—]/g, '-')
+  return (unsigned.match(/-?\s*\d+(?:[.,]\d+)?/g) || []).map((n) => parseFloat(n.replace(/\s/g, '').replace(',', '.')))
 }
 
 export function featuresToFields(features: Record<string, string>): FieldsFromFeatures {
