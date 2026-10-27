@@ -35,7 +35,7 @@ export function planOfflineSync(input: SyncInput): SyncPlan {
   if (currentStatic.size > 0) {
     for (const url of known) if (url.startsWith(staticPrefix) && !currentStatic.has(url)) deleteUrls.push(url)
   }
-  const fetchStatic = currentStatic.size > 0 ? loadedStatic.filter((url) => !known.has(url)) : []
+  const fetchStatic = loadedStatic.filter((url) => !known.has(url))
 
   // Фото: нужное и то, что на экране, оставляем — в любой ширине
   const wantedSources = new Set(wantedImages.values())
