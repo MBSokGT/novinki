@@ -18,3 +18,7 @@ next-env.d.ts
 
 # Результаты автотестов
 .e2e/
+
+# Отчёты crapper/dryer/mutator
+.metrics/
+target/
