@@ -1,6 +1,7 @@
 import { useEffect, useState, useSyncExternalStore } from 'react'
 
 import type { Product } from '@/types/product'
+import { imageSources, pickCachedImage, planOfflineSync } from '@/lib/offlineSyncPlan'
 
 // Работа без сети. Телефон хранит копию каталога (список товаров), фото
 // карточек и файлы самого приложения, чтобы на складе или в зале без связи
@@ -105,53 +106,37 @@ export async function syncOfflineFiles(products: Product[]): Promise<void> {
     const cache = await caches.open(OFFLINE_CACHE)
     if (stale()) return
     const known = new Set((await cache.keys()).map((request) => request.url))
-
-    // 1. Файлы приложения, которые страница уже загрузила (скрипты, стили, шрифты)
     const staticPrefix = absolute(`${BASE_PATH}/_next/static/`)
-    const loaded = performance
-      .getEntriesByType('resource')
-      .map((entry) => entry.name)
-      .filter((name) => name.startsWith(staticPrefix))
-    const currentStatic = new Set(loaded)
-    if (currentStatic.size > 0) {
-      for (const url of known) if (url.startsWith(staticPrefix) && !currentStatic.has(url)) await cache.delete(url)
-      await runPool(
-        loaded.filter((url) => !known.has(url)),
-        4,
-        async (url) => {
-          const response = await fetch(url).catch(() => null)
-          if (response?.ok && !stale()) await putResponse(cache, url, response)
-        }
-      )
-    }
+    const imagePrefix = absolute(`${BASE_PATH}/_next/image?`)
+    const onScreen = new Set([...document.images].map((img) => img.currentSrc).filter(Boolean))
 
-    // 2. Сама страница — каждый раз заново: после обновления сайта в ней новые адреса файлов
+    // Что скачать и что удалить — решает чистая функция (lib/offlineSyncPlan.ts)
+    const plan = planOfflineSync({
+      known,
+      staticPrefix,
+      imagePrefix,
+      loadedStatic: performance.getEntriesByType('resource').map((entry) => entry.name).filter((name) => name.startsWith(staticPrefix)),
+      wantedImages: new Map(imageSources(products, MAX_IMAGES).map((src) => [absolute(optimizedImageUrl(src)), src])),
+      onScreen,
+    })
+    for (const url of plan.deleteUrls) await cache.delete(url)
+
+    // Файлы приложения (скрипты, стили, шрифты) — чтобы оно открылось без сети
+    await runPool(plan.fetchStatic, 4, async (url) => {
+      const response = await fetch(url).catch(() => null)
+      if (response?.ok && !stale()) await putResponse(cache, url, response)
+    })
+
+    // Сама страница — каждый раз заново: после обновления сайта в ней новые адреса файлов
     const home = absolute(BASE_PATH || '/')
     const page = await fetch(home, { credentials: 'include' }).catch(() => null)
     if (page?.ok && !stale()) await putResponse(cache, home, page)
 
-    // 3. Фото карточек — по одному главному фото на товар
-    const sources = [...new Set(products.map((p) => p.images?.[0] || p.image_url).filter((s): s is string => Boolean(s)))].slice(0, MAX_IMAGES)
-    const wanted = new Map(sources.map((src) => [absolute(optimizedImageUrl(src)), src]))
-    // фото, которые сейчас на экране (логотип и т.п.), тоже оставляем
-    const onScreen = new Set([...document.images].map((img) => img.currentSrc).filter(Boolean))
-    const imagePrefix = absolute(`${BASE_PATH}/_next/image?`)
-    for (const url of known) {
-      if (url.startsWith(imagePrefix) && !wanted.has(url) && !onScreen.has(url)) {
-        const stillUsed = [...wanted.keys()].some((w) => new URL(w).searchParams.get('url') === new URL(url).searchParams.get('url'))
-        if (!stillUsed) await cache.delete(url)
-      }
-    }
-    // логотип и другие фото страницы, которые оптимизатор уже отдал, тоже сохраняем
-    const pageImages = [...onScreen].filter((url) => url.startsWith(imagePrefix))
-    await runPool(
-      [...new Set([...wanted.keys(), ...pageImages])].filter((url) => !known.has(url)),
-      3,
-      async (url) => {
-        const response = await fetch(url).catch(() => null)
-        if (response?.ok && !stale()) await cache.put(url, response)
-      }
-    )
+    // Фото карточек, логотип и другие фото страницы
+    await runPool(plan.fetchImages, 3, async (url) => {
+      const response = await fetch(url).catch(() => null)
+      if (response?.ok && !stale()) await cache.put(url, response)
+    })
   } catch {
     // синхронизация — дополнение, сайт работает и без неё
   }
@@ -161,13 +146,9 @@ export async function syncOfflineFiles(products: Product[]): Promise<void> {
 async function findCachedImage(src: string): Promise<Response | null> {
   if (!supported()) return null
   const cache = await caches.open(OFFLINE_CACHE)
-  const exact = await cache.match(absolute(optimizedImageUrl(src)), { ignoreVary: true })
-  if (exact) return exact
-  for (const request of await cache.keys()) {
-    const url = new URL(request.url)
-    if (url.pathname.endsWith('/_next/image') && url.searchParams.get('url') === src) return (await cache.match(request, { ignoreVary: true })) || null
-  }
-  return null
+  const exact = absolute(optimizedImageUrl(src))
+  const found = pickCachedImage((await cache.keys()).map((request) => request.url), src, exact)
+  return found ? (await cache.match(found, { ignoreVary: true })) || null : null
 }
 
 // --- Режим «нет связи» -------------------------------------------------
