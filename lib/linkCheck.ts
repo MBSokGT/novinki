@@ -72,6 +72,48 @@ function applyToVariant(variant: ProductVariant, result: LinkCheckResult, checke
   }
 }
 
+export interface ProductUpdatePlan {
+  assignments: string[]
+  values: unknown[]
+}
+
+type CheckResults = ReadonlyMap<string, LinkCheckResult | null>
+
+const resultFor = (link: string | null | undefined, results: CheckResults) => (isCheckableLink(link) ? results.get(link as string) : undefined)
+
+function mainLinkPlan(result: LinkCheckResult, checkedAt: string): ProductUpdatePlan {
+  const ok = result.broken ? null : result
+  return {
+    assignments: ['link_broken = ?', 'availability = ?', 'availability_label = ?', 'site_price = ?', 'site_currency = ?', 'availability_checked_at = ?'],
+    values: [result.broken ? 1 : 0, ok?.status?.availability ?? null, ok?.status?.label ?? null, ok?.price?.price ?? null, ok?.price?.currency ?? null, checkedAt],
+  }
+}
+
+// Что записать в карточку по итогам проверки: поля самого товара и варианты.
+// Если результата для ссылки нет (не проверялась или сбой сайта) — прежние
+// данные остаются как были.
+export function planProductUpdate(fresh: { website_link: string | null; variants: string | null }, results: CheckResults, checkedAt: string): ProductUpdatePlan {
+  const plan: ProductUpdatePlan = { assignments: ['link_checked_at = ?'], values: [checkedAt] }
+
+  const mainResult = resultFor(fresh.website_link, results)
+  if (mainResult) {
+    const main = mainLinkPlan(mainResult, checkedAt)
+    plan.assignments.push(...main.assignments)
+    plan.values.push(...main.values)
+  }
+
+  const variants = parseVariants(fresh.variants)
+  if (variants.length > 0) {
+    const updated = variants.map((variant) => {
+      const result = resultFor(variant.website_link, results)
+      return result ? applyToVariant(variant, result, checkedAt) : variant
+    })
+    plan.assignments.push('variants = ?')
+    plan.values.push(JSON.stringify(updated))
+  }
+  return plan
+}
+
 export async function lastLinkCheckAt(): Promise<string | null> {
   const row = await getLocalD1().prepare('SELECT MAX(link_checked_at) AS last FROM products').first<{ last: string | null }>()
   return row?.last ?? null
@@ -124,34 +166,7 @@ export async function checkAllLinks({ force = false } = {}) {
         .first<{ website_link: string | null; variants: string | null }>()
       if (!fresh) continue
 
-      const checkedAt = new Date().toISOString()
-      const assignments: string[] = ['link_checked_at = ?']
-      const values: unknown[] = [checkedAt]
-
-      const mainResult = isCheckableLink(fresh.website_link) ? cache.get(fresh.website_link!) : undefined
-      if (mainResult) {
-        const ok = mainResult.broken ? null : mainResult
-        assignments.push('link_broken = ?', 'availability = ?', 'availability_label = ?', 'site_price = ?', 'site_currency = ?', 'availability_checked_at = ?')
-        values.push(
-          mainResult.broken ? 1 : 0,
-          ok?.status?.availability ?? null,
-          ok?.status?.label ?? null,
-          ok?.price?.price ?? null,
-          ok?.price?.currency ?? null,
-          checkedAt
-        )
-      }
-
-      const freshVariants = parseVariants(fresh.variants)
-      if (freshVariants.length > 0) {
-        const updated = freshVariants.map((variant) => {
-          const result = isCheckableLink(variant.website_link) ? cache.get(variant.website_link) : undefined
-          return result ? applyToVariant(variant, result, checkedAt) : variant
-        })
-        assignments.push('variants = ?')
-        values.push(JSON.stringify(updated))
-      }
-
+      const { assignments, values } = planProductUpdate(fresh, cache, new Date().toISOString())
       await db.prepare(`UPDATE products SET ${assignments.join(', ')} WHERE id = ?`).bind(...values, row.id).run()
     }
 
