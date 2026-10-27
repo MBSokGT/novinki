@@ -74,56 +74,94 @@ function volumeOf(features: Features): { text: string; double: boolean } | null 
   return { text, double: keys.some((k) => /втор/i.test(k)) && unique.length > 1 }
 }
 
-export function describeFromFeatures(pages: Features[]): GeneratedText {
-  if (pages.length === 0) return { description: '', advantages: '' }
+interface Facts {
+  material: string
+  colors: string[]
+  shape: string
+  series: string
+  brand: string
+  country: string
+  volume: ReturnType<typeof volumeOf>
+  sizes: string[]
+}
 
-  const material = common(pages, /^материал/i)
-  const colors = unique(pages, /^цвет/i)
-  const shape = common(pages, /^форма/i)
-  const series = common(pages, /^серия/i)
-  const brand = common(pages, /^бренд/i)
-  const country = common(pages, /^страна/i)
-
+// Что одинаково у всех позиций серии (и что у них различается — цвета)
+function gatherFacts(pages: Features[]): Facts {
   const volumes = pages.map(volumeOf)
-  const volume = volumes.every((v) => v && v.text === volumes[0]?.text) ? volumes[0] : null
+  return {
+    material: common(pages, /^материал/i),
+    colors: unique(pages, /^цвет/i),
+    shape: common(pages, /^форма/i),
+    series: common(pages, /^серия/i),
+    brand: common(pages, /^бренд/i),
+    country: common(pages, /^страна/i),
+    volume: volumes.every((v) => v && v.text === volumes[0]?.text) ? volumes[0] : null,
+    sizes: sizesOf(pages),
+  }
+}
 
+function sizesOf(pages: Features[]): string[] {
   const sizes: string[] = []
   for (const [label, word] of SIZE_LABELS) {
-    const value = common(pages, label)
-    const n = parseFloat(value.replace(',', '.'))
+    const n = parseFloat(common(pages, label).replace(',', '.'))
     if (Number.isFinite(n) && n > 0) sizes.push(`${word} ${formatNumber(n)} мм`)
   }
+  return sizes
+}
 
-  const description: string[] = []
+function lookSentence(f: Facts): string {
   const look = [
-    material ? materialPhrase(material) : '',
-    colors.length > 0 ? `цвет — ${colors.join(', ')}` : '',
-    shape ? `форма — ${shape.toLowerCase()}` : '',
+    f.material ? materialPhrase(f.material) : '',
+    f.colors.length > 0 ? `цвет — ${f.colors.join(', ')}` : '',
+    f.shape ? `форма — ${f.shape.toLowerCase()}` : '',
   ].filter(Boolean)
-  if (look.length > 0) description.push(`${capitalize(look.join(', '))}.`)
-  if (volume) description.push(`Объём ${volume.text}.`)
-  if (sizes.length > 0) description.push(`Размеры: ${sizes.join(', ')}.`)
-  if (brand || series) description.push(`${[brand ? `Бренд ${brand}` : '', series ? (brand ? `серия ${series}` : `Серия ${series}`) : ''].filter(Boolean).join(', ')}.`)
-  if (country) description.push(`Страна производства: ${capitalize(country.toLowerCase())}.`)
+  return look.length > 0 ? `${capitalize(look.join(', '))}.` : ''
+}
 
+// «Бренд X, серия Y.»; без бренда — «Серия Y.»
+function identitySentence(f: Facts): string {
+  const parts = [f.brand ? `Бренд ${f.brand}` : '', f.series ? (f.brand ? `серия ${f.series}` : `Серия ${f.series}`) : ''].filter(Boolean)
+  return parts.length > 0 ? `${parts.join(', ')}.` : ''
+}
+
+function describe(f: Facts): string {
+  return [
+    lookSentence(f),
+    f.volume ? `Объём ${f.volume.text}.` : '',
+    f.sizes.length > 0 ? `Размеры: ${f.sizes.join(', ')}.` : '',
+    identitySentence(f),
+    f.country ? `Страна производства: ${capitalize(f.country.toLowerCase())}.` : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
+}
+
+type ParsedFields = ReturnType<typeof featuresToFields>
+
+function temperatureAdvantage(fields: ParsedFields[]): string {
+  const { temp_min: min, temp_max: max } = fields[0]
+  if (!fields.every((f) => f.temp_min === min && f.temp_max === max)) return ''
+  if (min !== undefined && max !== undefined) return `Выдерживает температуру от ${min} до ${max} °C`
+  return max !== undefined ? `Выдерживает температуру до ${max} °C` : ''
+}
+
+function advantagesOf(f: Facts, pages: Features[]): string {
   const fields = pages.map((p) => featuresToFields(p))
-  const advantages: string[] = []
-  const benefit = MATERIAL_BENEFITS.find(([re]) => re.test(material))
-  if (benefit) advantages.push(benefit[1])
-  if (fields.every((f) => f.is_dishwasher_safe)) advantages.push('Можно мыть в посудомоечной машине')
-  if (fields.every((f) => f.is_microwave_safe)) advantages.push('Подходит для микроволновой печи')
-  const tMin = fields[0].temp_min
-  const tMax = fields[0].temp_max
-  if (fields.every((f) => f.temp_min === tMin && f.temp_max === tMax)) {
-    if (tMin !== undefined && tMax !== undefined) advantages.push(`Выдерживает температуру от ${tMin} до ${tMax} °C`)
-    else if (tMax !== undefined) advantages.push(`Выдерживает температуру до ${tMax} °C`)
-  }
-  if (volume?.double) advantages.push(`Два объёма в одном: ${volume.text.replace('/', ' и ')}`)
-  if (pages.every((p) => /^да/i.test(valueOf(p, /мерного деления/i)))) advantages.push('Есть мерное деление')
-  if (series) advantages.push(`Входит в серию ${series} — удобно собрать комплект в одном стиле`)
+  const all = (flag: (x: ParsedFields) => boolean | undefined) => fields.every((x) => flag(x))
+  const list = [
+    MATERIAL_BENEFITS.find(([re]) => re.test(f.material))?.[1],
+    all((x) => x.is_dishwasher_safe) ? 'Можно мыть в посудомоечной машине' : '',
+    all((x) => x.is_microwave_safe) ? 'Подходит для микроволновой печи' : '',
+    temperatureAdvantage(fields),
+    f.volume?.double ? `Два объёма в одном: ${f.volume.text.replace('/', ' и ')}` : '',
+    pages.every((p) => /^да/i.test(valueOf(p, /мерного деления/i))) ? 'Есть мерное деление' : '',
+    f.series ? `Входит в серию ${f.series} — удобно собрать комплект в одном стиле` : '',
+  ].filter(Boolean)
+  return list.length > 0 ? `${list.join('. ')}.` : ''
+}
 
-  return {
-    description: description.join(' '),
-    advantages: advantages.length > 0 ? `${advantages.join('. ')}.` : '',
-  }
+export function describeFromFeatures(pages: Features[]): GeneratedText {
+  if (pages.length === 0) return { description: '', advantages: '' }
+  const facts = gatherFacts(pages)
+  return { description: describe(facts), advantages: advantagesOf(facts, pages) }
 }
